@@ -35,7 +35,9 @@ public sealed class HttpSecurityTests
         Assert.Equal(HttpStatusCode.Unauthorized, await SendAsync(kit, r => r.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "wrong")));
         Assert.Equal(HttpStatusCode.Forbidden, await SendAsync(kit, r => r.Headers.Add("Origin", "https://example.com")));
         var foreign = await SendAsync(kit, r => r.Headers.Host = "attacker.example:" + kit.Server.Port.ToString(CultureInfo.InvariantCulture));
-        Assert.True(foreign is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest, foreign.ToString());
+        // The guard answers 403; http.sys on Windows answers 400 for an unregistered host; the managed listener on
+        // Linux answers 404 because no prefix matches the foreign host. All three stop the request before any tool.
+        Assert.True(foreign is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest or HttpStatusCode.NotFound, foreign.ToString());
 
         // The prefix follows the platform rule: localhost on Windows (a normal user may register it), else 127.0.0.1.
         Assert.StartsWith(OperatingSystem.IsWindows() ? "http://localhost:" : "http://127.0.0.1:", kit.Server.BaseUrl, StringComparison.Ordinal);

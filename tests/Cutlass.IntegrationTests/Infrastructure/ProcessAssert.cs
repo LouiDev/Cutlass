@@ -11,6 +11,13 @@ public static class ProcessAssert
     /// <returns>True while the original process is alive.</returns>
     public static bool IsAlive(int pid, long startTimeUtcTicks)
     {
+        if (OperatingSystem.IsLinux())
+        {
+            // The registry records /proc start ticks on Linux (ChildProcessRegistry.StartTicksOf), which are jiffies
+            // since boot and not comparable with Process.StartTime, so read the same source here.
+            return Cutlass.Media.Platform.ProcStat.Read(pid) is { } stat && Math.Abs(stat.StartTicks - startTimeUtcTicks) <= 2;
+        }
+
         try
         {
             using var process = Process.GetProcessById(pid);
@@ -32,6 +39,11 @@ public static class ProcessAssert
     /// <returns>The start time.</returns>
     public static long StartTicks(int pid)
     {
+        if (OperatingSystem.IsLinux() && Cutlass.Media.Platform.ProcStat.Read(pid) is { } stat)
+        {
+            return stat.StartTicks;
+        }
+
         using var process = Process.GetProcessById(pid);
         return process.StartTime.ToUniversalTime().Ticks;
     }

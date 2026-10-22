@@ -64,7 +64,7 @@ internal sealed class AgentKit : IAsyncDisposable
             });
         var dispatcher = new ToolDispatcher(host, new AuditLog(engine.Log), null, "0.0.0-it");
         var server = new AgentHttpServer(dispatcher, Token);
-        await server.StartAsync(Random.Shared.Next(49_200, 64_000));
+        await server.StartAsync(FreeLoopbackPort());
         return new AgentKit(temp, engine, host, dispatcher, server);
     }
 
@@ -115,5 +115,25 @@ internal sealed class AgentKit : IAsyncDisposable
         await Engine.DisposeAsync();
         Temp.Dispose();
         Assert.Equal(0, left);
+    }
+
+    /// <summary>
+    /// A loopback port the OS reports as free. Windows runners exclude whole port ranges (Hyper-V, WSL), where http.sys
+    /// answers a sharing violation for every port, so a random number is not enough; a port the kernel hands out on
+    /// bind to port 0 never lies in such a range.
+    /// </summary>
+    /// <returns>The port.</returns>
+    internal static int FreeLoopbackPort()
+    {
+        var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        probe.Start();
+        try
+        {
+            return ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+        }
+        finally
+        {
+            probe.Stop();
+        }
     }
 }

@@ -206,7 +206,9 @@ public sealed class ProcessRunnerTests
 
         Assert.Equal(0, result.EnsureSuccess().ExitCode);
         Assert.True(File.Exists(output));
-        Assert.Contains(_media.OddPathClip, result.DisplayCommand, StringComparison.Ordinal);
+        // The display command quotes for the platform shell: on POSIX an apostrophe inside single quotes becomes '''.
+        var shown = OperatingSystem.IsWindows() ? _media.OddPathClip : _media.OddPathClip.Replace("'", @"'\''", StringComparison.Ordinal);
+        Assert.Contains(shown, result.DisplayCommand, StringComparison.Ordinal);
     }
 
     [FfmpegFact]

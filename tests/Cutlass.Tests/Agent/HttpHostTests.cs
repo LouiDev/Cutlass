@@ -23,8 +23,28 @@ public sealed class HttpHostTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _server = new AgentHttpServer(_host.Dispatcher, Token, new RateLimiter(30, 60, _limiterClock));
-        await _server.StartAsync(Random.Shared.Next(49_200, 64_000));
+        await _server.StartAsync(FreeLoopbackPort());
         _client = new AgentClient(_server.BaseUrl!, Token);
+    }
+
+    /// <summary>
+    /// A loopback port the OS reports as free. Windows runners exclude whole port ranges (Hyper-V, WSL), where http.sys
+    /// answers a sharing violation for every port, so a random number is not enough; a port the kernel hands out on
+    /// bind to port 0 never lies in such a range.
+    /// </summary>
+    /// <returns>The port.</returns>
+    internal static int FreeLoopbackPort()
+    {
+        var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        probe.Start();
+        try
+        {
+            return ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+        }
+        finally
+        {
+            probe.Stop();
+        }
     }
 
     public async Task DisposeAsync()

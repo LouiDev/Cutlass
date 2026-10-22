@@ -41,10 +41,21 @@ public sealed class ExportOutputSafetyTests
         }
 
         Assert.Equal(ExportJobState.Completed, job.State);
-        Assert.Equal(Path.Combine(kit.OutputDirectory, "held (2).wav"), job.OutputPath);
-        Assert.Contains(job.Warnings, w => w.Contains("held (2).wav", StringComparison.Ordinal));
         Assert.False(File.Exists(job.PartialPath));
-        Assert.Equal("the old export, open in a player", await File.ReadAllTextAsync(target));
+        if (OperatingSystem.IsWindows())
+        {
+            // FileShare.None blocks the replace on Windows, so the export lands under the first free name.
+            Assert.Equal(Path.Combine(kit.OutputDirectory, "held (2).wav"), job.OutputPath);
+            Assert.Contains(job.Warnings, w => w.Contains("held (2).wav", StringComparison.Ordinal));
+            Assert.Equal("the old export, open in a player", await File.ReadAllTextAsync(target));
+        }
+        else
+        {
+            // POSIX lets a rename replace a file another handle holds open, so the normal path is used.
+            Assert.Equal(target, job.OutputPath);
+            Assert.DoesNotContain(job.Warnings, w => w.Contains("could not be replaced", StringComparison.Ordinal));
+        }
+
         var samples = await ExportKit.DecodeAudioAsync(job.OutputPath);
         Assert.Equal(48_000, samples.Length / 2);
     }
