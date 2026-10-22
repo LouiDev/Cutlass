@@ -89,8 +89,12 @@ public sealed class HttpHostTests : IAsyncLifetime
         var port = _server.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var response = await RawAsync(HttpMethod.Get, "/v1/status", headers: h => h.Host = "evil.example:" + port);
 
-        // http.sys answers a host it was not registered for with 400 itself; the guard answers 403.
-        Assert.True(response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest, response.StatusCode.ToString());
+        // Which layer refuses depends on the platform: the guard answers 403, http.sys on Windows answers 400 for a
+        // host it was not registered for, and the managed listener on Linux answers 404 because no prefix matches the
+        // foreign host. All three mean the request never reached a tool; the guard itself is checked directly below.
+        Assert.True(
+            response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest or HttpStatusCode.NotFound,
+            response.StatusCode.ToString());
         Assert.Null(AuthGuard.Check(IPAddress.Loopback, "localhost:" + port, null, "Bearer " + Token, _server.Port, Token));
         Assert.Equal(ErrorCode.Forbidden, AuthGuard.Check(IPAddress.Loopback, "evil.example:" + port, null, "Bearer " + Token, _server.Port, Token)!.Code);
         Assert.Equal(ErrorCode.Forbidden, AuthGuard.Check(IPAddress.Parse("192.168.1.20"), "localhost:" + port, null, "Bearer " + Token, _server.Port, Token)!.Code);

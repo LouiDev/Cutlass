@@ -199,7 +199,7 @@ The host operations exist because the App does more than the bare edit:
 - **Concurrency:**
   - Mutating calls go through one `SemaphoreSlim(1)`, in arrival order. Reads run concurrently.
   - Heavy reads run at most 2 at once, or 1 while the user plays back. A third waits 10 s, then gets `busy`.
-- **Delegates stay short.** The App invoker uses `Dispatcher.UIThread.InvokeAsync` at `Normal` priority. `RemoveRanges` over 1000 clips must stay under 50 ms (A1 measures it).
+- **Delegates stay short.** The App invoker uses `Dispatcher.UIThread.InvokeAsync` at `Normal` priority. `RemoveRanges` over 1000 clips must stay linear: about 20 ms on a desktop and under 100 ms on a shared CI runner in Release (the A1 test bounds it at 1 s, which still separates it from the quadratic version that took seconds).
 
 ### 2.4 The App host
 
@@ -288,7 +288,7 @@ public sealed partial class ProjectSession
   - Export qualities are `draft`, `good`, `high` and `best`, as `ExportQuality` names them.
   - Silences that reach the start or the end of the analysed range are not padded on that side, because no sound needs protecting there. Silence analysis uses 10 ms intervals.
   - Levels report the mix as the user hears it: a mono source sits on both channels at -3 dB (the compiler's `aformat` upmix), so `tone.wav` reads -24.08 dBFS RMS, not -21.07.
-- **`RemoveRanges` speed.** The ripple step shifts the clips after each range directly (the same result as `Move`, in linear time), so 50 ranges over 1000 clips run in well under 50 ms in Release.
+- **`RemoveRanges` speed.** The ripple step shifts the clips after each range directly (the same result as `Move`, in linear time), so 50 ranges over 1000 clips run in about 20 ms on a desktop and about 60 ms on a CI runner in Release, against seconds for the quadratic version.
 - **Headless engine.** It creates no job scheduler or media pipeline: the pipeline needs thumbnails and proxies, which 2.5 excludes. Imports still build frame indexes and posters through `MediaImporter`.
 - **Events** (4.7) are built in A2.
 
