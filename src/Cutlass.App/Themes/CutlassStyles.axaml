@@ -200,6 +200,16 @@
   <Style Selector="Ellipse.statusDot.amber">
     <Setter Property="Fill" Value="{DynamicResource MarkerBrush}" />
   </Style>
+  <!-- AGENT_INTEGRATION 6.6: the MCP badge and the panel header use Warning amber when the MCP exe is missing. -->
+  <Style Selector="Ellipse.statusDot.warning">
+    <Setter Property="Fill" Value="{DynamicResource WarningBrush}" />
+  </Style>
+  <Style Selector="TextBlock.warning">
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+  </Style>
+  <Style Selector="TextBlock.success">
+    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+  </Style>
   <Style Selector="Rectangle.separator">
     <Setter Property="Width" Value="1" />
     <Setter Property="Margin" Value="8,5" />

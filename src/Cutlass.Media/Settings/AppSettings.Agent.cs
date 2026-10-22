@@ -54,4 +54,17 @@ public sealed partial record AppSettings
         get => _agentWritableFolders;
         set => _agentWritableFolders = FolderList.From(value);
     }
+
+    /// <summary>
+    /// An optional template file for "Copy briefing for your agent" (AGENT_INTEGRATION 6.6). Null or missing uses
+    /// <c>&lt;data&gt;/agent/briefing.md</c> when present, else the built-in template.
+    /// </summary>
+    public string? AgentBriefingTemplatePath { get; set; }
+
+    /// <summary>
+    /// True once the first-start dialog of Agent > Start MCP server was confirmed (AGENT_INTEGRATION 6.6 and 9.4); it
+    /// shows again only while a detected agent client is not registered (or stale) and no client has a current
+    /// registration.
+    /// </summary>
+    public bool McpStartDialogSeen { get; set; }
 }

@@ -31,16 +31,50 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 
 | Suite | Count | Result on this machine |
 |---|---|---|
-| `tests/Cutlass.Tests` (no ffmpeg) | 1621 | All green (Debug) |
-| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 239 | All green, run twice in a row; no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
+| `tests/Cutlass.Tests` (no ffmpeg) | 1744 | All green (Debug) |
+| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 247 | All green, run three times in a row; no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
+
+The provider-neutrality pass adds `tests/Cutlass.IntegrationTests/Examples` (6 tests, green: `agent-http.ps1` against an in-process headless host on the split and the marker path, the Python harnesses parse, stay under 150 lines and pass `check_harness.py` for `openai` and `anthropic`); the PowerShell tests skip without PowerShell and the Python ones without Python. The counts in the table include this pass (refreshed by the integration run of 2026-10-22, Debug and Release builds with 0 warnings). `VendorNeutralityTests` scans `src/Cutlass.App` (no vendor or client name outside `Assets/agent-clients.json`) and also `src/Cutlass.Agent` and `src/Cutlass.Agent.Mcp` (only the tool format ids in the exporters and the `discovery.tools` entry); `AgentClientRegistryTests` checks that the README client matrix lists every profile id in order.
 
 Debug and Release builds with `--no-incremental` finish with 0 warnings and 0 errors (Release treats warnings as errors). `build/check-text.ps1` is clean.
 
 GitHub Actions (first runs on 2026-10-22): the Ubuntu leg is green end to end, including the real-time playback tests and the M4 smoke under Xvfb, so the Linux build has now run on real hardware. The Windows leg skips the three `[RealtimeFact]` playback tests (`CUTLASS_SKIP_REALTIME=1`) because the shared runners stall for up to a second at a time; everything else runs there too.
 
+## Agent menu and briefing (2026-10-22)
+
+Built from `docs/MCP_HOSTING_CONCEPT.md` (accepted): an Agent menu (Start / Stop MCP server on F9, Copy briefing for your agent, the HTTP-only variant, Register with Claude Code, Show registration for other clients, Agent panel, Take over), the MCP badge states in the status bar, the MCP SERVER header block in the Agent panel, a first-start dialog that can register the exe with Claude Code, and the briefing renderer with live project values (`AgentBriefing`, templates embedded, user override at `<data>/agent/briefing.md`). Verified by hand: the rendered briefing pasted into a `claude -p` session as the only context made the agent acquire the lock, add the requested title inside one batch, render and check frame 30 and release the lock; a second session started at the same time waited for the lock and did not duplicate the edit. Smoke `m9` covered the menu, the badge, the dialog and both briefings (69 steps at the time). The Claude Code specific items were later replaced by the client profiles (next section).
+
+## Provider neutrality (2026-10-22, `docs/AGENT_INTEGRATION.md` section 9)
+
+Cutlass no longer treats one vendor as special: the tool catalog is served in every harness format, every tool is callable through one route, and Claude is one row of the client table.
+
+Discovery endpoints (all `GET`, bearer token, no lock):
+
+| Route | Returns |
+|---|---|
+| `/v1/tools` | The catalog as is: name, `mcpName`, description, `needsLock`, `mutating`, `heavy`, result kind, JSON schema. |
+| `/v1/tools?format=openai` | `[{type: "function", function: {name, description, parameters}}]` for OpenAI-compatible endpoints (Ollama, LM Studio, vLLM, OpenAI, ...). |
+| `/v1/tools?format=anthropic` | `[{name, description, input_schema}]`. |
+| `/v1/tools?format=gemini` | `[{functionDeclarations: [...]}]` with the schema reduced to what Gemini accepts. |
+| `/v1/tools?format=markdown` | A readable reference, one section per tool. |
+| `/v1/openapi.json` | OpenAPI 3.1 for every route, with the envelopes and bearer security. |
+| `/v1/instructions` | `{text}`: the workflow rules of 5.4 plus the `/v1/call` contract. |
+
+`POST /v1/call` takes the catalog name (`edit.split`) or the MCP name (`cutlass_split`), and image tools called through it answer with `pngBase64` in the envelope.
+
+Reference harnesses in `build/examples/` (documented in `build/examples/README.md`):
+
+| File | State |
+|---|---|
+| `agent-openai-compatible.py` | Written (149 lines, `openai` SDK only, `urllib` for Cutlass). Parses; `check_harness.py` loads it with a stub SDK and a fake transport serving the real `format=openai` document and checks the tool loading, the envelope handling, the lock header and the PNG saving. **A model-driven run is pending**: it was put off on the user's request. |
+| `agent-anthropic.py` | Written (149 lines, `anthropic` SDK only). Same offline checks with `format=anthropic`. No model call was made (no API key used). |
+| `agent-http.ps1` | Green: `HttpExampleTests` runs it in Windows PowerShell 5.1 against an in-process headless host over a placed clip (split path) and an empty project (marker path); run by hand against `serve` with the CI step's commands, it found `serve` through `endpoint.json` and passed. CI runs it on Windows against `serve` (never executed on GitHub yet). |
+
+Findings from a first attempt with gpt-oss 20B on Ollama, stopped when the run was put off (not a result): Ollama gives many models a 4096-token context by default, and the first request (57 tool definitions plus the instructions) is about 5300 tokens, so Ollama has to be started with a larger `OLLAMA_CONTEXT_LENGTH` (the examples README says so). The model asked for a 15 s lease and lost it while thinking; the harnesses now renew the lease every 10 s while the model thinks.
+
 ## Smoke scripts
 
-Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine.
+Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine (2026-10-22: m4 55 steps, m5 56, m6 134, m7 59, m7b 31, m9 92).
 
 | Script | Covers |
 |---|---|
@@ -49,14 +83,14 @@ Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each gen
 | `m6` | Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed and export, Source and Effects drops, and the DESIGN 5 checklist screenshots. |
 | `m7` | The Settings dialog and one export per DESIGN 9 preset, each checked with ffprobe. |
 | `m7b` | A media file taken offline (hatched clips with the `OFFLINE` badge, striped bin card) and screenshots of the real Relink, Settings, Export, Speed and Sequence Settings dialog windows. |
-| `m9` | The agent HTTP API in process (`--agent-server --port 47399`): lock, banner, read-only UI, an agent batch, silence removal, a frame PNG, pause, take over, one-step undo, an agent export, the Agent panel and Settings > Agents. Also run against the published win-x64 exe. |
+| `m9` | The agent HTTP API in process (`--agent-server --port 47399`): lock, banner, read-only UI, an agent batch, silence removal, a frame PNG, pause, take over, one-step undo, an agent export, the Agent panel and Settings > Agents; the Agent menu (briefings, Stop and Start, the open menu and its "Copy briefing for" submenu); the agent clients in the sandbox home (detect, register, update, remove, the briefing per target, Connect clients screenshots). 92 steps. Also run against the published win-x64 exe. |
 
 ## Verified on this machine versus only by reading
 
 Verified by running on Windows 11 (x64):
 
 - Debug and Release builds, the unit and integration suites, all six smoke scripts, the text check.
-- `build/publish.ps1` for win-x64 (both exes and `AGENT_INTEGRATION.md`), the m4 and m9 smokes on the published app, `Cutlass.Agent.Mcp --print-registration`, and `build/publish.ps1 -Runtime linux-x64` (cross-publish; the Linux exes never ran).
+- `build/publish.ps1` for win-x64 (both exes, `AGENT_INTEGRATION.md` and `agent-clients.json`), the m4 and m9 smokes on the published app, `Cutlass.Agent.Mcp --print-registration` (one block per profile, 12, checked by the publish script), and `build/publish.ps1 -Runtime linux-x64` (cross-publish; the Linux exes never ran).
 - `build/examples/agent-serve-demo.ps1` (story 3) against the published `Cutlass.Agent.Mcp serve`.
 - `dotnet publish src/Cutlass.App -c Release -r linux-x64 --self-contained` builds and the folder holds `Cutlass.App`, `libopenal.so` and the Inter fonts.
 - The m6, m7b and m9 screenshots were reviewed for visual defects.
@@ -110,8 +144,16 @@ powershell -File build/smoke.ps1 -AppPath artifacts/publish/win-x64/Cutlass.App.
 powershell -File build/examples/agent-serve-demo.ps1
 ```
 
+Agent examples (`build/examples/README.md`; start the app with agent connections on, or `serve`, first):
+
+```
+powershell -File build/examples/agent-http.ps1
+python build/examples/agent-openai-compatible.py --model gpt-oss:20b --task "<task>"
+python build/examples/agent-anthropic.py --task "<task>"
+```
+
 Nothing has been committed yet: `git status` shows the whole tree as untracked.
 
 ---
 
-**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1621 unit and 239 integration tests, six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only.
+**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1744 unit and 247 integration tests, six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only. Provider neutrality (section 9): the discovery endpoints, the client profiles and three reference harnesses exist; the HTTP example is green against a headless host and `serve`, while the model-driven harness run is pending (user's request); the Python harnesses pass `py_compile` and the offline `check_harness.py` against the real served tool documents.

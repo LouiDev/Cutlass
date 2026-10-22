@@ -1,0 +1,1902 @@
+[
+  {
+    "functionDeclarations": [
+      {
+        "name": "cutlass_status",
+        "description": "State of Cutlass: project, ffmpeg, who holds the edit lock. Call first."
+      },
+      {
+        "name": "cutlass_capabilities",
+        "description": "Export presets, qualities, transition kinds, title anchors, edit modes and limits of this build and ffmpeg."
+      },
+      {
+        "name": "cutlass_acquire_lock",
+        "description": "Take the edit lock before any change. The user sees your name and reason.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agentName": {
+              "type": "string",
+              "description": "Your name as the user should see it."
+            },
+            "reason": {
+              "type": "string",
+              "description": "What you are about to do, in a few words."
+            },
+            "waitMs": {
+              "type": "integer",
+              "description": "Wait this long (at most 120000) when the user or another agent is busy.",
+              "minimum": 0,
+              "maximum": 120000
+            },
+            "leaseSeconds": {
+              "type": "integer",
+              "description": "Lease length, 15 to the configured maximum; renewed by every call you make.",
+              "minimum": 15,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "agentName",
+            "reason"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_renew_lock",
+        "description": "Renew your lease during a long pause. Every other call renews it as well."
+      },
+      {
+        "name": "cutlass_release_lock",
+        "description": "Give the project back to the user. Always call when done."
+      },
+      {
+        "name": "cutlass_get_lock",
+        "description": "Who holds the edit lock, its phase and lease."
+      },
+      {
+        "name": "cutlass_get_project",
+        "description": "Timeline as JSON: tracks, clips (ids, frames, source times), transitions, markers, media.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackIds": {
+              "type": "array",
+              "description": "Only these tracks.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "from": {
+              "type": "integer",
+              "description": "Only clips ending after this frame.",
+              "minimum": 0
+            },
+            "to": {
+              "type": "integer",
+              "description": "Only clips starting before this frame.",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_describe_project",
+        "description": "Short text overview of the timeline; cheaper than get_project.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "integer",
+              "description": "Only clips ending after this frame.",
+              "minimum": 0
+            },
+            "to": {
+              "type": "integer",
+              "description": "Only clips starting before this frame.",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_new_project",
+        "description": "Create a new untitled project (V1, V2, A1, A2).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "integer",
+              "description": "Canvas width (even).",
+              "minimum": 16,
+              "maximum": 7680
+            },
+            "height": {
+              "type": "integer",
+              "description": "Canvas height (even).",
+              "minimum": 16,
+              "maximum": 4320
+            },
+            "frameRate": {
+              "type": "string",
+              "description": "Frame rate such as 30000/1001, 25 or 30."
+            },
+            "discardChanges": {
+              "type": "boolean",
+              "description": "Headless only: drop unsaved changes."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_open_project",
+        "description": "Open a project file inside the allowed folders.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The .cutlass file."
+            },
+            "discardChanges": {
+              "type": "boolean",
+              "description": "Headless only: drop unsaved changes."
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_save_project",
+        "description": "Save the project to its current path (an untitled project needs save-as)."
+      },
+      {
+        "name": "cutlass_list_media",
+        "description": "List the media in the bin with duration, codecs and online state."
+      },
+      {
+        "name": "cutlass_get_media",
+        "description": "One media asset with probe info and online state.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mediaId": {
+              "type": "string",
+              "description": "The media id."
+            }
+          },
+          "required": [
+            "mediaId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_import_media",
+        "description": "Add files to the bin (allowed folders only); place them with place_media.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "paths": {
+              "type": "array",
+              "description": "Absolute file paths.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 32
+            }
+          },
+          "required": [
+            "paths"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_remove_media",
+        "description": "Remove a media asset and every clip that uses it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mediaId": {
+              "type": "string",
+              "description": "The media id."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "mediaId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_source_levels",
+        "description": "Loudness of a media file's own audio (RMS and peak dBFS per interval).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mediaId": {
+              "type": "string",
+              "description": "The media id."
+            },
+            "startFlicks": {
+              "type": "integer",
+              "description": "Source start in flicks."
+            },
+            "startSeconds": {
+              "type": "number",
+              "description": "Source start in seconds."
+            },
+            "endFlicks": {
+              "type": "integer",
+              "description": "Source end in flicks."
+            },
+            "endSeconds": {
+              "type": "number",
+              "description": "Source end in seconds."
+            },
+            "intervalMs": {
+              "type": "integer",
+              "description": "Interval, 10 to 1000 (50).",
+              "minimum": 10,
+              "maximum": 1000
+            }
+          },
+          "required": [
+            "mediaId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_render_frame",
+        "description": "Look at one timeline frame. Returns an image.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "frame": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            },
+            "width": {
+              "type": "integer",
+              "description": "Image width, 16 to 1920, even (640).",
+              "minimum": 16,
+              "maximum": 1920
+            },
+            "useProxies": {
+              "type": "boolean",
+              "description": "Render from proxies."
+            },
+            "format": {
+              "type": "string",
+              "description": "png or base64.",
+              "enum": [
+                "png",
+                "base64"
+              ]
+            }
+          },
+          "required": [
+            "frame"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_contact_sheet",
+        "description": "Many frames tiled in one image, with a cell legend.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "frames": {
+              "type": "array",
+              "description": "Frames to show (at most 64).",
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 64
+            },
+            "start": {
+              "type": "integer",
+              "description": "First frame of an even spread."
+            },
+            "end": {
+              "type": "integer",
+              "description": "End frame of the spread."
+            },
+            "count": {
+              "type": "integer",
+              "description": "Cells of the spread (at most 64).",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "cellWidth": {
+              "type": "integer",
+              "description": "Cell width, 16 to 1920 (320).",
+              "minimum": 16,
+              "maximum": 1920
+            },
+            "columns": {
+              "type": "integer",
+              "description": "Columns (default: a near square grid).",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "format": {
+              "type": "string",
+              "description": "png or base64.",
+              "enum": [
+                "png",
+                "base64"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_audio_levels",
+        "description": "Loudness (RMS and peak dBFS) of the mix per interval.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "integer",
+              "description": "First frame.",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "description": "End frame (exclusive).",
+              "minimum": 0
+            },
+            "intervalMs": {
+              "type": "integer",
+              "description": "Interval, 10 to 1000 (50).",
+              "minimum": 10,
+              "maximum": 1000
+            },
+            "trackIds": {
+              "type": "array",
+              "description": "Only these audio tracks (soloed in a snapshot).",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_find_silences",
+        "description": "Frame ranges quieter than the threshold.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "integer",
+              "description": "First frame (0).",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "description": "End frame (the sequence end).",
+              "minimum": 0
+            },
+            "thresholdDb": {
+              "type": "number",
+              "description": "Threshold in dBFS (-40)."
+            },
+            "minDurationMs": {
+              "type": "integer",
+              "description": "Shortest silence (500).",
+              "minimum": 0
+            },
+            "padMs": {
+              "type": "integer",
+              "description": "Keep this much sound on each side (100).",
+              "minimum": 0
+            },
+            "trackIds": {
+              "type": "array",
+              "description": "Only these audio tracks.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_set_playhead",
+        "description": "Show the user a frame in the viewer.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "frame": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "frame"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_place_media",
+        "description": "Put media, or a source range of it, on the timeline.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "mediaId": {
+              "type": "string",
+              "description": "The media id."
+            },
+            "at": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            },
+            "mode": {
+              "type": "string",
+              "description": "overwrite (default) or insert.",
+              "enum": [
+                "overwrite",
+                "insert"
+              ]
+            },
+            "streams": {
+              "type": "string",
+              "description": "both (default), video or audio.",
+              "enum": [
+                "both",
+                "video",
+                "audio"
+              ]
+            },
+            "videoTrackId": {
+              "type": "string",
+              "description": "Video track (default: targeted)."
+            },
+            "audioTrackId": {
+              "type": "string",
+              "description": "Audio track (default: targeted)."
+            },
+            "sourceInFlicks": {
+              "type": "integer",
+              "description": "Source in point."
+            },
+            "sourceInSeconds": {
+              "type": "number",
+              "description": "Source in point in seconds."
+            },
+            "sourceOutFlicks": {
+              "type": "integer",
+              "description": "Source out point."
+            },
+            "sourceOutSeconds": {
+              "type": "number",
+              "description": "Source out point in seconds."
+            },
+            "durationFrames": {
+              "type": "integer",
+              "description": "Length in frames (stills, or instead of an out point).",
+              "minimum": 1
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "mediaId",
+            "at"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_move_clips",
+        "description": "Move clips in time and between tracks.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "deltaFrames": {
+              "type": "integer",
+              "description": "Frames to move (negative: left)."
+            },
+            "deltaTracks": {
+              "type": "integer",
+              "description": "Tracks to move (positive: up for video)."
+            },
+            "mode": {
+              "type": "string",
+              "description": "overwrite (default) or insert.",
+              "enum": [
+                "overwrite",
+                "insert"
+              ]
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Move linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds",
+            "deltaFrames"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_trim_clip",
+        "description": "Trim a clip's start or end, optionally rippling later clips.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipId": {
+              "type": "string",
+              "description": "The clip."
+            },
+            "edge": {
+              "type": "string",
+              "description": "start or end.",
+              "enum": [
+                "start",
+                "end"
+              ]
+            },
+            "deltaFrames": {
+              "type": "integer",
+              "description": "Frames to move the edge."
+            },
+            "toFrame": {
+              "type": "integer",
+              "description": "Move the edge to this frame.",
+              "minimum": 0
+            },
+            "ripple": {
+              "type": "boolean",
+              "description": "Shift later clips (false)."
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Trim linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipId",
+            "edge"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_roll_edit",
+        "description": "Move the cut between two butting clips.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "leftClipId": {
+              "type": "string",
+              "description": "The outgoing clip."
+            },
+            "rightClipId": {
+              "type": "string",
+              "description": "The incoming clip."
+            },
+            "deltaFrames": {
+              "type": "integer",
+              "description": "Frames to move the cut."
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Roll linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "leftClipId",
+            "rightClipId",
+            "deltaFrames"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_slip_clip",
+        "description": "Change which source part a clip shows without moving it.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipId": {
+              "type": "string",
+              "description": "The clip."
+            },
+            "deltaFrames": {
+              "type": "integer",
+              "description": "Frames to slip the source."
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Slip linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipId",
+            "deltaFrames"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_split",
+        "description": "Split clips at a frame (default: every unlocked track).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "frame": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            },
+            "trackIds": {
+              "type": "array",
+              "description": "Only these tracks.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "clipIds": {
+              "type": "array",
+              "description": "Only these clips.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Split linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "frame"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_delete_clips",
+        "description": "Delete clips, leaving gaps or closing them up (ripple).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "ripple": {
+              "type": "boolean",
+              "description": "Close the gaps (false)."
+            },
+            "includeLinked": {
+              "type": "boolean",
+              "description": "Delete linked partners too (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_remove_ranges",
+        "description": "Cut time ranges out of all unlocked tracks (or the given ones) and close the gaps.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ranges": {
+              "type": "array",
+              "description": "Ranges [start, end) in frames (at most 500).",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "integer",
+                    "description": "First frame.",
+                    "minimum": 0
+                  },
+                  "end": {
+                    "type": "integer",
+                    "description": "End frame (exclusive).",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "start",
+                  "end"
+                ]
+              },
+              "maxItems": 500
+            },
+            "trackIds": {
+              "type": "array",
+              "description": "Only these tracks.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ripple": {
+              "type": "boolean",
+              "description": "Close the gaps (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "ranges"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_close_gap",
+        "description": "Close the gap at a frame on one track by moving later clips left.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackId": {
+              "type": "string",
+              "description": "The track."
+            },
+            "gapStart": {
+              "type": "integer",
+              "description": "A frame inside or at the start of the gap.",
+              "minimum": 0
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "trackId",
+            "gapStart"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_set_clip_props",
+        "description": "Opacity, transform, colour, gain, fades, enable.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable or disable."
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 to 1 (video and titles)."
+            },
+            "transform": {
+              "description": "Video placement (fields optional).",
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "description": "Offset from centre in pixels."
+                },
+                "y": {
+                  "type": "number",
+                  "description": "Offset from centre in pixels."
+                },
+                "scale": {
+                  "type": "number",
+                  "description": "Scale (1 fits)."
+                },
+                "cropLeft": {
+                  "type": "number",
+                  "description": "0 to 0.9."
+                },
+                "cropTop": {
+                  "type": "number",
+                  "description": "0 to 0.9."
+                },
+                "cropRight": {
+                  "type": "number",
+                  "description": "0 to 0.9."
+                },
+                "cropBottom": {
+                  "type": "number",
+                  "description": "0 to 0.9."
+                }
+              }
+            },
+            "color": {
+              "description": "Colour adjustment (fields optional).",
+              "type": "object",
+              "properties": {
+                "brightness": {
+                  "type": "number",
+                  "description": "-1 to 1 (0)."
+                },
+                "contrast": {
+                  "type": "number",
+                  "description": "0 to 2 (1)."
+                },
+                "saturation": {
+                  "type": "number",
+                  "description": "0 to 3 (1)."
+                },
+                "gamma": {
+                  "type": "number",
+                  "description": "0.1 to 4 (1)."
+                }
+              }
+            },
+            "gainDb": {
+              "type": "number",
+              "description": "Clip gain in dB (audio)."
+            },
+            "fadeInFrames": {
+              "type": "integer",
+              "description": "Fade-in frames.",
+              "minimum": 0
+            },
+            "fadeOutFrames": {
+              "type": "integer",
+              "description": "Fade-out frames.",
+              "minimum": 0
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_set_speed",
+        "description": "Set clip speed in percent.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "percent": {
+              "type": "integer",
+              "description": "25 to 400.",
+              "minimum": 25,
+              "maximum": 400
+            },
+            "rippleFollowing": {
+              "type": "boolean",
+              "description": "Shift later clips (true)."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds",
+            "percent"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_link_clips",
+        "description": "Link clips so they select and move together.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_unlink_clips",
+        "description": "Unlink clips.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipIds": {
+              "type": "array",
+              "description": "Clip ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_set_volume_keys",
+        "description": "Replace an audio clip's volume envelope (empty clears).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipId": {
+              "type": "string",
+              "description": "The audio clip."
+            },
+            "keys": {
+              "type": "array",
+              "description": "Keys relative to the clip start.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "frame": {
+                    "type": "integer",
+                    "description": "Frame from the clip start.",
+                    "minimum": 0
+                  },
+                  "db": {
+                    "type": "number",
+                    "description": "Level in dB."
+                  }
+                },
+                "required": [
+                  "frame",
+                  "db"
+                ]
+              },
+              "maxItems": 1000
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipId",
+            "keys"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_add_transition",
+        "description": "Add a transition on the cut between two butting clips.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackId": {
+              "type": "string",
+              "description": "The track."
+            },
+            "cutFrame": {
+              "type": "integer",
+              "description": "The cut frame.",
+              "minimum": 0
+            },
+            "kind": {
+              "type": "string",
+              "description": "Transition kind (crossfade).",
+              "enum": [
+                "crossfade",
+                "dipToBlack",
+                "dipToWhite",
+                "wipeLeft",
+                "wipeRight",
+                "slideLeft",
+                "slideRight",
+                "circleOpen",
+                "audioCrossfade"
+              ]
+            },
+            "durationFrames": {
+              "type": "integer",
+              "description": "Length in frames (at least 2).",
+              "minimum": 2
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "trackId",
+            "cutFrame",
+            "durationFrames"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_update_transition",
+        "description": "Change a transition's kind or length.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "transitionId": {
+              "type": "string",
+              "description": "The transition."
+            },
+            "kind": {
+              "type": "string",
+              "description": "New kind.",
+              "enum": [
+                "crossfade",
+                "dipToBlack",
+                "dipToWhite",
+                "wipeLeft",
+                "wipeRight",
+                "slideLeft",
+                "slideRight",
+                "circleOpen",
+                "audioCrossfade"
+              ]
+            },
+            "durationFrames": {
+              "type": "integer",
+              "description": "New length.",
+              "minimum": 2
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "transitionId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_remove_transitions",
+        "description": "Remove transitions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "transitionIds": {
+              "type": "array",
+              "description": "Transition ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "transitionIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_add_title",
+        "description": "Add a text title on a video track.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackId": {
+              "type": "string",
+              "description": "A video track."
+            },
+            "at": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            },
+            "durationFrames": {
+              "type": "integer",
+              "description": "Length in frames.",
+              "minimum": 1
+            },
+            "mode": {
+              "type": "string",
+              "description": "overwrite (default) or insert.",
+              "enum": [
+                "overwrite",
+                "insert"
+              ]
+            },
+            "title": {
+              "description": "Text and style (only text is required).",
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "The text (lines separated by \\n)."
+                },
+                "font": {
+                  "type": "string",
+                  "description": "builtin:Inter-Bold, a system family or a font file."
+                },
+                "size": {
+                  "type": "number",
+                  "description": "Font size in canvas pixels."
+                },
+                "color": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "outlineWidth": {
+                  "type": "number",
+                  "description": "Outline width (0: none)."
+                },
+                "outlineColor": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "box": {
+                  "type": "boolean",
+                  "description": "Background box."
+                },
+                "boxColor": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "boxPadding": {
+                  "type": "number",
+                  "description": "Box padding in pixels."
+                },
+                "anchor": {
+                  "type": "string",
+                  "description": "Position preset.",
+                  "enum": [
+                    "center",
+                    "lowerThird",
+                    "top"
+                  ]
+                },
+                "offsetX": {
+                  "type": "number",
+                  "description": "Offset from the anchor in pixels."
+                },
+                "offsetY": {
+                  "type": "number",
+                  "description": "Offset from the anchor in pixels."
+                }
+              },
+              "required": [
+                "text"
+              ]
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 to 1."
+            },
+            "fadeInFrames": {
+              "type": "integer",
+              "description": "Fade-in frames.",
+              "minimum": 0
+            },
+            "fadeOutFrames": {
+              "type": "integer",
+              "description": "Fade-out frames.",
+              "minimum": 0
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "trackId",
+            "at",
+            "durationFrames",
+            "title"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_update_title",
+        "description": "Change a title's text, style, opacity or fades.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "clipId": {
+              "type": "string",
+              "description": "The title clip."
+            },
+            "title": {
+              "description": "Fields to change.",
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "The text (lines separated by \\n)."
+                },
+                "font": {
+                  "type": "string",
+                  "description": "builtin:Inter-Bold, a system family or a font file."
+                },
+                "size": {
+                  "type": "number",
+                  "description": "Font size in canvas pixels."
+                },
+                "color": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "outlineWidth": {
+                  "type": "number",
+                  "description": "Outline width (0: none)."
+                },
+                "outlineColor": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "box": {
+                  "type": "boolean",
+                  "description": "Background box."
+                },
+                "boxColor": {
+                  "type": "string",
+                  "description": "#RRGGBB or #RRGGBBAA."
+                },
+                "boxPadding": {
+                  "type": "number",
+                  "description": "Box padding in pixels."
+                },
+                "anchor": {
+                  "type": "string",
+                  "description": "Position preset.",
+                  "enum": [
+                    "center",
+                    "lowerThird",
+                    "top"
+                  ]
+                },
+                "offsetX": {
+                  "type": "number",
+                  "description": "Offset from the anchor in pixels."
+                },
+                "offsetY": {
+                  "type": "number",
+                  "description": "Offset from the anchor in pixels."
+                }
+              }
+            },
+            "opacity": {
+              "type": "number",
+              "description": "0 to 1."
+            },
+            "fadeInFrames": {
+              "type": "integer",
+              "description": "Fade-in frames.",
+              "minimum": 0
+            },
+            "fadeOutFrames": {
+              "type": "integer",
+              "description": "Fade-out frames.",
+              "minimum": 0
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "clipId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_add_marker",
+        "description": "Add a marker.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "frame": {
+              "type": "integer",
+              "description": "Timeline frame.",
+              "minimum": 0
+            },
+            "name": {
+              "type": "string",
+              "description": "Label."
+            },
+            "color": {
+              "type": "string",
+              "description": "#RRGGBB."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "frame"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_update_marker",
+        "description": "Move or rename a marker.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "markerId": {
+              "type": "string",
+              "description": "The marker."
+            },
+            "frame": {
+              "type": "integer",
+              "description": "New frame.",
+              "minimum": 0
+            },
+            "name": {
+              "type": "string",
+              "description": "New label."
+            },
+            "color": {
+              "type": "string",
+              "description": "#RRGGBB."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "markerId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_remove_markers",
+        "description": "Remove markers.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "markerIds": {
+              "type": "array",
+              "description": "Marker ids.",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 1000
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "markerIds"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_set_in_out",
+        "description": "Set or clear the In and Out points (null clears).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "inFrame": {
+              "type": "integer",
+              "nullable": true,
+              "description": "In frame or null."
+            },
+            "outFrame": {
+              "type": "integer",
+              "nullable": true,
+              "description": "Out frame (exclusive) or null."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_add_track",
+        "description": "Add a video or audio track.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "description": "video or audio.",
+              "enum": [
+                "video",
+                "audio"
+              ]
+            },
+            "index": {
+              "type": "integer",
+              "description": "Kind index (1 is V1 or A1); default: on top or bottom.",
+              "minimum": 1
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_update_track",
+        "description": "Track name, hidden, locked, targeted, mute, solo and gain.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackId": {
+              "type": "string",
+              "description": "The track."
+            },
+            "name": {
+              "type": "string",
+              "description": "New name."
+            },
+            "hidden": {
+              "type": "boolean",
+              "description": "Video: hide."
+            },
+            "locked": {
+              "type": "boolean",
+              "description": "Lock against edits."
+            },
+            "targeted": {
+              "type": "boolean",
+              "description": "Target for placing."
+            },
+            "muted": {
+              "type": "boolean",
+              "description": "Audio: mute."
+            },
+            "solo": {
+              "type": "boolean",
+              "description": "Audio: solo."
+            },
+            "gainDb": {
+              "type": "number",
+              "description": "Audio: track gain in dB."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "trackId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_remove_track",
+        "description": "Remove a track and its clips.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "trackId": {
+              "type": "string",
+              "description": "The track."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "trackId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_set_sequence",
+        "description": "Sequence size and frame rate.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "integer",
+              "description": "Canvas width (even).",
+              "minimum": 16,
+              "maximum": 7680
+            },
+            "height": {
+              "type": "integer",
+              "description": "Canvas height (even).",
+              "minimum": 16,
+              "maximum": 4320
+            },
+            "frameRate": {
+              "type": "string",
+              "description": "Frame rate such as 30000/1001."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_undo",
+        "description": "Undo your own last step, never the user's.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_redo",
+        "description": "Redo your own last undone step.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_begin_batch",
+        "description": "Group edits into one undo step \"Agent: label\".",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Short and human, for example Remove silences."
+            },
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          },
+          "required": [
+            "label"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_end_batch",
+        "description": "Close the batch as one undo step.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_cancel_batch",
+        "description": "Revert every edit since begin_batch and close the batch.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "ifRevision": {
+              "type": "integer",
+              "description": "Fail with conflict when the project revision is no longer this."
+            },
+            "returnProject": {
+              "type": "boolean",
+              "description": "Also return the project summary."
+            }
+          }
+        }
+      },
+      {
+        "name": "cutlass_start_export",
+        "description": "Render to a file inside the write folders; follow it with export_status.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "preset": {
+              "type": "string",
+              "description": "Preset id such as h264 (see capabilities)."
+            },
+            "quality": {
+              "type": "string",
+              "description": "draft, good, high or best (high).",
+              "enum": [
+                "draft",
+                "good",
+                "high",
+                "best"
+              ]
+            },
+            "height": {
+              "type": "integer",
+              "description": "Output height.",
+              "minimum": 16
+            },
+            "width": {
+              "type": "integer",
+              "description": "GIF width.",
+              "minimum": 16
+            },
+            "range": {
+              "type": "string",
+              "description": "whole (default) or inOut; use start and end for a frame range."
+            },
+            "start": {
+              "type": "integer",
+              "description": "First frame of a custom range.",
+              "minimum": 0
+            },
+            "end": {
+              "type": "integer",
+              "description": "End frame of a custom range.",
+              "minimum": 0
+            },
+            "outputPath": {
+              "type": "string",
+              "description": "The output file."
+            },
+            "limitPeaks": {
+              "type": "boolean",
+              "description": "Peak limiter (true)."
+            },
+            "overwrite": {
+              "type": "boolean",
+              "description": "Replace an existing file (false)."
+            }
+          },
+          "required": [
+            "preset",
+            "outputPath"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_list_exports",
+        "description": "This process's exports, oldest first."
+      },
+      {
+        "name": "cutlass_export_status",
+        "description": "An export's state and progress; waits up to waitMs for a change.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "exportId": {
+              "type": "string",
+              "description": "The export id."
+            },
+            "waitMs": {
+              "type": "integer",
+              "description": "Wait at most this long for a change (25000 max).",
+              "minimum": 0,
+              "maximum": 25000
+            }
+          },
+          "required": [
+            "exportId"
+          ]
+        }
+      },
+      {
+        "name": "cutlass_cancel_export",
+        "description": "Cancel an export gracefully.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "exportId": {
+              "type": "string",
+              "description": "The export id."
+            }
+          },
+          "required": [
+            "exportId"
+          ]
+        }
+      }
+    ]
+  }
+]

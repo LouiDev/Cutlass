@@ -16,11 +16,12 @@ public sealed partial class SmokeRunner
 
     /// <summary>
     /// Opens the window of a dialog view model, renders it into a PNG file and closes it (set by the app; the runner
-    /// itself touches no controls). Without it <c>show-dialog</c> fails.
+    /// itself touches no controls); the third argument is a window height for the capture, or null. Without it
+    /// <c>show-dialog</c> fails.
     /// </summary>
-    public Func<object, string, Task>? CaptureDialog { get; init; }
+    public Func<object, string, double?, Task>? CaptureDialog { get; init; }
 
-    // show-dialog settings|relink|export|speed|sequence [page=<page>] [media=<media>] screenshot=<file.png>
+    // show-dialog settings|relink|export|speed|sequence|mcp-start|connect-clients [page=<page>] [media=<media>] screenshot=<file.png>
     private async Task ShowDialogAsync(SmokeStep step)
     {
         Expect(_dialogs is not null, "show-dialog needs the smoke dialog service");
@@ -57,8 +58,23 @@ public sealed partial class SmokeRunner
             case "sequence":
                 RunRegistered(CommandIds.SequenceSettings);
                 break;
+            case "mcp-start":
+                // The first-start dialog of Agent > Start MCP server shows only once, so it is created directly here,
+                // from the client list's check (AGENT_INTEGRATION 9.4: the detected clients in the dropdown).
+                if (_vm.Clients is { } startClients)
+                {
+                    await startClients.RefreshAsync(force: false);
+                }
+
+                var mcp = _vm.CreateMcpStartDialog();
+                await CaptureDialog!(mcp, shot, null);
+                _log.Write("screenshot of the " + mcp.GetType().Name + " window (" + string.Join(", ", mcp.Choices.Select(c => c.DisplayText)) + "): " + shot);
+                return;
+            case "connect-clients":
+                RunRegistered(CommandIds.AgentConnectClients);
+                break;
             default:
-                throw Fail("show-dialog knows settings, relink, export, speed and sequence, not " + kind);
+                throw Fail("show-dialog knows settings, relink, export, speed, sequence, mcp-start and connect-clients, not " + kind);
         }
 
         var deadline = DateTime.UtcNow + DialogTimeout;
@@ -78,9 +94,20 @@ public sealed partial class SmokeRunner
             }
 
             await settings.LoadAsync();
+            if (settings.Clients is { } settingsClients)
+            {
+                await settingsClients.RefreshAsync(force: false);
+            }
+        }
+        else if (dialog is ConnectClientsViewModel clients)
+        {
+            // The menu command started a check; the screenshot shows its result.
+            await clients.RefreshAsync(force: false);
         }
 
-        await CaptureDialog!(dialog, shot);
+        // height=<px> renders a taller window, so a long page (Settings > Agents) shows its lower groups.
+        double? height = step.Option("height") is { } h ? double.Parse(h, NumberStyles.Float, CultureInfo.InvariantCulture) : null;
+        await CaptureDialog!(dialog, shot, height);
         _log.Write("screenshot of the " + dialog.GetType().Name + " window: " + shot);
     }
 

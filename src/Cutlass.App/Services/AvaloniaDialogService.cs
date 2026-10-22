@@ -198,6 +198,20 @@ public sealed class AvaloniaDialogService : IDialogService
     }
 
     /// <inheritdoc />
+    public Task<bool> ShowMcpStartDialogAsync(McpStartDialogViewModel dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        return _owner() is { } owner ? McpStartDialog.ShowAsync(owner, dialog) : Task.FromResult(false);
+    }
+
+    /// <inheritdoc />
+    public Task ShowConnectClientsDialogAsync(ConnectClientsViewModel dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        return _owner() is { } owner ? ConnectClientsDialog.ShowAsync(owner, dialog) : Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public Task<bool> ShowSettingsDialogAsync(SettingsViewModel dialog)
     {
         ArgumentNullException.ThrowIfNull(dialog);
@@ -274,7 +288,7 @@ public sealed class AvaloniaDialogService : IDialogService
         var folder = Directory.Exists(path) ? path : Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
         {
-            // The launcher hands the folder to the OS; no Process is started here (CLAUDE.md process rule).
+            // The launcher hands the folder to the OS; no Process is started here (the repository's process rule).
             await owner.Launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(folder));
         }
     }
@@ -293,7 +307,7 @@ public sealed class AvaloniaDialogService : IDialogService
             return;
         }
 
-        // The launcher hands the file to the OS; no Process is started here (CLAUDE.md process rule).
+        // The launcher hands the file to the OS; no Process is started here (the repository's process rule).
         if (!await owner.Launcher.LaunchFileInfoAsync(new FileInfo(path)))
         {
             await RevealInFileManagerAsync(path);

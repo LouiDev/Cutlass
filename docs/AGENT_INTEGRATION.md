@@ -126,6 +126,9 @@ tests/Cutlass.IntegrationTests/Agent/ real ffmpeg, headless host, MCP end to end
   - Views: AgentBanner, AgentPanelView, and the Agents page in SettingsDialog.
   - Commands and smoke: `CommandIds.AllowedWhileAgentHolds`, `SmokeRunner.Agent`, `build/smoke/m9.smoke`.
   - `CommandLineOptions` gains `--agent-server` and `--port`.
+  - The Agent menu (6.6, 9.4): `Services/Agent/` AgentBriefing and AgentBriefingTemplate (the embedded neutral body `Briefing/briefing.md` and the per-target tails `briefing-tail-mcp.md`, `-harness.md`, `-http.md` and `-generic.md`) and IAgentServerSwitch; `Services/` CliProcess, ICliRunner and CliResult; `ViewModels/` McpStartDialogViewModel, IAgentMenuActions, BriefingTargetItem and the partial `MainWindowViewModel.Mcp`; `Views/McpStartDialog`; `SmokeRunner.Mcp`. `Cutlass.Agent` gains `ProjectDescriber.Summary(project, maxLines)`; Media gains `AgentBriefingTemplatePath` and `McpStartDialogSeen`.
+  - Agent clients (9.3): `Assets/agent-clients.json` (the profiles, copied beside the exe and embedded); `Services/Agent/Clients/` AgentClientProfile, AgentClientRegistry (partial `.Operations`), AgentClientProbe, AgentClientRegisterResult, AgentClientState, AgentClientEnvironment (the sandbox), JsoncEditor and TomlTableEditor with their helpers; `ViewModels/` ConnectClientsViewModel, AgentClientItemViewModel and McpClientChoice; `Views/` ClientListView and ConnectClientsDialog; `Services/SmokeCliRunner` and `SmokeRunner.Clients`.
+- **Agent discovery (9.2):** `Cutlass.Agent/Api/AgentInstructions.cs` (the one source of the workflow text for the MCP server instructions, `/v1/instructions` and the briefing) and `Api/Export/` (OpenAiToolExporter, AnthropicToolExporter, GeminiToolExporter, MarkdownToolExporter, OpenApiDocument, ToolExport).
 
 ### 2.2 The host abstraction
 
@@ -211,7 +214,7 @@ The host operations exist because the App does more than the bare edit:
   - `ExportRunning` is true while a user-started export is Queued or Running.
   - `IsPlaying` covers both monitors.
 - **Services.** `IAgentServices` adapts `AppServices`. `AppServices.Apply` creates `StillRenderer` and `RangeAudioReader` next to the FrameServer, sharing its `FrameCache`.
-- **Lifetime.** `AgentServerController` starts and stops the server per the setting or `--agent-server`. It owns the token and endpoint file, and ticks `AgentLockDriver` from a 1 s `DispatcherTimer`.
+- **Lifetime.** `AgentServerController` starts and stops the server per the setting or `--agent-server`, or per Agent > Start/Stop MCP server for the session (6.6). It owns the token and endpoint file, and ticks `AgentLockDriver` from a 1 s `DispatcherTimer`.
 
 ### 2.5 The headless host
 
@@ -497,7 +500,7 @@ Edits never throw on user input (TECH_BRIEF 3.3), so a clamped edit is a success
 | GET `/v1/lock` | | | `{phase, agentName, reason, since, leaseExpiresAt, mine, pending}` | Who holds the project. |
 | GET `/v1/events` | | `?after=<seq>&timeoutMs<=25000` | `{events[], next, gap}` | Long-poll (section 4.7). |
 | POST `/v1/shutdown` | Lock | `{save?: false}` | `{}` | `serve` only; `not_found` elsewhere. |
-| POST `/v1/call` | per tool | `{tool, args}` | as the tool | Any tool by catalog name (`edit.split`); used by smoke and simple clients. |
+| POST `/v1/call` | per tool | `{tool, args}` | as the tool | Any tool by catalog name (`edit.split`) or MCP name (`cutlass_split`); the documented entry point for harnesses (9.1), also used by smoke. |
 
 **Project and media**
 
@@ -665,7 +668,7 @@ There is no SSE in v1. The MCP server does not need events. Events were built in
 | `Cutlass.Agent.Mcp [--launch <Cutlass.App path>]` | MCP over stdio, proxying to the running app (`HttpBackend`). |
 | `Cutlass.Agent.Mcp --headless --project <file> [--create] [--allow-read <dir>]... [--allow-write <dir>]...` | MCP over stdio with an in-process `HeadlessHost` (`InProcessBackend`, no HTTP). |
 | `Cutlass.Agent.Mcp serve --project <file> [--create] [--port N] [--allow-read ...] [--allow-write ...]` | No MCP: headless host plus the HTTP API for scripts. Prints `baseUrl: ...` and `tokenFile: ...` on stdout, writes `endpoint.json` and runs until `/v1/shutdown` or Ctrl+C. |
-| `Cutlass.Agent.Mcp --print-registration` | Prints the `claude mcp add` command and the Claude Desktop JSON for this exe, then exits. |
+| `Cutlass.Agent.Mcp --print-registration` | Prints one block per client profile of `agent-clients.json` (9.3, 9.4): the CLI command with its scopes, the JSON or TOML entry and its file for this platform, or the harness text; then the headless arguments. Exits. |
 
 - **Exit codes.** 0 success, 1 a startup failure named on stderr (for example the project is open in a live app, 4.1), 2 a bad command line (printed with the usage).
 - **Backends.** Both implement `IAgentBackend.CallAsync(toolName, JsonElement args)`, which returns JSON or PNG bytes. `HttpBackend` maps tools to routes through `ToolCatalog`, and `InProcessBackend` calls `ToolDispatcher`, so tools are written once.
@@ -747,7 +750,9 @@ You are editing a video in Cutlass while its user may be watching. Rules:
 
 ### 5.5 Registration
 
-**Claude Code.** Add `--scope user` to register it for every project.
+Since 9.3 the registration of every client comes from its profile in `agent-clients.json`: Agent > Connect an agent client... (and Settings > Agents > Connect clients) registers, updates or removes it, and `--print-registration` prints all of them. The commands below are the Claude Code and Claude Desktop rows of that table, kept as examples; every other MCP client takes the same exe and arguments in its own configuration file.
+
+**Claude Code** (one profile among others). Add `--scope user` to register it for every project.
 
 | Use | Command |
 |---|---|
@@ -762,8 +767,8 @@ You are editing a video in Cutlass while its user may be watching. Rules:
 { "mcpServers": { "cutlass": { "command": "C:\\Program Files\\Cutlass\\Cutlass.Agent.Mcp.exe", "args": [] } } }
 ```
 
-- **Other clients.** Cursor and other clients take the same command and arguments.
-- **Settings.** Settings > Agents shows both, filled in with the real exe path, with Copy buttons.
+- **Other clients.** Cursor, Windsurf, VS Code, Gemini CLI, Codex CLI, Continue and Zed take the same command and arguments; their files and entry paths are in their profiles (9.3).
+- **Settings.** Settings > Agents > Connect clients lists every profile with Register, Update, Remove or Copy, filled in with the real exe path (9.4).
 
 ---
 
@@ -787,7 +792,7 @@ The Settings dialog gets a fifth page, Agents, between Playback and About: tab o
 - **Lease timeout** (`AgentLeaseSeconds`, 90 s, 15 to 600) and the most an agent may request (`AgentMaxLeaseSeconds`, 300).
 - **"Ask me before an agent takes the project"** (`AgentAskFirst`, off).
 - **"Agent may read from" and "Agent may write to"** folder lists (`AgentReadableFolders`, `AgentWritableFolders`), with Add (folder picker) and Remove. Long paths end in an ellipsis with the full path as a tooltip. A note says the project and export folders are always included.
-- **MCP setup:** the Claude Code command and the Claude Desktop JSON with Copy, and "Open agent docs". That opens `AGENT_INTEGRATION.md` beside the exe (A4: in the publish folder root, where `AgentServerController.AgentDocsPath` looks first; `docs/` in a checkout); publish copies it there.
+- **Connect clients** (since 9.4; it replaces "MCP setup"): the MCP exe the clients start, the shared client list of Agent > Connect an agent client... (9.4), the token note, the discovery URLs of 9.2 (`v1/tools?format=` per format from the profile file, `v1/openapi.json`, `v1/instructions`) each with Copy, and "Open agent docs". That opens `AGENT_INTEGRATION.md` beside the exe (A4: in the publish folder root, where `AgentServerController.AgentDocsPath` looks first; `docs/` in a checkout); publish copies it there.
 
 ### 6.2 The lock banner
 
@@ -808,12 +813,12 @@ A 32 px bar across the window under the menu row, shown in `Held` and `Paused`.
 ### 6.3 Agent panel and status bar badge
 
 - **Panel location.** The left panel gets a third tab, AGENT (MEDIA | EFFECTS | AGENT), while connections are allowed.
-- **Panel contents:**
+- **Panel contents** (since 6.6 the MCP SERVER header block replaces the connection card):
   - a lock card: phase, agent, reason, lease left, Pause/Resume, Take over;
-  - a connection card: base URL, token Copy, "Copy Claude Code command";
+  - a connection card: base URL, token Copy (since 6.6 the header block; since 9.4 its links are Copy token and Copy exe path);
   - the call log, newest first, up to 500 `AgentCallItemViewModel` rows: time, agent, tool, duration, code (Danger for errors), with the arguments as a tooltip;
   - "Open agent docs" and "Open log folder".
-- **Badge** (a status bar segment after the jobs):
+- **Badge** (a status bar segment after the jobs; since 6.6 it always shows and reads "MCP off", "MCP ready", "MCP: Claude Code" and so on):
   - hidden when off;
   - "Agent ready" (TextSecondary dot);
   - "Agent: Claude Code" (Accent dot);
@@ -846,6 +851,68 @@ The sections above now describe the built code. What differed from the first dra
 - The modal count lives on `TrackedDialogService`, not on `AvaloniaDialogService` (2.4).
 - The allowed commands, the pending banner, the paused colour and the smoke options were filled in (3.7, 6.2, 6.4).
 - **Agent host operations.** Import goes through the media bin with a `MediaImportReport` (commits as `SessionWriter.Agent` after a lock check); new and open skip the save and recovery prompts (a dirty project is `conflict/unsaved_changes`); save reports errors instead of showing a dialog.
+
+### 6.6 Agent menu and briefing
+
+Built on 2026-10-22 from `docs/MCP_HOSTING_CONCEPT.md` (accepted). The MCP exe is always started by the client over stdio; what the app starts is everything the exe needs: the agent server of this window and, once, the client registration.
+
+**Agent menu** (a top-level menu between Sequence and View; every item goes through `CommandIds` and `RunCommandCommand`, and every item is allowed while an agent holds the project):
+
+| Item | Command id | Does |
+|---|---|---|
+| Start MCP server / Stop MCP server, `F9` | `agent.toggleServer` | Start: the agent server on for this session (`AgentServerController.StartForSessionAsync`), the first-start dialog when due. Stop: off for this session (`StopForSessionAsync`); while an agent holds the project it first asks "Claude Code is editing. Stop the server and take over?" and takes over on yes. |
+| Copy briefing for your agent | `agent.copyBriefing` | The briefing (9.4) for the client registered last (`clients.state.json` in the agent folder), or the generic text, onto the clipboard. |
+| Copy briefing for > one item per profile | `agent.copyBriefing.<profile id>`; the plain HTTP profile also as `agent.copyBriefingHttp` | That target's briefing. For http transports (harnesses, plain HTTP) the token goes into the text only after a confirmation, otherwise the text names the token file. |
+| Connect an agent client... | `agent.connectClients` | The client list (9.4): one row per profile with its state and Register / Update / Remove or Copy. |
+| Agent panel | `view.agentPanel` | The AGENT tab. |
+| Take over | `agent.takeOver` | As the banner's Take over (enabled while locked). |
+
+The View menu keeps Agent: Pause / Resume and Agent: Follow.
+
+**Session switch.** "Start" and "Stop" override "Allow agent connections" and `--agent-server` for this session only; the saved `AgentConnectionsEnabled` changes only when "Keep it on in future sessions" is ticked. Changing "Allow agent connections" in Settings ends the session switch, so Settings decides again.
+
+**First-start dialog** ("Start the MCP server"): "Allow agent connections for this session" (on), "Keep it on in future sessions" (off, enabled only with the first), and "Register with:" a dropdown of the detected clients plus "none" (9.4; the first detected client that is not registered or stale is chosen, else none) with the exact command or configuration entry and, for a client CLI with scopes, the scope and the folder the CLI runs in; Start and Cancel. It shows the first time (`McpStartDialogSeen`, set on Start) and again while a detected client is not registered or stale and no client is current. Start with a client runs the registration, keeps the dialog open with the output and turns the button into Close; the server starts after the dialog closes.
+
+**Client registration** (since 9.3 `AgentClientRegistry` with the profiles of `agent-clients.json`; a CLI profile runs through `CliProcess`, never `ProcessRunner`: `CreateNoWindow`, stdin closed, 30 s timeout, off the UI thread). For the CLI profile shipped first:
+- Add: its `register` command with `{scope}` (the first scope by default). An existing `cutlass` entry is removed first with its `remove` command in the scope the check reported, then the state is read again.
+- State: its `probe` command, falling back to `fallbackArgs` when the check fails unexpectedly. The parse is tolerant and driven by the profile (`notRegisteredWhen`, `scopeField`, `commandField`, `listPrefix`, else a search for the exe): not installed, not registered, current, stale (another Cutlass MCP exe), foreign (something else), could not check.
+- The CLI runs in the open project's folder (a local scope registration belongs to it), else in the home folder. The panel checks every client once when it opens and the client list caches the result per folder; the Connect dialog checks again.
+
+**Status bar badge** (always shown; a click opens the AGENT tab, or Settings > Agents while the server failed):
+
+| Text | Dot | When |
+|---|---|---|
+| MCP off | grey | server off |
+| MCP ready | Success | listening, MCP exe found |
+| MCP: exe missing | Warning | listening, the MCP exe is not there |
+| MCP: Claude Code | Accent | an agent holds the lock |
+| MCP paused | Snap/Marker | paused |
+| MCP waiting, MCP starting, MCP: other window | grey | an agent waits; the server starts; another Cutlass serves agents |
+| MCP: port in use, MCP: error | Danger (text too) | the server failed |
+
+**Agent panel header block** ("MCP SERVER", above the lock card; it replaces the connection card): Server (dot, "ready", "off", "port in use" and so on, the URL while listening, Start/Stop), Exe (the path, "found" in Success or "missing" in Warning), Clients (9.4: "2 current" in Success, "none current", "checking...", the detected clients and their states as a tooltip, with "Connect..."), then "Copy briefing for your agent" (primary) and "Open docs", and the links "Copy token" and "Copy exe path". The AGENT tab also shows once the user asked for it (menu, badge), so Start is reachable while connections are off.
+
+**Briefing** (`AgentBriefing`, English only; since 9.4 a neutral body plus a per-target tail). The body is the embedded `Services/Agent/Briefing/briefing.md`, the tails `briefing-tail-generic.md`, `-mcp.md`, `-harness.md` and `-http.md`; a user copy at `<data>/agent/briefing.md` (or the file named by the optional setting `AgentBriefingTemplatePath`) replaces the body, and `<data>/agent/briefing-tail-<profile id>.md` replaces one target's tail. Templates are read off the UI thread. Placeholders (`{name}`; unknown names and JSON braces stay as they are):
+
+| Placeholder | Value |
+|---|---|
+| `{project}` | `"name" (path)`, ", unsaved changes" when dirty, "an untitled project", or "none is open" |
+| `{sequence}` | `1920x1080 at 30 fps, 00:00:12:00 (360 frames)` |
+| `{tracks}` | `ProjectDescriber.Summary(project, 8)` joined with "; ", for example `V1: 2 clips, 1 transition; A1: 2 clips` |
+| `{media}` | the imported file names (at most 12, then "and N more"), or "none imported yet" |
+| `{lock}` | "free", "held by X", "paused, held by X" or "free, X is waiting" |
+| `{url}` | the server's base URL (the configured one while it is off) |
+| `{exe}` | the MCP exe |
+| `{registration}` | the target client's registration as the profile gives it (its command, or "Add to <file>:" with the entry), indented |
+| `{token}` | HTTP only: `export CUTLASS_TOKEN='<token>'` after the confirmation, else `export CUTLASS_TOKEN="$(cat '<token file>')"`; a harness: the token after the confirmation, else the token file |
+| `{docs}` | HTTP only: the path of this document |
+| `{client}`, `{tools_url}`, `{example}` | the target's name, `<url>v1/tools?format=<its format>` and its example script (9.4) |
+
+The default MCP template is MCP_HOSTING_CONCEPT 5.2 word for word. The HTTP only template has the same state block and `curl` examples for status, lock acquire (keep `result.lockId`), describe, place (with `X-Cutlass-Lock` and a batch), a frame saved with `-o frame.png`, and lock release. After copying, a toast says "Briefing copied. Paste it into your agent session." or, with the server off, how to start it.
+
+**Settings** (`AppSettings.Agent.cs`, additive): `AgentBriefingTemplatePath` (string, optional) and `McpStartDialogSeen` (bool, false).
+
+**Smoke** (`SmokeRunner.Mcp.cs` and `SmokeRunner.Clients.cs`, used at the end of `m9`): `agent-briefing [http|target=<profile id>] [save=<file>]` runs the menu command and checks the clipboard text (no `{name}` left, no `{` at all in the generic text, the project's name, the target's tail: the tool names, the routes and token line, the harness contract or the client's registration); `menu-stop-mcp` and `menu-start-mcp` run Agent > Stop/Start through `RunCommandCommand` (the smoke dialog service answers the first-start dialog with Start and "Register with: none") and check the server, the badge and the menu text; `show-menu <header> [submenu="<header>"] screenshot=<file>` renders the window with an open menu (and an open submenu, for example "Copy briefing for", whose popup is drawn over the menu's); `show-dialog mcp-start` and `show-dialog connect-clients` render the first-start dialog and the client list (`height=<px>` renders a taller window, for Settings > Agents). A smoke run's client registry is always a sandbox (9.3); `settings agent-home=<dir>` gives it an empty fake home inside the script folder and sets `$clienthome` and `$clientconfig`, `write-file <path> <text> [json]` seeds client files there, `agent-clients [expect=<id>:<state>,...] [current=<n>]` checks every client and `agent-client <id> register|update|remove [expect=<state>]` runs a row's button.
 
 ---
 
@@ -969,6 +1036,129 @@ Each step ends green and runnable, like TECH_BRIEF 12.
 - **Prompt injection through project content.** Titles and file names reach the model. The instructions mark them as data, and no tool executes content.
 - **Two writers on one file.** `serve` and `--headless` refuse a project that a live app (or another headless host) names in `endpoint.json` (`ProjectOwnerGuard`, 4.1). An app that does not serve agents writes no endpoint file, so then the last save wins, as with two app instances today.
 - **Large projects.** Summary filters and the describe text keep responses small, and the tool descriptions steer agents to `describe` first.
+
+---
+
+## 9. Provider neutrality
+
+Status: normative since 2026-10-22. Cutlass talks to agents through two open surfaces, the HTTP API (section 4) and MCP (section 5). Everything a vendor-specific client needs is derived from the one tool catalog (`ToolCatalog`), never hand-written per vendor. "Claude" is one row in a client table, not a special case in code, menus or docs.
+
+### 9.1 The generic contract
+
+An agent, harness or model that can make tool calls needs three things, and the server provides each of them in a vendor-neutral form:
+
+1. **Tool definitions** in the format its harness consumes (9.2).
+2. **One way to call a tool:** `POST /v1/call` with `{ "tool": "<name>", "args": { ... } }` and the bearer token; the reply is the envelope of 4.2 (`revision`, `warnings`, `result`, `error`). The per-route endpoints of 4.4 stay for REST-style use, but `/v1/call` is the documented entry point for harnesses because it needs no routing table. Image tools return `pngBase64` in `result` when called through `/v1/call` (the per-route form returns PNG bytes).
+3. **The workflow** (lock, describe, batch, verify, release) as text: the briefing (6.6) and `GET /v1/instructions` (9.2), which both render from the same source as the MCP server instructions (5.4).
+
+### 9.2 Discovery endpoints
+
+All are `GET`, read only, no lock, bearer token required like every route.
+
+| Route | Returns |
+|---|---|
+| `/v1/tools` | `{ "tools": [ { "name", "mcpName", "description", "needsLock", "mutating", "heavy", "result": "json" or "png", "parameters": <JSON schema> } ] }`, the catalog as is. |
+| `/v1/tools?format=openai` | `[ { "type": "function", "function": { "name", "description", "parameters" } } ]`, the OpenAI function-calling shape, accepted unchanged by OpenAI, Azure OpenAI, Ollama, LM Studio, vLLM, Groq, Mistral, DeepSeek and every other OpenAI-compatible endpoint. |
+| `/v1/tools?format=anthropic` | `[ { "name", "description", "input_schema" } ]`. |
+| `/v1/tools?format=gemini` | `[ { "functionDeclarations": [ { "name", "description", "parameters" } ] } ]` with the schema reduced to what Gemini accepts (no `additionalProperties`, no `$ref`). |
+| `/v1/tools?format=markdown` | A human and LLM readable reference: one section per tool with its description, parameters and an example call; this is what the briefing links to. |
+| `/v1/openapi.json` | OpenAPI 3.1 for the whole API: every route of 4.4 with its request schema, the envelope as the response schema, the error envelope, bearer security, and `x-cutlass-needs-lock` / `x-cutlass-mutating` extensions. Agent frameworks that ingest OpenAPI (LangChain, Semantic Kernel, CrewAI, custom GPT style actions, Postman) get the whole surface from this one document. |
+| `/v1/instructions` | `{ "text": "..." }`, the server instructions of 5.4 plus the generic call contract of 9.1, rendered for a harness that has no MCP. |
+
+Rules:
+
+- Tool names on the wire are the MCP names (`cutlass_*`) in every vendor format, so a transcript reads the same whatever the harness; `/v1/call` accepts both the catalog name (`edit.split`) and the MCP name (`cutlass_split`).
+- Vendor formats are produced by pure functions in `Cutlass.Agent/Api/Export/` (`OpenAiToolExporter`, `AnthropicToolExporter`, `GeminiToolExporter`, `MarkdownToolExporter`, `OpenApiDocument`), each unit tested against a golden file and, for the JSON ones, validated by loading them into the vendor SDK in the example harnesses (9.5).
+- `GeminiToolExporter` is the only one that rewrites schemas; the others pass the catalog schema through. The rewrite is documented in the class and tested.
+
+Implementation notes (filled gaps, 2026-10-22; `capabilities.apiRevision` is 2):
+
+- The three routes are catalog tools without an MCP name (`discovery.tools`, `discovery.openapi`, `discovery.instructions`, result kind `document`), so the auth guard, rate limit and audit log apply as to any read. They answer the document itself, not the envelope; through `/v1/call` the JSON document (or `{ "text" }` for Markdown) becomes `result`.
+- `/v1/tools` entries also carry `method` and `route`; `result` is `json`, `png`, `text` or `document`. The vendor formats and the Markdown reference list only tools with an MCP name, with the catalog (HTTP) argument names, so `cutlass_acquire_lock` takes `waitMs` there, not the MCP exe's `waitSeconds`.
+- Gemini: a `["integer", "null"]` type becomes `"integer"` plus `"nullable": true`, and a tool without arguments has no `parameters` (Gemini rejects an empty object).
+- `/v1/call` answers describe as `result.text`; image tools default to `format=base64` there, and an explicit `"format": "png"` still gets PNG bytes.
+- `/v1/instructions` renders the 5.4 rules with `waitMs` in rule 2, then the call contract (`AgentInstructions.Http()`); the MCP exe uses `AgentInstructions.Mcp()`, the 5.4 text word for word.
+- `/v1/openapi.json` also describes `POST /v1/call` (`CallRequest`), puts POST bodies in `components.schemas.<Name>Args`, sends GET and DELETE arguments as query parameters (arrays comma separated) and uses the MCP name as `operationId`.
+
+### 9.3 Client profiles instead of a Claude button
+
+The app knows agent clients through **profiles**, not code paths. A profile says how to detect a client and how to write its configuration:
+
+```json
+{
+  "id": "claude-code",
+  "name": "Claude Code",
+  "transport": "mcp-stdio",
+  "detect": { "command": "claude" },
+  "register": { "command": "claude", "args": ["mcp", "add", "cutlass", "--scope", "{scope}", "--", "{exe}"] },
+  "probe": { "command": "claude", "args": ["mcp", "get", "cutlass"], "registeredWhen": "{exe}" },
+  "remove": { "command": "claude", "args": ["mcp", "remove", "cutlass", "-s", "{scope}"] },
+  "scopes": ["user", "local"]
+}
+```
+
+```json
+{
+  "id": "cursor",
+  "name": "Cursor",
+  "transport": "mcp-stdio",
+  "detect": { "file": "{home}/.cursor" },
+  "configFile": "{home}/.cursor/mcp.json",
+  "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } }
+}
+```
+
+- Shipped profiles (`src/Cutlass.App/Assets/agent-clients.json`, copied beside the exe): Claude Code, Claude Desktop, Cursor, Windsurf, VS Code (Copilot agent mode, `mcp.json`), Gemini CLI (`~/.gemini/settings.json`), Codex CLI (`~/.codex/config.toml`, written as TOML), Continue, Zed, and three non-MCP rows that only produce text: "OpenAI-compatible harness" (the `/v1/tools?format=openai` URL and the example script), "Anthropic SDK harness", "HTTP only (curl)".
+- User profiles in `<data>/agent/clients/*.json` are merged by `id` and may override shipped ones.
+- Two register kinds: `command` (run a CLI through `ICliRunner`) and `configFile` (read JSON or TOML, merge the entry under `path` without touching other keys, atomic write with a `.bak`). Both support `{exe}`, `{scope}`, `{home}`, `{url}`, `{token}` placeholders. `{token}` is inserted only when the profile's transport is `http` and the user confirmed the token dialog.
+- Probe states stay as in the concept: Not installed, Not registered, Current, Stale (points at another exe or URL), Foreign (an entry the app did not write).
+- The App types `ClaudeCodeRegistration`, `ClaudeCodeState`, `ClaudeCodeStatus` and `ClaudeCodeRegisterResult` are replaced by `AgentClientProfile`, `AgentClientRegistry`, `AgentClientProbe` and `AgentClientRegisterResult`. Nothing in `Cutlass.App` names a vendor outside the profile file and its tests.
+
+Implementation notes (App, 2026-10-22):
+
+- **File format.** `agent-clients.json` is `{ "version": 1, "toolFormats": [...], "clients": [ <profile>... ] }` (comments and trailing commas allowed). It is copied beside the exe and also embedded (`AgentClientRegistry.EmbeddedProfiles`), which is used when the file is missing. A user file may hold one profile, an array or a catalog; a profile without `id` or `name` is skipped and logged. `toolFormats` lists the `/v1/tools?format=` values Settings shows.
+- **Profile fields** (`AgentClientProfile`): `id`, `name`, `transport` (`mcp-stdio` or `http`), `detect` (`command` on PATH and/or `file`, a file or folder; an existing configuration file counts too), `register`, `probe` (`command`, `args`, `fallbackArgs`, `registeredWhen`, `notRegisteredWhen`, `scopeField`, `commandField`, `listPrefix`), `remove`, `scopes`, `configFile`, `configFormat` (`json` or `toml`, else from the extension), `configEntry` (`path`, `value`), `text` (text-only rows), `briefing` (`mcp`, `harness`, `http`; else from the transport), `toolsFormat`, `example`, `note` (shown after registering). Kind: `register` makes a CLI profile, `configFile` plus `configEntry` a config file profile, neither a text-only row.
+- **Per-platform paths.** `configFile` and `detect.file` are a string or `{ "windows", "macos", "linux", "default" }`. A gap filled here: the placeholder `{appdata}` is the per-user configuration folder (Windows `%APPDATA%`, elsewhere `$XDG_CONFIG_HOME` or `~/.config`), used by Claude Desktop, VS Code and Zed on Windows.
+- **Placeholders.** An argument whose placeholder is empty is dropped with the option before it (`-s {scope}` without a scope). `{token}` is the confirmed token, else "the content of <token file>".
+- **Probe.** Config file profiles compare the entry member by member (members the client added are allowed; a missing empty `args` counts as empty; paths compare as paths): equal is current, an entry that names a `Cutlass.Agent.Mcp` exe is stale, anything else is foreign. A file that is not valid JSON or TOML is "could not check" and is never written. Two extra states exist for the check itself: not checked and could not check (`AgentClientState.Unknown`, `Error`).
+- **Writing.** JSON files are edited in place by `JsoncEditor`: only the span of the `cutlass` member changes (comments, key order, indentation, line ends, trailing commas and a UTF-8 BOM stay), a new member takes the file's indentation and comma style, and register then remove gives the original bytes back when the parent object existed. TOML files go through `TomlTableEditor`: only the keys of `[mcp_servers.cutlass]` change (its other keys stay), a missing table is appended after a blank line, remove drops the table, its sub-tables and that blank line. Both write `<file>.bak` first and then a temporary file that is renamed over the original. A foreign entry is replaced and an entry removed only after a confirmation in the UI.
+- **Last registered client.** A gap filled here: `LastRegisteredClientId` lives in `<data>/agent/clients.state.json` (App-owned), not in `AppSettings`, because the settings record belongs to `Cutlass.Media`.
+- **Tests and smoke never touch a real client.** `AgentClientEnvironment.Sandbox(home)` resolves `{home}`, `{appdata}` (`<home>/AppData/Roaming` on Windows, else `<home>/.config`) and PATH (`<home>/bin`) inside a fake home, and the registry refuses a sandbox combined with the real `CliProcess`. The app builds a sandbox registry in every `--smoke-script` run (`agent-clients-home` beside the script, a `SmokeCliRunner` that starts nothing, the last registered client kept in memory); the smoke command `settings agent-home=<dir>` (not an environment variable) moves it to an empty folder inside the script folder.
+- **Vendor-free code.** A unit test (`VendorNeutralityTests`) scans every C#, XAML, Markdown, JSON and project file of `src/Cutlass.App` except the profile file for vendor and client names (`Cursor` only as the Avalonia pointer API). The same scan covers `src/Cutlass.Agent` and `src/Cutlass.Agent.Mcp` (server instructions, prompts, resources, `Registration.cs`, the usage text); there only the tool format ids `openai`, `anthropic` and `gemini` are allowed, in `Api/Export/` and the `discovery.tools` catalog entry, plus the file name `CLAUDE.md` in comments.
+
+### 9.4 UI wording and the briefing targets
+
+- Agent menu: "Register with Claude Code..." becomes **"Connect an agent client..."**, which opens the client list (detected clients first, each with Register / Update / Remove or Copy, and the text-only rows). "Show registration for other clients..." is folded into it. "Copy briefing for your agent" gains a submenu, one item per profile plus "HTTP only"; the plain item renders for the client that was registered last, or the generic text when none was.
+- Agent panel header: the "Claude Code" line becomes **"Clients"** with the count of current registrations and a "Connect..." button; the per-client state moves into the client list.
+- First-start dialog: the registration checkbox becomes a client dropdown filled from detected profiles ("Register with: Claude Code / Cursor / ... / none").
+- Settings > Agents, "MCP setup" group becomes **"Connect clients"** and hosts the same list plus the discovery URLs (`/v1/tools?format=...`, `/v1/openapi.json`) with Copy.
+- Briefing: the template has one neutral body and a **per-target tail** chosen by the profile: for MCP clients the tool names and the registration fallback of that client; for "OpenAI-compatible harness" the base URL, the tools URL, the `/v1/call` contract and a pointer to the example script; for "HTTP only" the curl examples. The body never names a vendor.
+- MCP exe: `--print-registration` prints every profile's registration (command or config snippet), not only Claude's.
+
+Implementation notes (App, 2026-10-22):
+
+- **Agent menu.** Start/Stop MCP server; Copy briefing for your agent; Copy briefing for > (one item per profile, `agent.copyBriefing.<id>`, registered when the profiles are loaded and allowed while an agent holds the project through `CommandIds.IsAllowedWhileAgentHolds`); Connect an agent client... (`agent.connectClients`); Agent panel; Take over. The shipped profiles end with "HTTP only (curl)", so the submenu needs no separate HTTP item; one is added only when no profile has the `http` briefing.
+- **Client list** (`ConnectClientsViewModel`, `AgentClientItemViewModel`, view `ClientListView`, window `ConnectClientsDialog`): detected clients first in profile order, then the others, then the text-only rows. A row shows its dot (Success current, Warning stale or foreign, Danger could not check), name, transport, state, a scope dropdown for a CLI with scopes that can register now, Register (not registered) or Update (stale, foreign; foreign asks first), Remove (an entry exists; asks first), and Copy (the command, "Add to <file>:" with the entry, or the harness text; for http transports the token only after a confirmation). The output of the last action and the token note sit under the list. The same list is shown in Settings > Agents > Connect clients, counted in the panel header and used by the first-start dialog.
+- **Briefing targets.** The tail of an MCP client names it and indents its registration; a harness gets its `toolsFormat` URL, `/v1/call`, `/v1/instructions` and its `example`; plain HTTP the curl steps; the generic tail (no client registered) both the MCP tool names and the HTTP discovery routes. The body and the tails name no vendor (a unit test checks it).
+- **`--print-registration`** reads `agent-clients.json` beside the exe, else `src/Cutlass.App/Assets/agent-clients.json` of the checkout it was built in, and prints one block per profile (the CLI command with its scopes, "Add to <path>:" with the JSON or TOML entry for this platform, or the harness text with the default URL; never the token), then the headless arguments. Without the file it prints the generic `mcpServers` entry.
+
+### 9.5 Reference harnesses
+
+`build/examples/` holds runnable proof that any tool-calling model can drive Cutlass, each under 150 lines and documented at the top:
+
+| File | Stack | What it shows |
+|---|---|---|
+| `agent-openai-compatible.py` | Python, `openai` SDK, any OpenAI-compatible endpoint (`--base-url`, `--model`, `--api-key`, `--task`); the model-driven run against Ollama on this machine is pending (STATUS) | loads `/v1/tools?format=openai`, runs a tool loop against `/v1/call` with the bearer token, acquires and releases the lock, performs a task given on the command line |
+| `agent-anthropic.py` | Python, `anthropic` SDK | the same loop with `/v1/tools?format=anthropic` |
+| `agent-http.ps1` | PowerShell, no SDK | the HTTP-only path: status, lock, describe, one edit, render a frame to a file, release |
+
+The examples read the endpoint and token from `<data>/agent/endpoint.json` and the token file by default, so they run with no arguments once the app serves. CI runs `agent-http.ps1` on Windows against `serve`; the Python examples are checked by a unit test that loads their tool JSON through the vendor shape only (no model call in CI).
+
+As built (2026-10-22): `tests/Cutlass.IntegrationTests/Examples` runs `agent-http.ps1` against an in-process headless host (split and marker paths). The vendor-shape check is `check_harness.py`: it loads each harness with a stub SDK module and a fake transport that serves the `ToolExport` rendering of its format, and checks the tool loading, envelopes, the lock header and the PNG files; Python's parser covers syntax (`ast.parse`, no `__pycache__`). The harnesses keep the lock id for the model, renew the lease every 10 s while it thinks (a model may ask for a 15 s lease), save images to files and release on exit. Ollama needs `OLLAMA_CONTEXT_LENGTH` above its 4096-token default for many models: the first request is about 5300 tokens.
+
+### 9.6 Docs
+
+README "AI agents" opens with the generic contract and a client matrix (one row per profile, with transport and how to connect); Claude is a row. STATUS lists the discovery endpoints and the harness test results. The briefing and `/v1/instructions` are the only prose an agent sees, and both are vendor free.
 
 ---
 

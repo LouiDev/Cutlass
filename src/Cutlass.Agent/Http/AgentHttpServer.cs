@@ -223,6 +223,11 @@ public sealed class AgentHttpServer : IAsyncDisposable
                     Header(request, ApiVersion.LockHeader),
                     Header(request, ApiVersion.AgentHeader));
                 result = await _dispatcher.DispatchAsync(call, _stop.Token).ConfigureAwait(false);
+                if (Router.IsCallRoute(request.Url?.AbsolutePath ?? "/"))
+                {
+                    // The generic contract (AGENT_INTEGRATION 9.1): /v1/call always answers with the envelope.
+                    result = result.AsCallEnvelope();
+                }
             }
         }
         catch (ApiException ex)

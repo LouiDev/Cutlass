@@ -37,8 +37,14 @@ public sealed class ApiResult
     /// <summary>The PNG of an image tool, or null.</summary>
     public byte[]? Png { get; init; }
 
-    /// <summary>The text of a text tool (describe), or null.</summary>
+    /// <summary>The text of a text tool (describe) or a discovery document, or null.</summary>
     public string? Text { get; init; }
+
+    /// <summary>
+    /// The media type of <see cref="Text"/> without parameters, for example <c>application/json</c> or
+    /// <c>text/markdown</c> for a discovery document (AGENT_INTEGRATION 9.2); null means <c>text/plain</c>.
+    /// </summary>
+    public string? TextMediaType { get; init; }
 
     /// <summary>Extra response headers (for example the contact sheet layout), or null.</summary>
     public IReadOnlyDictionary<string, string>? Headers { get; init; }
@@ -54,7 +60,7 @@ public sealed class ApiResult
 
     /// <summary>The content type of the HTTP body.</summary>
     public string ContentType => Error is null && Png is not null ? "image/png"
-        : Error is null && Text is not null ? "text/plain; charset=utf-8"
+        : Error is null && Text is not null ? (TextMediaType ?? "text/plain") + "; charset=utf-8"
         : "application/json; charset=utf-8";
 
     /// <summary>A success with a JSON result.</summary>
@@ -80,6 +86,45 @@ public sealed class ApiResult
     /// <param name="error">The error.</param>
     /// <returns>The result.</returns>
     public static ApiResult Fail(long revision, ApiError error) => new() { Revision = revision, Error = error };
+
+    /// <summary>
+    /// The result as <c>POST /v1/call</c> answers it (AGENT_INTEGRATION 9.1): always the JSON envelope. A text result
+    /// becomes <c>{"text": ...}</c>, and a JSON document (a discovery route) becomes the result itself. Errors, JSON
+    /// results and PNG answers (an explicit <c>format=png</c>) stay as they are.
+    /// </summary>
+    /// <returns>This result, or the envelope form of it.</returns>
+    public ApiResult AsCallEnvelope()
+    {
+        if (Error is not null || Png is not null || Text is not { } text)
+        {
+            return this;
+        }
+
+        JsonElement result;
+        if (string.Equals(TextMediaType, "application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            using var doc = JsonDocument.Parse(text);
+            result = doc.RootElement.Clone();
+        }
+        else
+        {
+            result = JsonSerializer.SerializeToElement(
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["text"] = text },
+                AgentJsonContext.Relaxed.DictionaryStringString);
+        }
+
+        return new ApiResult
+        {
+            Revision = Revision,
+            Warnings = Warnings,
+            Result = result,
+            Changed = Changed,
+            Select = Select,
+            UndoLabel = UndoLabel,
+            Project = Project,
+            Headers = Headers,
+        };
+    }
 
     /// <summary>Deserialises <see cref="Result"/>.</summary>
     /// <typeparam name="T">The type.</typeparam>

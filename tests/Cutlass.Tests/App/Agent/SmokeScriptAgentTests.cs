@@ -12,6 +12,7 @@ public sealed class SmokeScriptAgentTests
         [
             "agent-connect", "agent-call", "expect-locked", "expect-unlocked", "agent-takeover", "agent-pause", "agent-resume",
             "expect-readonly", "expect-agent-log", "expect-no-refused",
+            "agent-briefing", "menu-start-mcp", "menu-stop-mcp", "show-menu", "write-file", "agent-clients", "agent-client",
         ];
         foreach (var command in commands)
         {
@@ -35,7 +36,7 @@ public sealed class SmokeScriptAgentTests
 
         Assert.Equal(12, steps.Count);
         Assert.Equal("Smoke", steps[0].Option("name"));
-        Assert.Equal(["lock.acquire", "{'agentName':'Smoke','reason':'m9'}"], steps[1].Positional());
+        Assert.Equal(["lock.acquire", "{'agentName':'Smoke','reason':'m9'}"], steps[1].Positional().Take(2));
         Assert.Equal("lock=result.lockId", steps[1].Option("save"));
         Assert.Equal("{'trackId':'$v2','title':{'text':'Meet Ana'}}", steps[2].Positional()[1]);
         Assert.Equal("lock_required", steps[3].Option("expect"));
@@ -46,6 +47,30 @@ public sealed class SmokeScriptAgentTests
         Assert.Equal(["edit.split"], steps[7].Positional());
         Assert.Equal("lock_required", steps[7].Option("code"));
         Assert.Equal(["agent"], steps[11].Positional());
+    }
+
+    [Fact]
+    public void TheClientCommandsKeepTheirOptions()
+    {
+        var steps = SmokeScript.Parse(
+            "settings agent-home=clients-home\n" +
+            "write-file $clienthome/.gemini/settings.json \"{'mcpServers':{'cutlass':{'command':'npx','args':[]}}}\" json\n" +
+            "agent-clients expect=cursor:not-registered,gemini-cli:foreign current=0\n" +
+            "agent-client cursor register expect=current\n" +
+            "agent-briefing target=cursor save=shots/b.txt\n" +
+            "show-dialog connect-clients screenshot=shots/c.png\n");
+        Assert.Equal(6, steps.Count);
+        Assert.Equal("clients-home", steps[0].Option("agent-home"));
+        Assert.Equal(["$clienthome/.gemini/settings.json", "{'mcpServers':{'cutlass':{'command':'npx','args':[]}}}"], steps[1].Args.Take(2));
+        Assert.True(steps[1].Flag("json"));
+        Assert.Equal("cursor:not-registered,gemini-cli:foreign", steps[2].Option("expect"));
+        Assert.Equal("0", steps[2].Option("current"));
+        Assert.Equal(["cursor", "register"], steps[3].Positional());
+        Assert.Equal("current", steps[3].Option("expect"));
+        Assert.Equal("cursor", steps[4].Option("target"));
+        Assert.Equal(["connect-clients"], steps[5].Positional());
+        Assert.Contains("connect-clients", SmokeScript.Commands["show-dialog"], StringComparison.Ordinal);
+        Assert.Contains("agent-home=<folder>", SmokeScript.Commands["settings"], StringComparison.Ordinal);
     }
 
     [Fact]

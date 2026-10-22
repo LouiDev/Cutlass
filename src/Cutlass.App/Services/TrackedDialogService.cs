@@ -74,6 +74,12 @@ public sealed class TrackedDialogService : IDialogService
     public Task<bool> ShowSettingsDialogAsync(SettingsViewModel dialog) => TrackAsync(() => _inner.ShowSettingsDialogAsync(dialog));
 
     /// <inheritdoc />
+    public Task<bool> ShowMcpStartDialogAsync(McpStartDialogViewModel dialog) => TrackAsync(() => _inner.ShowMcpStartDialogAsync(dialog));
+
+    /// <inheritdoc />
+    public Task ShowConnectClientsDialogAsync(ConnectClientsViewModel dialog) => TrackAsync(() => _inner.ShowConnectClientsDialogAsync(dialog));
+
+    /// <inheritdoc />
     public Task<string?> PickFolderAsync(string title, string? startFolder) => TrackAsync(() => _inner.PickFolderAsync(title, startFolder));
 
     /// <inheritdoc />

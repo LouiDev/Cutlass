@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:views="using:Cutlass.App.Views"
         xmlns:export="using:Cutlass.Compiler.Export"
         x:Class="Cutlass.App.Views.SettingsDialog"
         x:DataType="vm:SettingsViewModel"
@@ -254,20 +255,27 @@
             </Grid>
             <TextBlock Classes="note" Text="{x:Static vm:SettingsViewModel.AgentFoldersNote}" />
 
-            <TextBlock Classes="group" Text="MCP setup" />
-            <TextBlock Classes="label" Text="Claude Code" />
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-              <TextBox Grid.Column="0" Text="{Binding ClaudeCodeCommandText, Mode=OneWay}" IsReadOnly="True" FontFamily="monospace" />
-              <Button Grid.Column="1" Content="Copy" Command="{Binding CopyClaudeCodeCommandCommand}" />
-            </Grid>
-            <TextBlock Classes="label" Text="Claude Desktop (claude_desktop_config.json)" />
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-              <TextBox Grid.Column="0" Text="{Binding ClaudeDesktopJsonText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="monospace" />
-              <Button Grid.Column="1" Content="Copy" Command="{Binding CopyClaudeDesktopJsonCommand}" VerticalAlignment="Top" />
-            </Grid>
+            <!-- AGENT_INTEGRATION 9.4: the shared client list with its actions, the discovery URLs with Copy, the docs. -->
+            <TextBlock Classes="group" Text="Connect clients" />
+            <TextBlock Classes="note" Text="{Binding McpPathText, StringFormat='MCP clients start {0}. Register writes the configuration of the client; Copy puts the same setup on the clipboard.'}" />
+            <Panel IsVisible="{Binding HasClients}">
+              <views:ClientListView DataContext="{Binding Clients}" />
+            </Panel>
+            <TextBlock Classes="note" Text="{x:Static vm:ConnectClientsViewModel.TokenNoteText}" />
+            <TextBlock Classes="label" Text="Discovery URLs (for harnesses without MCP)" Margin="0,4,0,0" />
+            <ItemsControl ItemsSource="{Binding Clients.DiscoveryUrls}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AgentDiscoveryUrlItem">
+                  <Grid ColumnDefinitions="150,*,Auto" ColumnSpacing="6" Margin="0,0,0,4">
+                    <TextBlock Grid.Column="0" Classes="label" Text="{Binding Label}" />
+                    <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" FontFamily="monospace" />
+                    <Button Grid.Column="2" Content="Copy" Command="{Binding CopyCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
               <Button Content="Open agent docs" Command="{Binding OpenAgentDocsCommand}" />
-              <TextBlock Classes="note" VerticalAlignment="Center" Text="Cursor and other MCP clients take the same command." />
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

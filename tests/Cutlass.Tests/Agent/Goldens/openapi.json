@@ -1,0 +1,5154 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Cutlass agent API",
+    "version": "1.2.3",
+    "summary": "Drive the Cutlass video editor from any agent or script over loopback HTTP.",
+    "description": "Every route needs the bearer token from the token file that endpoint.json names. Changes need the edit lock: call POST /v1/lock/acquire, then send its lockId as X-Cutlass-Lock. Replies are the envelope {revision, warnings, result} or {revision, error}. POST /v1/call runs any tool by name and is the simplest entry point for a harness. Timeline positions are integer frames; source times are flicks (705600000 per second).",
+    "x-cutlass-api-version": 1,
+    "x-cutlass-api-revision": 2
+  },
+  "servers": [
+    {
+      "url": "http://{host}:{port}",
+      "description": "The loopback server; use baseUrl from endpoint.json.",
+      "variables": {
+        "host": {
+          "default": "localhost",
+          "enum": [
+            "localhost",
+            "127.0.0.1"
+          ]
+        },
+        "port": {
+          "default": "47390"
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "call"
+    },
+    {
+      "name": "session"
+    },
+    {
+      "name": "discovery"
+    },
+    {
+      "name": "project"
+    },
+    {
+      "name": "media"
+    },
+    {
+      "name": "preview"
+    },
+    {
+      "name": "edit"
+    },
+    {
+      "name": "export"
+    }
+  ],
+  "paths": {
+    "/v1/call": {
+      "post": {
+        "operationId": "call",
+        "summary": "Run any tool by name",
+        "description": "Runs a tool by its MCP name (cutlass_split) or catalog name (edit.split) with its arguments. The reply is always the envelope: image tools answer with pngBase64 in result, describe with result.text. Lock tools need X-Cutlass-Lock.",
+        "tags": [
+          "call"
+        ],
+        "parameters": [
+          {
+            "name": "X-Cutlass-Lock",
+            "in": "header",
+            "required": false,
+            "description": "The lockId; required by tools that need the lock.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope of the tool.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "operationId": "cutlass_status",
+        "summary": "cutlass_status",
+        "description": "State of Cutlass: project, ffmpeg, who holds the edit lock. Call first.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "status",
+        "x-cutlass-mcp-name": "cutlass_status",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "operationId": "cutlass_capabilities",
+        "summary": "cutlass_capabilities",
+        "description": "Export presets, qualities, transition kinds, title anchors, edit modes and limits of this build and ffmpeg.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "capabilities",
+        "x-cutlass-mcp-name": "cutlass_capabilities",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/lock/acquire": {
+      "post": {
+        "operationId": "cutlass_acquire_lock",
+        "summary": "cutlass_acquire_lock",
+        "description": "Take the edit lock before any change. The user sees your name and reason.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockAcquireArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "lock.acquire",
+        "x-cutlass-mcp-name": "cutlass_acquire_lock",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/lock/renew": {
+      "post": {
+        "operationId": "cutlass_renew_lock",
+        "summary": "cutlass_renew_lock",
+        "description": "Renew your lease during a long pause. Every other call renews it as well.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockRenewArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "lock.renew",
+        "x-cutlass-mcp-name": "cutlass_renew_lock",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/lock/release": {
+      "post": {
+        "operationId": "cutlass_release_lock",
+        "summary": "cutlass_release_lock",
+        "description": "Give the project back to the user. Always call when done.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockReleaseArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "lock.release",
+        "x-cutlass-mcp-name": "cutlass_release_lock",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/lock": {
+      "get": {
+        "operationId": "cutlass_get_lock",
+        "summary": "cutlass_get_lock",
+        "description": "Who holds the edit lock, its phase and lease.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "lock.get",
+        "x-cutlass-mcp-name": "cutlass_get_lock",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "operationId": "cutlass_events",
+        "summary": "events",
+        "description": "Long-poll for project, lock, export and playhead events after a sequence number.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Return events after this sequence number.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "timeoutMs",
+            "in": "query",
+            "required": false,
+            "description": "Wait at most this long (25000 max).",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "events",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/shutdown": {
+      "post": {
+        "operationId": "cutlass_shutdown",
+        "summary": "shutdown",
+        "description": "Stops a headless serve process.",
+        "tags": [
+          "session"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShutdownArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "shutdown",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/tools": {
+      "get": {
+        "operationId": "cutlass_discovery_tools",
+        "summary": "discovery.tools",
+        "description": "The tool catalog as JSON, or tool definitions for a harness with format openai, anthropic, gemini or markdown.",
+        "tags": [
+          "discovery"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "json (default), openai, anthropic, gemini or markdown.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "openai",
+                "anthropic",
+                "gemini",
+                "markdown"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The catalog {tools: [...]}, a vendor tool list (format openai, anthropic or gemini), or Markdown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": [
+                    "object",
+                    "array"
+                  ]
+                }
+              },
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "discovery.tools",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/openapi.json": {
+      "get": {
+        "operationId": "cutlass_discovery_openapi",
+        "summary": "discovery.openapi",
+        "description": "OpenAPI 3.1 description of the whole HTTP API.",
+        "tags": [
+          "discovery"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "discovery.openapi",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/instructions": {
+      "get": {
+        "operationId": "cutlass_discovery_instructions",
+        "summary": "discovery.instructions",
+        "description": "The workflow rules and the /v1/call contract as text, for a harness without MCP.",
+        "tags": [
+          "discovery"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow rules and the call contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Instructions"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "discovery.instructions",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project": {
+      "get": {
+        "operationId": "cutlass_get_project",
+        "summary": "cutlass_get_project",
+        "description": "Timeline as JSON: tracks, clips (ids, frames, source times), transitions, markers, media.",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "trackIds",
+            "in": "query",
+            "required": false,
+            "description": "Only these tracks.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Only clips ending after this frame.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Only clips starting before this frame.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.get",
+        "x-cutlass-mcp-name": "cutlass_get_project",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project/describe": {
+      "get": {
+        "operationId": "cutlass_describe_project",
+        "summary": "cutlass_describe_project",
+        "description": "Short text overview of the timeline; cheaper than get_project.",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Only clips ending after this frame.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Only clips starting before this frame.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The text (through /v1/call: the envelope with result.text).",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.describe",
+        "x-cutlass-mcp-name": "cutlass_describe_project",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project/new": {
+      "post": {
+        "operationId": "cutlass_new_project",
+        "summary": "cutlass_new_project",
+        "description": "Create a new untitled project (V1, V2, A1, A2).",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectNewArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.new",
+        "x-cutlass-mcp-name": "cutlass_new_project",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project/open": {
+      "post": {
+        "operationId": "cutlass_open_project",
+        "summary": "cutlass_open_project",
+        "description": "Open a project file inside the allowed folders.",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectOpenArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.open",
+        "x-cutlass-mcp-name": "cutlass_open_project",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project/save": {
+      "post": {
+        "operationId": "cutlass_save_project",
+        "summary": "cutlass_save_project",
+        "description": "Save the project to its current path (an untitled project needs save-as).",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectSaveArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.save",
+        "x-cutlass-mcp-name": "cutlass_save_project",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/project/save-as": {
+      "post": {
+        "operationId": "cutlass_project_save_as",
+        "summary": "project.save-as",
+        "description": "Save the project to a new path inside the write folders.",
+        "tags": [
+          "project"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectSaveAsArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "project.save-as",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/media": {
+      "get": {
+        "operationId": "cutlass_list_media",
+        "summary": "cutlass_list_media",
+        "description": "List the media in the bin with duration, codecs and online state.",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.list",
+        "x-cutlass-mcp-name": "cutlass_list_media",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/media/{mediaId}": {
+      "get": {
+        "operationId": "cutlass_get_media",
+        "summary": "cutlass_get_media",
+        "description": "One media asset with probe info and online state.",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "description": "The media id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.get",
+        "x-cutlass-mcp-name": "cutlass_get_media",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      },
+      "delete": {
+        "operationId": "cutlass_remove_media",
+        "summary": "cutlass_remove_media",
+        "description": "Remove a media asset and every clip that uses it.",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "description": "The media id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "required": false,
+            "description": "Fail with conflict when the project revision is no longer this.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "returnProject",
+            "in": "query",
+            "required": false,
+            "description": "Also return the project summary.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.remove",
+        "x-cutlass-mcp-name": "cutlass_remove_media",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/media/import": {
+      "post": {
+        "operationId": "cutlass_import_media",
+        "summary": "cutlass_import_media",
+        "description": "Add files to the bin (allowed folders only); place them with place_media.",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaImportArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.import",
+        "x-cutlass-mcp-name": "cutlass_import_media",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/media/{mediaId}/peaks": {
+      "get": {
+        "operationId": "cutlass_media_peaks",
+        "summary": "media.peaks",
+        "description": "Source waveform peaks of a media asset.",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "description": "The media id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "startFlicks",
+            "in": "query",
+            "required": false,
+            "description": "Source start.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "endFlicks",
+            "in": "query",
+            "required": false,
+            "description": "Source end.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "bins",
+            "in": "query",
+            "required": false,
+            "description": "Number of bins (at most 4000).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.peaks",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/media/{mediaId}/levels": {
+      "post": {
+        "operationId": "cutlass_source_levels",
+        "summary": "cutlass_source_levels",
+        "description": "Loudness of a media file's own audio (RMS and peak dBFS per interval).",
+        "tags": [
+          "media"
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "description": "The media id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaLevelsArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "media.levels",
+        "x-cutlass-mcp-name": "cutlass_source_levels",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": true
+      }
+    },
+    "/v1/frame/{frame}": {
+      "get": {
+        "operationId": "cutlass_render_frame",
+        "summary": "cutlass_render_frame",
+        "description": "Look at one timeline frame. Returns an image.",
+        "tags": [
+          "preview"
+        ],
+        "parameters": [
+          {
+            "name": "frame",
+            "in": "path",
+            "required": true,
+            "description": "Timeline frame.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "width",
+            "in": "query",
+            "required": false,
+            "description": "Image width, 16 to 1920, even (640).",
+            "schema": {
+              "type": "integer",
+              "minimum": 16,
+              "maximum": 1920
+            }
+          },
+          {
+            "name": "useProxies",
+            "in": "query",
+            "required": false,
+            "description": "Render from proxies.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "png or base64.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "png",
+                "base64"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The PNG, or with format=base64 (the default through /v1/call) the envelope with pngBase64 in result.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "contentMediaType": "image/png"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "frame.render",
+        "x-cutlass-mcp-name": "cutlass_render_frame",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": true
+      }
+    },
+    "/v1/contact-sheet": {
+      "post": {
+        "operationId": "cutlass_contact_sheet",
+        "summary": "cutlass_contact_sheet",
+        "description": "Many frames tiled in one image, with a cell legend.",
+        "tags": [
+          "preview"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactSheetArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The PNG, or with format=base64 (the default through /v1/call) the envelope with pngBase64 in result.",
+            "headers": {
+              "X-Cutlass-Layout": {
+                "description": "The cell layout as JSON [{frame, timecode, x, y}] next to the PNG.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "contentMediaType": "image/png"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "contact-sheet",
+        "x-cutlass-mcp-name": "cutlass_contact_sheet",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": true
+      }
+    },
+    "/v1/audio/levels": {
+      "post": {
+        "operationId": "cutlass_audio_levels",
+        "summary": "cutlass_audio_levels",
+        "description": "Loudness (RMS and peak dBFS) of the mix per interval.",
+        "tags": [
+          "preview"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioLevelsArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "audio.levels",
+        "x-cutlass-mcp-name": "cutlass_audio_levels",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": true
+      }
+    },
+    "/v1/audio/silences": {
+      "post": {
+        "operationId": "cutlass_find_silences",
+        "summary": "cutlass_find_silences",
+        "description": "Frame ranges quieter than the threshold.",
+        "tags": [
+          "preview"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioSilencesArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "audio.silences",
+        "x-cutlass-mcp-name": "cutlass_find_silences",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": true
+      }
+    },
+    "/v1/playhead": {
+      "post": {
+        "operationId": "cutlass_set_playhead",
+        "summary": "cutlass_set_playhead",
+        "description": "Show the user a frame in the viewer.",
+        "tags": [
+          "preview"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayheadSetArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "playhead.set",
+        "x-cutlass-mcp-name": "cutlass_set_playhead",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/place": {
+      "post": {
+        "operationId": "cutlass_place_media",
+        "summary": "cutlass_place_media",
+        "description": "Put media, or a source range of it, on the timeline.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditPlaceArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.place",
+        "x-cutlass-mcp-name": "cutlass_place_media",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/move": {
+      "post": {
+        "operationId": "cutlass_move_clips",
+        "summary": "cutlass_move_clips",
+        "description": "Move clips in time and between tracks.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMoveArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.move",
+        "x-cutlass-mcp-name": "cutlass_move_clips",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/trim": {
+      "post": {
+        "operationId": "cutlass_trim_clip",
+        "summary": "cutlass_trim_clip",
+        "description": "Trim a clip's start or end, optionally rippling later clips.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTrimArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.trim",
+        "x-cutlass-mcp-name": "cutlass_trim_clip",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/roll": {
+      "post": {
+        "operationId": "cutlass_roll_edit",
+        "summary": "cutlass_roll_edit",
+        "description": "Move the cut between two butting clips.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRollArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.roll",
+        "x-cutlass-mcp-name": "cutlass_roll_edit",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/slip": {
+      "post": {
+        "operationId": "cutlass_slip_clip",
+        "summary": "cutlass_slip_clip",
+        "description": "Change which source part a clip shows without moving it.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSlipArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.slip",
+        "x-cutlass-mcp-name": "cutlass_slip_clip",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/split": {
+      "post": {
+        "operationId": "cutlass_split",
+        "summary": "cutlass_split",
+        "description": "Split clips at a frame (default: every unlocked track).",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSplitArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.split",
+        "x-cutlass-mcp-name": "cutlass_split",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/delete": {
+      "post": {
+        "operationId": "cutlass_delete_clips",
+        "summary": "cutlass_delete_clips",
+        "description": "Delete clips, leaving gaps or closing them up (ripple).",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditDeleteArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.delete",
+        "x-cutlass-mcp-name": "cutlass_delete_clips",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/remove-ranges": {
+      "post": {
+        "operationId": "cutlass_remove_ranges",
+        "summary": "cutlass_remove_ranges",
+        "description": "Cut time ranges out of all unlocked tracks (or the given ones) and close the gaps.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRemoveRangesArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.remove-ranges",
+        "x-cutlass-mcp-name": "cutlass_remove_ranges",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/close-gap": {
+      "post": {
+        "operationId": "cutlass_close_gap",
+        "summary": "cutlass_close_gap",
+        "description": "Close the gap at a frame on one track by moving later clips left.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditCloseGapArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.close-gap",
+        "x-cutlass-mcp-name": "cutlass_close_gap",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/clip-props": {
+      "post": {
+        "operationId": "cutlass_set_clip_props",
+        "summary": "cutlass_set_clip_props",
+        "description": "Opacity, transform, colour, gain, fades, enable.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditClipPropsArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.clip-props",
+        "x-cutlass-mcp-name": "cutlass_set_clip_props",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/speed": {
+      "post": {
+        "operationId": "cutlass_set_speed",
+        "summary": "cutlass_set_speed",
+        "description": "Set clip speed in percent.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSpeedArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.speed",
+        "x-cutlass-mcp-name": "cutlass_set_speed",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/link": {
+      "post": {
+        "operationId": "cutlass_link_clips",
+        "summary": "cutlass_link_clips",
+        "description": "Link clips so they select and move together.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditLinkArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.link",
+        "x-cutlass-mcp-name": "cutlass_link_clips",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/unlink": {
+      "post": {
+        "operationId": "cutlass_unlink_clips",
+        "summary": "cutlass_unlink_clips",
+        "description": "Unlink clips.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditUnlinkArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.unlink",
+        "x-cutlass-mcp-name": "cutlass_unlink_clips",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/volume-keys": {
+      "post": {
+        "operationId": "cutlass_set_volume_keys",
+        "summary": "cutlass_set_volume_keys",
+        "description": "Replace an audio clip's volume envelope (empty clears).",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditVolumeKeysArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.volume-keys",
+        "x-cutlass-mcp-name": "cutlass_set_volume_keys",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/transition/add": {
+      "post": {
+        "operationId": "cutlass_add_transition",
+        "summary": "cutlass_add_transition",
+        "description": "Add a transition on the cut between two butting clips.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTransitionAddArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.transition.add",
+        "x-cutlass-mcp-name": "cutlass_add_transition",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/transition/update": {
+      "post": {
+        "operationId": "cutlass_update_transition",
+        "summary": "cutlass_update_transition",
+        "description": "Change a transition's kind or length.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTransitionUpdateArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.transition.update",
+        "x-cutlass-mcp-name": "cutlass_update_transition",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/transition/remove": {
+      "post": {
+        "operationId": "cutlass_remove_transitions",
+        "summary": "cutlass_remove_transitions",
+        "description": "Remove transitions.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTransitionRemoveArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.transition.remove",
+        "x-cutlass-mcp-name": "cutlass_remove_transitions",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/title/add": {
+      "post": {
+        "operationId": "cutlass_add_title",
+        "summary": "cutlass_add_title",
+        "description": "Add a text title on a video track.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTitleAddArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.title.add",
+        "x-cutlass-mcp-name": "cutlass_add_title",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/title/update": {
+      "post": {
+        "operationId": "cutlass_update_title",
+        "summary": "cutlass_update_title",
+        "description": "Change a title's text, style, opacity or fades.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTitleUpdateArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.title.update",
+        "x-cutlass-mcp-name": "cutlass_update_title",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/marker/add": {
+      "post": {
+        "operationId": "cutlass_add_marker",
+        "summary": "cutlass_add_marker",
+        "description": "Add a marker.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMarkerAddArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.marker.add",
+        "x-cutlass-mcp-name": "cutlass_add_marker",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/marker/update": {
+      "post": {
+        "operationId": "cutlass_update_marker",
+        "summary": "cutlass_update_marker",
+        "description": "Move or rename a marker.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMarkerUpdateArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.marker.update",
+        "x-cutlass-mcp-name": "cutlass_update_marker",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/marker/remove": {
+      "post": {
+        "operationId": "cutlass_remove_markers",
+        "summary": "cutlass_remove_markers",
+        "description": "Remove markers.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMarkerRemoveArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.marker.remove",
+        "x-cutlass-mcp-name": "cutlass_remove_markers",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/in-out": {
+      "post": {
+        "operationId": "cutlass_set_in_out",
+        "summary": "cutlass_set_in_out",
+        "description": "Set or clear the In and Out points (null clears).",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditInOutArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.in-out",
+        "x-cutlass-mcp-name": "cutlass_set_in_out",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/track/add": {
+      "post": {
+        "operationId": "cutlass_add_track",
+        "summary": "cutlass_add_track",
+        "description": "Add a video or audio track.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTrackAddArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.track.add",
+        "x-cutlass-mcp-name": "cutlass_add_track",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/track/update": {
+      "post": {
+        "operationId": "cutlass_update_track",
+        "summary": "cutlass_update_track",
+        "description": "Track name, hidden, locked, targeted, mute, solo and gain.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTrackUpdateArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.track.update",
+        "x-cutlass-mcp-name": "cutlass_update_track",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/track/remove": {
+      "post": {
+        "operationId": "cutlass_remove_track",
+        "summary": "cutlass_remove_track",
+        "description": "Remove a track and its clips.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditTrackRemoveArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.track.remove",
+        "x-cutlass-mcp-name": "cutlass_remove_track",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/sequence": {
+      "post": {
+        "operationId": "cutlass_set_sequence",
+        "summary": "cutlass_set_sequence",
+        "description": "Sequence size and frame rate.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditSequenceArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.sequence",
+        "x-cutlass-mcp-name": "cutlass_set_sequence",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/undo": {
+      "post": {
+        "operationId": "cutlass_undo",
+        "summary": "cutlass_undo",
+        "description": "Undo your own last step, never the user's.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UndoArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "undo",
+        "x-cutlass-mcp-name": "cutlass_undo",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/redo": {
+      "post": {
+        "operationId": "cutlass_redo",
+        "summary": "cutlass_redo",
+        "description": "Redo your own last undone step.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedoArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "redo",
+        "x-cutlass-mcp-name": "cutlass_redo",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/batch/begin": {
+      "post": {
+        "operationId": "cutlass_begin_batch",
+        "summary": "cutlass_begin_batch",
+        "description": "Group edits into one undo step \"Agent: label\".",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchBeginArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "batch.begin",
+        "x-cutlass-mcp-name": "cutlass_begin_batch",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/batch/end": {
+      "post": {
+        "operationId": "cutlass_end_batch",
+        "summary": "cutlass_end_batch",
+        "description": "Close the batch as one undo step.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchEndArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "batch.end",
+        "x-cutlass-mcp-name": "cutlass_end_batch",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/batch/cancel": {
+      "post": {
+        "operationId": "cutlass_cancel_batch",
+        "summary": "cutlass_cancel_batch",
+        "description": "Revert every edit since begin_batch and close the batch.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchCancelArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "batch.cancel",
+        "x-cutlass-mcp-name": "cutlass_cancel_batch",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/exports": {
+      "post": {
+        "operationId": "cutlass_start_export",
+        "summary": "cutlass_start_export",
+        "description": "Render to a file inside the write folders; follow it with export_status.",
+        "tags": [
+          "export"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportsStartArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "exports.start",
+        "x-cutlass-mcp-name": "cutlass_start_export",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      },
+      "get": {
+        "operationId": "cutlass_list_exports",
+        "summary": "cutlass_list_exports",
+        "description": "This process's exports, oldest first.",
+        "tags": [
+          "export"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "exports.list",
+        "x-cutlass-mcp-name": "cutlass_list_exports",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/exports/{exportId}": {
+      "get": {
+        "operationId": "cutlass_export_status",
+        "summary": "cutlass_export_status",
+        "description": "An export's state and progress; waits up to waitMs for a change.",
+        "tags": [
+          "export"
+        ],
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "description": "The export id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          },
+          {
+            "name": "waitMs",
+            "in": "query",
+            "required": false,
+            "description": "Wait at most this long for a change (25000 max).",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "exports.get",
+        "x-cutlass-mcp-name": "cutlass_export_status",
+        "x-cutlass-needs-lock": false,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/exports/{exportId}/cancel": {
+      "post": {
+        "operationId": "cutlass_cancel_export",
+        "summary": "cutlass_cancel_export",
+        "description": "Cancel an export gracefully.",
+        "tags": [
+          "export"
+        ],
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "description": "The export id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportsCancelArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "exports.cancel",
+        "x-cutlass-mcp-name": "cutlass_cancel_export",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": false,
+        "x-cutlass-heavy": false
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The token in <data>/agent/token (endpoint.json names the file as tokenFile)."
+      }
+    },
+    "parameters": {
+      "LockHeader": {
+        "name": "X-Cutlass-Lock",
+        "in": "header",
+        "required": true,
+        "description": "The lockId from POST /v1/lock/acquire.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "AgentHeader": {
+        "name": "X-Cutlass-Agent",
+        "in": "header",
+        "required": false,
+        "description": "Names the caller in the audit log before it holds a lock.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "An error: the code, a sentence saying what to do next, details and, for busy, paused and rate_limited, retryAfterMs.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait, when the error has retryAfterMs.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "LockError": {
+        "description": "lock_required (no valid lock) or lock_lost (revoked, expired or released; details.reason).",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait, when the error has retryAfterMs.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "description": "A successful reply.",
+        "required": [
+          "revision",
+          "warnings"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "description": "The project revision after the call."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Clamps and notes; empty when the call did exactly what was asked."
+          },
+          "result": {
+            "description": "The tool's result."
+          }
+        }
+      },
+      "MutationEnvelope": {
+        "description": "The reply of an edit: the envelope plus what changed.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "changed": {
+                "type": "boolean",
+                "description": "False when the edit clamped to nothing."
+              },
+              "select": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Ids selected after the edit."
+              },
+              "undoLabel": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "What Undo would revert now."
+              },
+              "project": {
+                "type": "object",
+                "description": "The project summary, with returnProject."
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "unauthorized",
+              "forbidden",
+              "lock_required",
+              "lock_lost",
+              "paused",
+              "invalid_argument",
+              "not_found",
+              "conflict",
+              "busy",
+              "unavailable",
+              "payload_too_large",
+              "rate_limited",
+              "internal"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "What happened and what to do next."
+          },
+          "details": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "retryAfterMs": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "description": "A failed reply.",
+        "required": [
+          "revision",
+          "error"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "CallRequest": {
+        "type": "object",
+        "required": [
+          "tool"
+        ],
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "The MCP name (cutlass_split) or the catalog name (edit.split)."
+          },
+          "args": {
+            "type": "object",
+            "description": "The tool's arguments, as its schema in GET /v1/tools."
+          }
+        }
+      },
+      "Instructions": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "LockAcquireArgs": {
+        "type": "object",
+        "properties": {
+          "agentName": {
+            "type": "string",
+            "description": "Your name as the user should see it."
+          },
+          "reason": {
+            "type": "string",
+            "description": "What you are about to do, in a few words."
+          },
+          "waitMs": {
+            "type": "integer",
+            "description": "Wait this long (at most 120000) when the user or another agent is busy.",
+            "minimum": 0,
+            "maximum": 120000
+          },
+          "leaseSeconds": {
+            "type": "integer",
+            "description": "Lease length, 15 to the configured maximum; renewed by every call you make.",
+            "minimum": 15,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "agentName",
+          "reason"
+        ]
+      },
+      "LockRenewArgs": {
+        "type": "object",
+        "properties": {}
+      },
+      "LockReleaseArgs": {
+        "type": "object",
+        "properties": {}
+      },
+      "ShutdownArgs": {
+        "type": "object",
+        "properties": {
+          "save": {
+            "type": "boolean",
+            "description": "Save the project first."
+          }
+        }
+      },
+      "ProjectNewArgs": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "integer",
+            "description": "Canvas width (even).",
+            "minimum": 16,
+            "maximum": 7680
+          },
+          "height": {
+            "type": "integer",
+            "description": "Canvas height (even).",
+            "minimum": 16,
+            "maximum": 4320
+          },
+          "frameRate": {
+            "type": "string",
+            "description": "Frame rate such as 30000/1001, 25 or 30."
+          },
+          "discardChanges": {
+            "type": "boolean",
+            "description": "Headless only: drop unsaved changes."
+          }
+        }
+      },
+      "ProjectOpenArgs": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The .cutlass file."
+          },
+          "discardChanges": {
+            "type": "boolean",
+            "description": "Headless only: drop unsaved changes."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "ProjectSaveArgs": {
+        "type": "object",
+        "properties": {}
+      },
+      "ProjectSaveAsArgs": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The new .cutlass path."
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "Replace an existing file."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "MediaImportArgs": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "description": "Absolute file paths.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "paths"
+        ]
+      },
+      "MediaLevelsArgs": {
+        "type": "object",
+        "properties": {
+          "startFlicks": {
+            "type": "integer",
+            "description": "Source start in flicks."
+          },
+          "startSeconds": {
+            "type": "number",
+            "description": "Source start in seconds."
+          },
+          "endFlicks": {
+            "type": "integer",
+            "description": "Source end in flicks."
+          },
+          "endSeconds": {
+            "type": "number",
+            "description": "Source end in seconds."
+          },
+          "intervalMs": {
+            "type": "integer",
+            "description": "Interval, 10 to 1000 (50).",
+            "minimum": 10,
+            "maximum": 1000
+          }
+        }
+      },
+      "ContactSheetArgs": {
+        "type": "object",
+        "properties": {
+          "frames": {
+            "type": "array",
+            "description": "Frames to show (at most 64).",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 64
+          },
+          "start": {
+            "type": "integer",
+            "description": "First frame of an even spread."
+          },
+          "end": {
+            "type": "integer",
+            "description": "End frame of the spread."
+          },
+          "count": {
+            "type": "integer",
+            "description": "Cells of the spread (at most 64).",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "cellWidth": {
+            "type": "integer",
+            "description": "Cell width, 16 to 1920 (320).",
+            "minimum": 16,
+            "maximum": 1920
+          },
+          "columns": {
+            "type": "integer",
+            "description": "Columns (default: a near square grid).",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "format": {
+            "type": "string",
+            "description": "png or base64.",
+            "enum": [
+              "png",
+              "base64"
+            ]
+          }
+        }
+      },
+      "AudioLevelsArgs": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "description": "First frame.",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "description": "End frame (exclusive).",
+            "minimum": 0
+          },
+          "intervalMs": {
+            "type": "integer",
+            "description": "Interval, 10 to 1000 (50).",
+            "minimum": 10,
+            "maximum": 1000
+          },
+          "trackIds": {
+            "type": "array",
+            "description": "Only these audio tracks (soloed in a snapshot).",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ]
+      },
+      "AudioSilencesArgs": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "description": "First frame (0).",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "description": "End frame (the sequence end).",
+            "minimum": 0
+          },
+          "thresholdDb": {
+            "type": "number",
+            "description": "Threshold in dBFS (-40)."
+          },
+          "minDurationMs": {
+            "type": "integer",
+            "description": "Shortest silence (500).",
+            "minimum": 0
+          },
+          "padMs": {
+            "type": "integer",
+            "description": "Keep this much sound on each side (100).",
+            "minimum": 0
+          },
+          "trackIds": {
+            "type": "array",
+            "description": "Only these audio tracks.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PlayheadSetArgs": {
+        "type": "object",
+        "properties": {
+          "frame": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "frame"
+        ]
+      },
+      "EditPlaceArgs": {
+        "type": "object",
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "description": "The media id."
+          },
+          "at": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "mode": {
+            "type": "string",
+            "description": "overwrite (default) or insert.",
+            "enum": [
+              "overwrite",
+              "insert"
+            ]
+          },
+          "streams": {
+            "type": "string",
+            "description": "both (default), video or audio.",
+            "enum": [
+              "both",
+              "video",
+              "audio"
+            ]
+          },
+          "videoTrackId": {
+            "type": "string",
+            "description": "Video track (default: targeted)."
+          },
+          "audioTrackId": {
+            "type": "string",
+            "description": "Audio track (default: targeted)."
+          },
+          "sourceInFlicks": {
+            "type": "integer",
+            "description": "Source in point."
+          },
+          "sourceInSeconds": {
+            "type": "number",
+            "description": "Source in point in seconds."
+          },
+          "sourceOutFlicks": {
+            "type": "integer",
+            "description": "Source out point."
+          },
+          "sourceOutSeconds": {
+            "type": "number",
+            "description": "Source out point in seconds."
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Length in frames (stills, or instead of an out point).",
+            "minimum": 1
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "mediaId",
+          "at"
+        ]
+      },
+      "EditMoveArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "deltaFrames": {
+            "type": "integer",
+            "description": "Frames to move (negative: left)."
+          },
+          "deltaTracks": {
+            "type": "integer",
+            "description": "Tracks to move (positive: up for video)."
+          },
+          "mode": {
+            "type": "string",
+            "description": "overwrite (default) or insert.",
+            "enum": [
+              "overwrite",
+              "insert"
+            ]
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Move linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds",
+          "deltaFrames"
+        ]
+      },
+      "EditTrimArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The clip."
+          },
+          "edge": {
+            "type": "string",
+            "description": "start or end.",
+            "enum": [
+              "start",
+              "end"
+            ]
+          },
+          "deltaFrames": {
+            "type": "integer",
+            "description": "Frames to move the edge."
+          },
+          "toFrame": {
+            "type": "integer",
+            "description": "Move the edge to this frame.",
+            "minimum": 0
+          },
+          "ripple": {
+            "type": "boolean",
+            "description": "Shift later clips (false)."
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Trim linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId",
+          "edge"
+        ]
+      },
+      "EditRollArgs": {
+        "type": "object",
+        "properties": {
+          "leftClipId": {
+            "type": "string",
+            "description": "The outgoing clip."
+          },
+          "rightClipId": {
+            "type": "string",
+            "description": "The incoming clip."
+          },
+          "deltaFrames": {
+            "type": "integer",
+            "description": "Frames to move the cut."
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Roll linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "leftClipId",
+          "rightClipId",
+          "deltaFrames"
+        ]
+      },
+      "EditSlipArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The clip."
+          },
+          "deltaFrames": {
+            "type": "integer",
+            "description": "Frames to slip the source."
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Slip linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId",
+          "deltaFrames"
+        ]
+      },
+      "EditSplitArgs": {
+        "type": "object",
+        "properties": {
+          "frame": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "trackIds": {
+            "type": "array",
+            "description": "Only these tracks.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clipIds": {
+            "type": "array",
+            "description": "Only these clips.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Split linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "frame"
+        ]
+      },
+      "EditDeleteArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "ripple": {
+            "type": "boolean",
+            "description": "Close the gaps (false)."
+          },
+          "includeLinked": {
+            "type": "boolean",
+            "description": "Delete linked partners too (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds"
+        ]
+      },
+      "EditRemoveRangesArgs": {
+        "type": "object",
+        "properties": {
+          "ranges": {
+            "type": "array",
+            "description": "Ranges [start, end) in frames (at most 500).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer",
+                  "description": "First frame.",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "description": "End frame (exclusive).",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ]
+            },
+            "maxItems": 500
+          },
+          "trackIds": {
+            "type": "array",
+            "description": "Only these tracks.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ripple": {
+            "type": "boolean",
+            "description": "Close the gaps (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "ranges"
+        ]
+      },
+      "EditCloseGapArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "The track."
+          },
+          "gapStart": {
+            "type": "integer",
+            "description": "A frame inside or at the start of the gap.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId",
+          "gapStart"
+        ]
+      },
+      "EditClipPropsArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable."
+          },
+          "opacity": {
+            "type": "number",
+            "description": "0 to 1 (video and titles)."
+          },
+          "transform": {
+            "description": "Video placement (fields optional).",
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "Offset from centre in pixels."
+              },
+              "y": {
+                "type": "number",
+                "description": "Offset from centre in pixels."
+              },
+              "scale": {
+                "type": "number",
+                "description": "Scale (1 fits)."
+              },
+              "cropLeft": {
+                "type": "number",
+                "description": "0 to 0.9."
+              },
+              "cropTop": {
+                "type": "number",
+                "description": "0 to 0.9."
+              },
+              "cropRight": {
+                "type": "number",
+                "description": "0 to 0.9."
+              },
+              "cropBottom": {
+                "type": "number",
+                "description": "0 to 0.9."
+              }
+            }
+          },
+          "color": {
+            "description": "Colour adjustment (fields optional).",
+            "type": "object",
+            "properties": {
+              "brightness": {
+                "type": "number",
+                "description": "-1 to 1 (0)."
+              },
+              "contrast": {
+                "type": "number",
+                "description": "0 to 2 (1)."
+              },
+              "saturation": {
+                "type": "number",
+                "description": "0 to 3 (1)."
+              },
+              "gamma": {
+                "type": "number",
+                "description": "0.1 to 4 (1)."
+              }
+            }
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Clip gain in dB (audio)."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds"
+        ]
+      },
+      "EditSpeedArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "percent": {
+            "type": "integer",
+            "description": "25 to 400.",
+            "minimum": 25,
+            "maximum": 400
+          },
+          "rippleFollowing": {
+            "type": "boolean",
+            "description": "Shift later clips (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds",
+          "percent"
+        ]
+      },
+      "EditLinkArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds"
+        ]
+      },
+      "EditUnlinkArgs": {
+        "type": "object",
+        "properties": {
+          "clipIds": {
+            "type": "array",
+            "description": "Clip ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipIds"
+        ]
+      },
+      "EditVolumeKeysArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The audio clip."
+          },
+          "keys": {
+            "type": "array",
+            "description": "Keys relative to the clip start.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "frame": {
+                  "type": "integer",
+                  "description": "Frame from the clip start.",
+                  "minimum": 0
+                },
+                "db": {
+                  "type": "number",
+                  "description": "Level in dB."
+                }
+              },
+              "required": [
+                "frame",
+                "db"
+              ]
+            },
+            "maxItems": 1000
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId",
+          "keys"
+        ]
+      },
+      "EditTransitionAddArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "The track."
+          },
+          "cutFrame": {
+            "type": "integer",
+            "description": "The cut frame.",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "description": "Transition kind (crossfade).",
+            "enum": [
+              "crossfade",
+              "dipToBlack",
+              "dipToWhite",
+              "wipeLeft",
+              "wipeRight",
+              "slideLeft",
+              "slideRight",
+              "circleOpen",
+              "audioCrossfade"
+            ]
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Length in frames (at least 2).",
+            "minimum": 2
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId",
+          "cutFrame",
+          "durationFrames"
+        ]
+      },
+      "EditTransitionUpdateArgs": {
+        "type": "object",
+        "properties": {
+          "transitionId": {
+            "type": "string",
+            "description": "The transition."
+          },
+          "kind": {
+            "type": "string",
+            "description": "New kind.",
+            "enum": [
+              "crossfade",
+              "dipToBlack",
+              "dipToWhite",
+              "wipeLeft",
+              "wipeRight",
+              "slideLeft",
+              "slideRight",
+              "circleOpen",
+              "audioCrossfade"
+            ]
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "New length.",
+            "minimum": 2
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "transitionId"
+        ]
+      },
+      "EditTransitionRemoveArgs": {
+        "type": "object",
+        "properties": {
+          "transitionIds": {
+            "type": "array",
+            "description": "Transition ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "transitionIds"
+        ]
+      },
+      "EditTitleAddArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "A video track."
+          },
+          "at": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Length in frames.",
+            "minimum": 1
+          },
+          "mode": {
+            "type": "string",
+            "description": "overwrite (default) or insert.",
+            "enum": [
+              "overwrite",
+              "insert"
+            ]
+          },
+          "title": {
+            "description": "Text and style (only text is required).",
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "The text (lines separated by \\n)."
+              },
+              "font": {
+                "type": "string",
+                "description": "builtin:Inter-Bold, a system family or a font file."
+              },
+              "size": {
+                "type": "number",
+                "description": "Font size in canvas pixels."
+              },
+              "color": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "outlineWidth": {
+                "type": "number",
+                "description": "Outline width (0: none)."
+              },
+              "outlineColor": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "box": {
+                "type": "boolean",
+                "description": "Background box."
+              },
+              "boxColor": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "boxPadding": {
+                "type": "number",
+                "description": "Box padding in pixels."
+              },
+              "anchor": {
+                "type": "string",
+                "description": "Position preset.",
+                "enum": [
+                  "center",
+                  "lowerThird",
+                  "top"
+                ]
+              },
+              "offsetX": {
+                "type": "number",
+                "description": "Offset from the anchor in pixels."
+              },
+              "offsetY": {
+                "type": "number",
+                "description": "Offset from the anchor in pixels."
+              }
+            },
+            "required": [
+              "text"
+            ]
+          },
+          "opacity": {
+            "type": "number",
+            "description": "0 to 1."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId",
+          "at",
+          "durationFrames",
+          "title"
+        ]
+      },
+      "EditTitleUpdateArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The title clip."
+          },
+          "title": {
+            "description": "Fields to change.",
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "The text (lines separated by \\n)."
+              },
+              "font": {
+                "type": "string",
+                "description": "builtin:Inter-Bold, a system family or a font file."
+              },
+              "size": {
+                "type": "number",
+                "description": "Font size in canvas pixels."
+              },
+              "color": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "outlineWidth": {
+                "type": "number",
+                "description": "Outline width (0: none)."
+              },
+              "outlineColor": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "box": {
+                "type": "boolean",
+                "description": "Background box."
+              },
+              "boxColor": {
+                "type": "string",
+                "description": "#RRGGBB or #RRGGBBAA."
+              },
+              "boxPadding": {
+                "type": "number",
+                "description": "Box padding in pixels."
+              },
+              "anchor": {
+                "type": "string",
+                "description": "Position preset.",
+                "enum": [
+                  "center",
+                  "lowerThird",
+                  "top"
+                ]
+              },
+              "offsetX": {
+                "type": "number",
+                "description": "Offset from the anchor in pixels."
+              },
+              "offsetY": {
+                "type": "number",
+                "description": "Offset from the anchor in pixels."
+              }
+            }
+          },
+          "opacity": {
+            "type": "number",
+            "description": "0 to 1."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId"
+        ]
+      },
+      "EditMarkerAddArgs": {
+        "type": "object",
+        "properties": {
+          "frame": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Label."
+          },
+          "color": {
+            "type": "string",
+            "description": "#RRGGBB."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "frame"
+        ]
+      },
+      "EditMarkerUpdateArgs": {
+        "type": "object",
+        "properties": {
+          "markerId": {
+            "type": "string",
+            "description": "The marker."
+          },
+          "frame": {
+            "type": "integer",
+            "description": "New frame.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "New label."
+          },
+          "color": {
+            "type": "string",
+            "description": "#RRGGBB."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "markerId"
+        ]
+      },
+      "EditMarkerRemoveArgs": {
+        "type": "object",
+        "properties": {
+          "markerIds": {
+            "type": "array",
+            "description": "Marker ids.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "markerIds"
+        ]
+      },
+      "EditInOutArgs": {
+        "type": "object",
+        "properties": {
+          "inFrame": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "In frame or null."
+          },
+          "outFrame": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Out frame (exclusive) or null."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "EditTrackAddArgs": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "video or audio.",
+            "enum": [
+              "video",
+              "audio"
+            ]
+          },
+          "index": {
+            "type": "integer",
+            "description": "Kind index (1 is V1 or A1); default: on top or bottom.",
+            "minimum": 1
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "EditTrackUpdateArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "The track."
+          },
+          "name": {
+            "type": "string",
+            "description": "New name."
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Video: hide."
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Lock against edits."
+          },
+          "targeted": {
+            "type": "boolean",
+            "description": "Target for placing."
+          },
+          "muted": {
+            "type": "boolean",
+            "description": "Audio: mute."
+          },
+          "solo": {
+            "type": "boolean",
+            "description": "Audio: solo."
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Audio: track gain in dB."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId"
+        ]
+      },
+      "EditTrackRemoveArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "The track."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId"
+        ]
+      },
+      "EditSequenceArgs": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "integer",
+            "description": "Canvas width (even).",
+            "minimum": 16,
+            "maximum": 7680
+          },
+          "height": {
+            "type": "integer",
+            "description": "Canvas height (even).",
+            "minimum": 16,
+            "maximum": 4320
+          },
+          "frameRate": {
+            "type": "string",
+            "description": "Frame rate such as 30000/1001."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "UndoArgs": {
+        "type": "object",
+        "properties": {
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "RedoArgs": {
+        "type": "object",
+        "properties": {
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "BatchBeginArgs": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Short and human, for example Remove silences."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "BatchEndArgs": {
+        "type": "object",
+        "properties": {
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "BatchCancelArgs": {
+        "type": "object",
+        "properties": {
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        }
+      },
+      "ExportsStartArgs": {
+        "type": "object",
+        "properties": {
+          "preset": {
+            "type": "string",
+            "description": "Preset id such as h264 (see capabilities)."
+          },
+          "quality": {
+            "type": "string",
+            "description": "draft, good, high or best (high).",
+            "enum": [
+              "draft",
+              "good",
+              "high",
+              "best"
+            ]
+          },
+          "height": {
+            "type": "integer",
+            "description": "Output height.",
+            "minimum": 16
+          },
+          "width": {
+            "type": "integer",
+            "description": "GIF width.",
+            "minimum": 16
+          },
+          "range": {
+            "type": "string",
+            "description": "whole (default) or inOut; use start and end for a frame range."
+          },
+          "start": {
+            "type": "integer",
+            "description": "First frame of a custom range.",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "description": "End frame of a custom range.",
+            "minimum": 0
+          },
+          "outputPath": {
+            "type": "string",
+            "description": "The output file."
+          },
+          "limitPeaks": {
+            "type": "boolean",
+            "description": "Peak limiter (true)."
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "Replace an existing file (false)."
+          }
+        },
+        "required": [
+          "preset",
+          "outputPath"
+        ]
+      },
+      "ExportsCancelArgs": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

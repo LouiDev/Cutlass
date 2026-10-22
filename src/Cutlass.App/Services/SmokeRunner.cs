@@ -259,7 +259,7 @@ public sealed partial class SmokeRunner
                 _log.Write(string.Join(' ', step.Args));
                 break;
             default:
-                if (!ExecuteEditing(step) && !ExecuteInspect(step) && !await ExecuteSettingsAsync(step) && !await ExecuteAgentAsync(step))
+                if (!ExecuteEditing(step) && !ExecuteInspect(step) && !await ExecuteSettingsAsync(step) && !await ExecuteAgentAsync(step) && !await ExecuteMcpAsync(step) && !await ExecuteClientsAsync(step))
                 {
                     throw Fail("unknown command " + step.Command);
                 }

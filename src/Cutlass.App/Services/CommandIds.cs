@@ -257,8 +257,50 @@ public static class CommandIds
     /// <summary>Agent banner: keep the viewer on what the agent works on (AGENT_INTEGRATION 6.2).</summary>
     public const string AgentToggleFollow = "agent.follow";
 
-    /// <summary>View menu and the status bar badge: show the AGENT tab of the left panel (AGENT_INTEGRATION 6.3).</summary>
+    /// <summary>Agent menu and the status bar badge: show the AGENT tab of the left panel (AGENT_INTEGRATION 6.3).</summary>
     public const string ShowAgentPanel = "view.agentPanel";
+
+    /// <summary>F9, Agent menu and the Agent panel: start or stop the MCP (agent) server for this session (AGENT_INTEGRATION 6.6).</summary>
+    public const string AgentToggleServer = "agent.toggleServer";
+
+    /// <summary>
+    /// Agent menu and the Agent panel: copy the briefing for the client registered last, or the generic briefing when
+    /// none was (AGENT_INTEGRATION 6.6 and 9.4).
+    /// </summary>
+    public const string AgentCopyBriefing = "agent.copyBriefing";
+
+    /// <summary>Agent menu, "Copy briefing for" > HTTP only: the briefing with curl examples (AGENT_INTEGRATION 9.4).</summary>
+    public const string AgentCopyBriefingHttp = "agent.copyBriefingHttp";
+
+    /// <summary>
+    /// The prefix of the "Copy briefing for" submenu's commands, one per client profile (<see cref="AgentCopyBriefingFor"/>);
+    /// they are registered once the profiles are loaded.
+    /// </summary>
+    public const string AgentCopyBriefingPrefix = "agent.copyBriefing.";
+
+    /// <summary>Agent menu and the Agent panel: the client list, "Connect an agent client..." (AGENT_INTEGRATION 9.4).</summary>
+    public const string AgentConnectClients = "agent.connectClients";
+
+    /// <summary>The command id that copies the briefing for one client profile.</summary>
+    /// <param name="profileId">The profile id.</param>
+    /// <returns>The command id.</returns>
+    public static string AgentCopyBriefingFor(string profileId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        return AgentCopyBriefingPrefix + profileId;
+    }
+
+    /// <summary>
+    /// True when a command may run while an agent holds the project: <see cref="AllowedWhileAgentHolds"/> plus the
+    /// per-profile briefing commands, which touch no project data either.
+    /// </summary>
+    /// <param name="id">The command id.</param>
+    /// <returns>True when allowed.</returns>
+    public static bool IsAllowedWhileAgentHolds(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return AllowedWhileAgentHolds.Contains(id) || id.StartsWith(AgentCopyBriefingPrefix, StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// The commands that still run while an agent holds or pauses the project (AGENT_INTEGRATION 3.7 and 3.8): they
@@ -267,8 +309,10 @@ public static class CommandIds
     /// zoom, guides, proxies, snapping, tool selection, monitor switches, match frame, select all, copy, Escape, Save,
     /// Save As, Export, Settings and Quit as the spec lists them. Gap filled here: About (a Settings page), Open Log
     /// Folder and the agent commands themselves (Take over, Pause/Resume, Follow, the Agent panel) are allowed too,
-    /// because they cannot change the project. The routed mark commands of <see cref="RoutedToSource"/> are allowed
-    /// only while they target the Source monitor.
+    /// because they cannot change the project. The Agent menu (AGENT_INTEGRATION 6.6) is allowed as well: Stop asks
+    /// before it takes the project back, and the briefing and client commands touch no project data (the per-client
+    /// briefing commands are allowed through <see cref="IsAllowedWhileAgentHolds"/>). The routed
+    /// mark commands of <see cref="RoutedToSource"/> are allowed only while they target the Source monitor.
     /// </summary>
     public static IReadOnlySet<string> AllowedWhileAgentHolds { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -282,6 +326,7 @@ public static class CommandIds
         Save, SaveAs, Export, Settings, Quit,
         About, OpenLogFolder,
         AgentTakeOver, AgentPauseResume, AgentToggleFollow, ShowAgentPanel,
+        AgentToggleServer, AgentCopyBriefing, AgentCopyBriefingHttp, AgentConnectClients,
     }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>

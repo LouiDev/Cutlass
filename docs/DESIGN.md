@@ -83,7 +83,7 @@ The window opens maximized on first run. The default restored size is 1600x900 a
 
 ```
 +------------------------------------------------------------------------------------+
-| File  Edit  Clip  Sequence  View  Help          beach-day *           [ Export ]   |
+| File  Edit  Clip  Sequence  Agent  View  Help   beach-day *           [ Export ]   |
 +------------------------+--------------------------------------+--------------------+
 | MEDIA | EFFECTS        |  [Timeline|Source]   Auto v  [P] [G] |  INSPECTOR         |
 | [search........] [=][#]|                                      |  > Clip            |
@@ -109,6 +109,7 @@ The window opens maximized on first run. The default restored size is 1600x900 a
 
 - **Proportions.** The top row takes 58% of the height and the timeline 42%. The top columns are 22% (Media), 56% (Viewer) and 22% (Inspector). All boundaries are `GridSplitter`s, and their positions are saved in settings.
 - **Menu row.** It shows the project name, with `*` when there are unsaved changes. Export is the primary (Accent) button.
+- **Menus.** File, Edit, Clip, Sequence, Agent, View, Help. The Agent menu (AGENT_INTEGRATION 6.6 and 9.4): Start MCP server / Stop MCP server (F9); Copy briefing for your agent (for the client registered last, or the generic text); Copy briefing for > one item per client profile, the plain HTTP one last; Connect an agent client... (the client list); Agent panel; Take over (enabled while an agent holds the project). Separators group the server, the briefings, the clients and the panel items. The View menu keeps Agent: Pause / Resume and Agent: Follow. No menu, panel or settings text names a client vendor: the client names come from the profile file (`agent-clients.json`).
 - **Agent banner** (AGENT_INTEGRATION 6.2). While an agent holds, pauses or waits for the project, a 32 px bar spans the window under the menu row:
   - Bg2 background, a 3 px Accent left edge (the Snap/Marker yellow while paused), a 1 px Border bottom line;
   - left: the agent's name in bold and its reason ("**Claude Code** is editing: Remove silences"), then in TextSecondary the last call and its age ("edit.split, 2 s ago"), the elapsed time (`tnum`) and the open batch;
@@ -229,8 +230,8 @@ Context sensitive, with collapsible sections whose state is remembered.
   - cache use against its limit
   - sequence format
   - "Audio unavailable" in amber when OpenAL failed or the device was lost during playback (re-checked after every play start, since a start may reopen the device)
-- **Agent badge** (AGENT_INTEGRATION 6.3), a status bar segment after the job summary while agent connections are on: "Agent ready" (TextSecondary dot), "Agent: Claude Code" (Accent dot), "Agent paused" (Snap/Marker yellow dot) or "Agent waiting". A waiting agent also shows "Claude Code is waiting for the project". A click opens the AGENT tab.
-- **AGENT tab** (AGENT_INTEGRATION 6.3). While connections are allowed the left panel has a third tab (MEDIA | EFFECTS | AGENT): a lock card (phase, agent, reason, lease left, Pause/Resume, Take over), a connection card (the server address, Copy token, Copy Claude Code command), the call log newest first (time, tool, agent, duration, code in Danger for errors, the arguments as a tooltip, at most 500 rows), and Open agent docs and Open log folder. View > Agent Panel opens it too; the View menu also has Agent: Take Over, Agent: Pause / Resume and Agent: Follow.
+- **MCP badge** (AGENT_INTEGRATION 6.6), a status bar segment after the job summary, always shown: "MCP off" (grey dot), "MCP ready" (Success dot), "MCP: exe missing" (Warning dot), "MCP: <agent>" (Accent dot, an agent holds the project, for example "MCP: Smoke"), "MCP paused" (Snap/Marker yellow dot), "MCP waiting", "MCP starting", "MCP: other window" (grey), "MCP: port in use" or "MCP: error" (Danger dot and text). A waiting agent also shows "Claude Code is waiting for the project". A click opens the AGENT tab, or Settings > Agents while the server failed.
+- **AGENT tab** (AGENT_INTEGRATION 6.3 and 6.6). While connections are allowed, or once Agent > Agent panel or the badge asked for it, the left panel has a third tab (MEDIA | EFFECTS | AGENT): the MCP SERVER header block (Server: dot, state, URL and Start/Stop; Exe: the path, "found" in Success or "missing" in Warning; Clients: the count of agent clients whose registration starts this Cutlass ("2 current", Success when at least one, the detected clients and their states as a tooltip) with "Connect..." (the client list); "Copy briefing for your agent" as the primary button and "Open docs"; the links Copy token and Copy exe path), a lock card (phase, agent, reason, lease left, Pause/Resume, Take over), the call log newest first (time, tool, agent, duration, code in Danger for errors, the arguments as a tooltip, at most 500 rows), and Open log folder. Agent > Agent panel opens it; the View menu has Agent: Pause / Resume and Agent: Follow.
 - **Jobs popover.** Clicking the job summary lists index, thumbnail, waveform, proxy and export jobs, each with progress, ETA, cancel and, on failure, "Details". A finished export names and opens the file it really wrote (`name (n).ext` when the target was locked) and lists its warnings (offline media, fallback fonts) in amber under the row. Probing runs inside the import, which the media card shows with its spinner (TECH_BRIEF 6.7).
 
 ---
@@ -425,7 +426,7 @@ The defaults live in a static keymap. Non-letter keys are named by their Avaloni
 | Ctrl+Shift+L | loop | Ctrl+, | settings |
 | Ctrl+N / Ctrl+O | new / open | Ctrl+S / Ctrl+Shift+S | save / save as |
 | Ctrl+I | import | Ctrl+E | export |
-| Ctrl+Q | quit | | |
+| Ctrl+Q | quit | F9 | start / stop the MCP server (Agent menu) |
 
 **While an agent holds the project** (AGENT_INTEGRATION 3.7 and 3.8) only these keys run: transport (Space, Shift+Space, J, K, L) and loop, the playhead steps, edit points, Home and End, go to In/Out, marker navigation, zoom, guides, proxies, snapping, the tool keys, match frame, Ctrl+A, Ctrl+C, Esc, Ctrl+S, Ctrl+Shift+S, Ctrl+E, Ctrl+, and Ctrl+Q. I, O, X and Ctrl+Shift+X run only while they target the Source monitor (Source In/Out are view state). Every other bound key is claimed and dropped with the toast "An agent is editing. Take over to edit.", and its menu item is disabled. Edit > Undo and Redo name the step, for example "Undo Agent: Remove silences"; one Ctrl+Z after Take over reverts a whole agent batch.
 
@@ -528,7 +529,7 @@ Settings (Ctrl+, or Edit > Settings) has five pages: General, Media, Playback, A
   - Port (47390, 1024 to 65535; when it is busy the next nine ports are tried), lease timeout (90 s, 15 to 600) and the longest lease an agent may ask for (300 s, 15 to 600), "Ask me before an agent takes the project" (off).
   - The token, masked, with Copy and "Regenerate token..." (confirms first).
   - "Agent may read from" and "Agent may write to" folder lists with Add (folder picker) and Remove; the project's and its media's folders are always readable, the export folder (or the project's folder) always writable; a long path ends in an ellipsis and shows in full as a tooltip.
-  - MCP setup: the Claude Code command (`claude mcp add cutlass -- <exe>`) and the Claude Desktop JSON with the real path of `Cutlass.Agent.Mcp`, each with Copy, and "Open agent docs" (`AGENT_INTEGRATION.md` beside the exe).
+  - Connect clients (AGENT_INTEGRATION 9.4): the MCP exe the clients start, the client list of Agent > Connect an agent client... (one row per profile: dot, name, transport, state "current", "not registered", "stale: another exe", "foreign entry" or "not installed", Register / Update / Remove and Copy; text-only rows Copy only; detected clients first), the token note, the discovery URLs (`v1/tools?format=openai|anthropic|gemini|markdown`, `v1/openapi.json`, `v1/instructions`) each with Copy, and "Open agent docs" (`AGENT_INTEGRATION.md` beside the exe).
 - **About:** versions, the ffmpeg build id and path, (Inter is under the SIL OFL) and project links as plain text. Help > About Cutlass opens this page; Help also has Open Log Folder (`<data>/logs`) and Locate ffmpeg.
 
 **First-run help.** When ffmpeg is missing, the install hints are `winget install Gyan.FFmpeg` (Windows), `sudo apt install ffmpeg` (Debian/Ubuntu) and `sudo dnf install ffmpeg` (Fedora with RPM Fusion), plus a manual Locate button.

@@ -195,6 +195,88 @@ public sealed class HttpHostTests : IAsyncLifetime
         Assert.Equal(ErrorCode.NotFound, unknownTool.Error!.Code);
     }
 
+    [Theory]
+    [InlineData("/v1/tools", "application/json")]
+    [InlineData("/v1/tools?format=openai", "application/json")]
+    [InlineData("/v1/tools?format=anthropic", "application/json")]
+    [InlineData("/v1/tools?format=gemini", "application/json")]
+    [InlineData("/v1/tools?format=markdown", "text/markdown")]
+    [InlineData("/v1/openapi.json", "application/json")]
+    [InlineData("/v1/instructions", "application/json")]
+    public async Task DiscoveryRoutesNeedTheTokenAndServeTheirDocuments(string path, string mediaType)
+    {
+        var missing = await RawAsync(HttpMethod.Get, path, headers: h => h.Authorization = null);
+        Assert.Equal(HttpStatusCode.Unauthorized, missing.StatusCode);
+        Assert.Equal("unauthorized", (await ErrorOf(missing)).GetProperty("code").GetString());
+
+        var ok = await RawAsync(HttpMethod.Get, path);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        Assert.Equal(mediaType, ok.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("utf-8", ok.Content.Headers.ContentType?.CharSet);
+        var body = await ok.Content.ReadAsStringAsync();
+        var question = path.IndexOf('?', StringComparison.Ordinal);
+        var expected = path switch
+        {
+            "/v1/openapi.json" => Cutlass.Agent.Api.Export.OpenApiDocument.Build("9.9.9"),
+            "/v1/instructions" => null,
+            _ => Cutlass.Agent.Api.Export.ToolExport.TryRender(question < 0 ? null : path[(question + 8)..], out var text, out _) ? text : "?",
+        };
+        if (expected is not null)
+        {
+            Assert.Equal(expected, body);
+        }
+        else
+        {
+            using var doc = JsonDocument.Parse(body);
+            Assert.Equal(AgentInstructions.Http(), doc.RootElement.GetProperty("text").GetString());
+        }
+
+        // Discovery is a read like any other: no lock, and it lands in the audit log.
+        Assert.Contains(_host.Audit.Snapshot(), e => e.Tool.StartsWith("discovery.", StringComparison.Ordinal) && e.Code == "ok");
+    }
+
+    [Fact]
+    public async Task AnUnknownToolsFormatIsInvalid()
+    {
+        var response = await RawAsync(HttpMethod.Get, "/v1/tools?format=yaml");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("format", (await ErrorOf(response)).GetProperty("details").GetProperty("field").GetString());
+    }
+
+    [Fact]
+    public async Task TheGenericCallTakesMcpNamesAndAlwaysAnswersTheEnvelope()
+    {
+        var args = JsonDocument.Parse("""{"trackIds":["tr_v1"],"from":0}""").RootElement;
+        var byCatalog = await _client.CallGenericAsync("project.get", args);
+        var byMcp = await _client.CallGenericAsync("cutlass_get_project", args);
+        Assert.Null(byMcp.Error);
+        Assert.Equal(byCatalog.Result!.Value.GetRawText(), byMcp.Result!.Value.GetRawText());
+        Assert.Equal("project.get", _host.Audit.Snapshot()[^1].Tool);
+
+        // Describe answers text on its route, but the envelope with result.text through /v1/call.
+        var describe = await RawAsync(HttpMethod.Post, "/v1/call", """{"tool":"cutlass_describe_project","args":{}}""");
+        Assert.Equal("application/json", describe.Content.Headers.ContentType?.MediaType);
+        using (var doc = JsonDocument.Parse(await describe.Content.ReadAsStringAsync()))
+        {
+            Assert.Contains("V1 tr_v1:", doc.RootElement.GetProperty("result").GetProperty("text").GetString(), StringComparison.Ordinal);
+            Assert.True(doc.RootElement.TryGetProperty("revision", out _));
+        }
+
+        // A discovery document through /v1/call is the envelope's result.
+        var tools = await _client.CallGenericAsync("discovery.tools", JsonDocument.Parse("""{"format":"anthropic"}""").RootElement);
+        Assert.Null(tools.Error);
+        Assert.Equal(ToolCatalog.McpTools.Count(), tools.Result!.Value.GetArrayLength());
+        var instructions = await _client.CallGenericAsync("discovery.instructions");
+        Assert.Equal(AgentInstructions.Http(), instructions.Result!.Value.GetProperty("text").GetString());
+
+        // An edit by MCP name still needs the lock, and unknown names keep the name the caller used.
+        var split = await _client.CallGenericAsync("cutlass_split", JsonDocument.Parse("""{"frame":50}""").RootElement);
+        Assert.Equal(ErrorCode.LockRequired, split.Error!.Code);
+        var unknown = await _client.CallGenericAsync("cutlass_no_such_tool");
+        Assert.Equal(ErrorCode.NotFound, unknown.Error!.Code);
+        Assert.Contains("cutlass_no_such_tool", unknown.Error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task EventsLongPollReturnsWhenSomethingHappens()
     {

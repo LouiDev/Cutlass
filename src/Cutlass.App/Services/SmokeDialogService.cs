@@ -118,8 +118,39 @@ public sealed class SmokeDialogService : IDialogService
     /// <inheritdoc />
     public Task<string?> PickFolderAsync(string title, string? startFolder) => Answer<string?>("pick a folder: " + title, null);
 
+    /// <summary>The text of the last clipboard copy (the smoke command <c>agent-briefing</c> checks it), or null.</summary>
+    public string? LastClipboardText { get; private set; }
+
     /// <inheritdoc />
-    public Task CopyToClipboardAsync(string text) => Answer("copy to clipboard", true);
+    public Task CopyToClipboardAsync(string text)
+    {
+        LastClipboardText = text;
+        return Answer("copy to clipboard (" + text.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " characters)", true);
+    }
+
+    /// <summary>
+    /// The first-start dialog never registers a client in a smoke run: it answers Start with "Register with: none"
+    /// (the client registry is a sandbox anyway, AGENT_INTEGRATION 9.3).
+    /// </summary>
+    /// <param name="dialog">The dialog state.</param>
+    /// <returns>True (Start).</returns>
+    public Task<bool> ShowMcpStartDialogAsync(McpStartDialogViewModel dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        LastDialog = dialog;
+        dialog.SelectedChoice = McpClientChoice.None;
+        return Answer("MCP start dialog (Start without registering; " + dialog.Choices.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) + " choices)", true);
+    }
+
+    /// <summary>Agent > Connect an agent client... is recorded (for <c>show-dialog connect-clients</c>) and closed at once.</summary>
+    /// <param name="dialog">The client list.</param>
+    /// <returns>A completed task.</returns>
+    public Task ShowConnectClientsDialogAsync(ConnectClientsViewModel dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        LastDialog = dialog;
+        return Answer("connect clients dialog (" + dialog.Items.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) + " clients; closed)", true);
+    }
 
     /// <inheritdoc />
     public Task RevealInFileManagerAsync(string path) => Answer("reveal " + path, true);

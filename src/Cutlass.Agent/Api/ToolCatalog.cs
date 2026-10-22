@@ -31,6 +31,13 @@ public static class ToolCatalog
     /// <returns>The tool, or null.</returns>
     public static ToolInfo? FindByMcpName(string mcpName) => ByMcp.GetValueOrDefault(mcpName);
 
+    /// <summary>
+    /// Finds a tool by catalog name or, failing that, by MCP name: <c>/v1/call</c> accepts both (AGENT_INTEGRATION 9.2).
+    /// </summary>
+    /// <param name="name">For example <c>edit.split</c> or <c>cutlass_split</c>.</param>
+    /// <returns>The tool, or null.</returns>
+    public static ToolInfo? FindAny(string name) => Find(name) ?? FindByMcpName(name);
+
     /// <summary>Matches a request to a tool and extracts the route arguments.</summary>
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The path without query, for example <c>/v1/media/m_1/peaks</c>.</param>
@@ -145,6 +152,12 @@ public static class ToolCatalog
         Read("events", null, "GET", "/v1/events", "Long-poll for project, lock, export and playhead events after a sequence number.",
             S().Int("after", "Return events after this sequence number.", false, 0).Int("timeoutMs", "Wait at most this long (25000 max).", false, 0, 25000));
         Locked("shutdown", null, "POST", "/v1/shutdown", "Stops a headless serve process.", S().Bool("save", "Save the project first."));
+
+        // Discovery (9.2): documents for harnesses, served as is rather than in the envelope.
+        Read("discovery.tools", null, "GET", "/v1/tools", "The tool catalog as JSON, or tool definitions for a harness with format openai, anthropic, gemini or markdown.",
+            S().Str("format", "json (default), openai, anthropic, gemini or markdown.", false, "json", "openai", "anthropic", "gemini", "markdown"), result: ToolResultKind.Document);
+        Read("discovery.openapi", null, "GET", "/v1/openapi.json", "OpenAPI 3.1 description of the whole HTTP API.", S(), result: ToolResultKind.Document);
+        Read("discovery.instructions", null, "GET", "/v1/instructions", "The workflow rules and the /v1/call contract as text, for a harness without MCP.", S(), result: ToolResultKind.Document);
 
         // Project and media.
         Read("project.get", "cutlass_get_project", "GET", "/v1/project", "Timeline as JSON: tracks, clips (ids, frames, source times), transitions, markers, media.",

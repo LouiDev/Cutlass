@@ -22,7 +22,7 @@ case "$runtime" in
     *) echo "Unsupported runtime: $runtime (use linux-x64 or win-x64)" >&2; exit 2 ;;
 esac
 required+=("Cutlass.App.deps.json" "Cutlass.Agent.Mcp.deps.json")
-required+=("fonts/Inter-Regular.ttf" "fonts/Inter-SemiBold.ttf" "fonts/Inter-Bold.ttf" "fonts/OFL.txt" "AGENT_INTEGRATION.md")
+required+=("fonts/Inter-Regular.ttf" "fonts/Inter-SemiBold.ttf" "fonts/Inter-Bold.ttf" "fonts/OFL.txt" "AGENT_INTEGRATION.md" "agent-clients.json")
 
 if [ -z "$output" ]; then
     output="$root/artifacts/publish/$runtime"
@@ -79,8 +79,17 @@ if [ "$runtime" = "linux-x64" ] && [ "$(uname -s)" = "Linux" ]; then
 fi
 
 if [ "$runs_here" = true ]; then
-    if ! registration="$("$output/$mcp" --print-registration)" || [[ "$registration" != *"claude mcp add cutlass"* ]]; then
+    if ! registration="$("$output/$mcp" --print-registration)"; then
         echo "The published $mcp --print-registration failed." >&2
+        exit 1
+    fi
+    # One block per client profile: a line that starts with the profile name (AGENT_INTEGRATION 9.4).
+    absent=()
+    while IFS= read -r name; do
+        grep -qF -- "$name" <<<"$(grep -E '^[^ ]' <<<"$registration")" || absent+=("$name")
+    done < <(grep -oE '"name": *"[^"]+"' "$output/agent-clients.json" | sed -E 's/"name": *"([^"]+)"//')
+    if [ "${#absent[@]}" -gt 0 ]; then
+        echo "The published $mcp --print-registration printed no block for: ${absent[*]}" >&2
         exit 1
     fi
     echo "$registration"

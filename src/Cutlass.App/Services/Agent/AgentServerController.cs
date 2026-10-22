@@ -15,9 +15,12 @@ namespace Cutlass.App.Services.Agent;
 /// Agent panel, and ticks the <see cref="AgentLockDriver"/> from a 1 s <see cref="DispatcherTimer"/>. A second
 /// Cutlass that finds a live owner in <c>endpoint.json</c> does not serve. On Windows the prefix is
 /// <c>http://localhost:N/</c>; when http.sys refuses it the controller retries <c>127.0.0.1</c>, then shows the error
-/// with the <c>netsh http add urlacl</c> hint. UI thread only, except the token and file I/O, which run off it.
+/// with the <c>netsh http add urlacl</c> hint. Agent > Start/Stop MCP server (AGENT_INTEGRATION 6.6) switches it for
+/// this session on top of the setting (<see cref="StartForSessionAsync"/>, <see cref="StopForSessionAsync"/>); a change
+/// of "Allow agent connections" in Settings ends that session switch. UI thread only, except the token and file I/O,
+/// which run off it.
 /// </summary>
-public sealed partial class AgentServerController : IAgentSettingsHost, IAsyncDisposable
+public sealed partial class AgentServerController : IAgentSettingsHost, IAgentServerSwitch, IAsyncDisposable
 {
     /// <summary>How many ports after the default are tried when the default is busy.</summary>
     public const int PortProbeCount = 9;
@@ -36,6 +39,12 @@ public sealed partial class AgentServerController : IAgentSettingsHost, IAsyncDi
     private string? _token;
     private string? _baseUrl;
     private bool _disposed;
+
+    // Agent > Start/Stop MCP server: true or false overrides the setting for this session; null follows it.
+    private bool? _sessionSwitch;
+
+    // True while StartForSessionAsync saves "Allow agent connections" on, so the change does not end the session switch.
+    private bool _savingKeepOn;
 
     /// <summary>Creates the controller (UI thread). Nothing listens until <see cref="StartAsync"/>.</summary>
     /// <param name="services">The composition root.</param>
@@ -89,6 +98,17 @@ public sealed partial class AgentServerController : IAgentSettingsHost, IAsyncDi
     /// <summary>The base URL while listening, for example <c>http://localhost:47390/</c>, else null.</summary>
     public string? BaseUrl => _baseUrl;
 
+    /// <inheritdoc />
+    public bool IsSwitchedOn => ShouldServe(_services.Settings);
+
+    /// <inheritdoc />
+    public string ExpectedBaseUrl => _baseUrl ?? string.Create(
+        CultureInfo.InvariantCulture,
+        $"http://{(OperatingSystem.IsWindows() ? "localhost" : "127.0.0.1")}:{(_options.AgentServer && _options.AgentPort is { } port ? port : _services.Settings.AgentPort)}/");
+
+    /// <inheritdoc />
+    public string TokenFile => _tokens.TokenFile;
+
     /// <summary>The audit log of agent calls (the Agent panel reads it).</summary>
     public AuditLog Audit => _audit;
 
@@ -106,13 +126,47 @@ public sealed partial class AgentServerController : IAgentSettingsHost, IAsyncDi
 
     private MainWindowViewModel MainWindow => _host.MainWindow;
 
-    /// <summary>True when connections should be on: the setting, or <c>--agent-server</c>.</summary>
+    /// <summary>
+    /// True when connections should be on: Agent > Start/Stop MCP server for this session when used, else the
+    /// setting or <c>--agent-server</c>.
+    /// </summary>
     /// <param name="settings">The settings.</param>
     /// <returns>True when the server should run.</returns>
     public bool ShouldServe(AppSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        return _options.AgentServer || settings.AgentConnectionsEnabled;
+        return _sessionSwitch ?? (_options.AgentServer || settings.AgentConnectionsEnabled);
+    }
+
+    /// <inheritdoc />
+    public async Task StartForSessionAsync(bool keepOn)
+    {
+        _sessionSwitch = true;
+        if (keepOn && !_services.Settings.AgentConnectionsEnabled)
+        {
+            _savingKeepOn = true;
+            try
+            {
+                await _services.ApplySettingsAsync(_services.Settings with { AgentConnectionsEnabled = true }, CancellationToken.None);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _log?.Write("agent: \"Keep it on\" could not be saved: " + ex.Message);
+            }
+            finally
+            {
+                _savingKeepOn = false;
+            }
+        }
+
+        await StartAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task StopForSessionAsync()
+    {
+        _sessionSwitch = false;
+        await StartAsync();
     }
 
     /// <summary>Starts or stops the server to match the settings in effect (after startup and every settings change).</summary>
@@ -221,7 +275,14 @@ public sealed partial class AgentServerController : IAgentSettingsHost, IAsyncDi
     private async void OnSettingsChanged(object? sender, SettingsChangedEventArgs e)
     {
         var (old, now) = (e.OldSettings, e.NewSettings);
-        if (ShouldServe(old) == ShouldServe(now) && old.AgentPort == now.AgentPort)
+        var before = ShouldServe(old);
+        if (!_savingKeepOn && old.AgentConnectionsEnabled != now.AgentConnectionsEnabled)
+        {
+            // The user switched "Allow agent connections" in Settings: that decides again.
+            _sessionSwitch = null;
+        }
+
+        if (before == ShouldServe(now) && old.AgentPort == now.AgentPort)
         {
             return;
         }

@@ -49,13 +49,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <param name="clearCache">Clears the cache and answers the bytes still in use, or null for
     /// <see cref="ISettingsHost.ClearCacheAsync"/> (the main window also queues the open project's jobs again).</param>
     /// <param name="agents">The agent server for the Agents page (status, token, MCP paths), or null when there is none.</param>
+    /// <param name="clients">The agent client list for the Agents page's "Connect clients" group, or null.</param>
     public SettingsViewModel(
         ISettingsHost host,
         IDialogService dialogs,
         Func<Task>? clearRecent = null,
         SettingsPage page = SettingsPage.General,
         Func<CancellationToken, Task<long>>? clearCache = null,
-        Services.Agent.IAgentSettingsHost? agents = null)
+        Services.Agent.IAgentSettingsHost? agents = null,
+        ConnectClientsViewModel? clients = null)
     {
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(dialogs);
@@ -72,6 +74,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         FfmpegStatusText = host.IsFfmpegReady ? "in use: " + host.FfmpegSummary : "not found";
         IsFfmpegOk = host.IsFfmpegReady;
         AttachAgents(agents);
+        Clients = clients;
         LoadFrom(host.Settings);
         SelectedPageIndex = (int)page;
     }

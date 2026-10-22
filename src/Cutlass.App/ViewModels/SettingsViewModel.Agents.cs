@@ -10,7 +10,8 @@ namespace Cutlass.App.ViewModels;
 /// <summary>
 /// The Settings > Agents page (AGENT_INTEGRATION 6.1): "Allow agent connections" with its status line, the port, the
 /// lease and the longest lease an agent may ask for, "Ask me before an agent takes the project", the read and write
-/// folder lists, the token (masked, Copy, Regenerate) and the MCP setup text with Copy buttons and "Open agent docs".
+/// folder lists, the token (masked, Copy, Regenerate) and the "Connect clients" group (AGENT_INTEGRATION 9.4): the
+/// shared client list with its actions, the server's discovery URLs with Copy, and "Open agent docs".
 /// The fields join the dialog's working copy and are validated and applied with the other pages.
 /// </summary>
 public sealed partial class SettingsViewModel
@@ -96,14 +97,14 @@ public sealed partial class SettingsViewModel
     public static string AgentFoldersNote =>
         "The project's folder and its media folders are always readable; the export folder (or the project's folder) is always writable.";
 
-    /// <summary>The Claude Code registration command with the real exe path (AGENT_INTEGRATION 5.5).</summary>
-    public string ClaudeCodeCommandText => "claude mcp add cutlass -- " + QuoteIfNeeded(McpPath);
+    /// <summary>The agent client list of the "Connect clients" group, or null when there is none.</summary>
+    public ConnectClientsViewModel? Clients { get; }
 
-    /// <summary>The Claude Desktop <c>claude_desktop_config.json</c> entry with the real exe path.</summary>
-    public string ClaudeDesktopJsonText =>
-        "{ \"mcpServers\": { \"cutlass\": { \"command\": \"" + McpPath.Replace("\\", "\\\\", StringComparison.Ordinal) + "\", \"args\": [] } } }";
+    /// <summary>True when the "Connect clients" group shows the client list.</summary>
+    public bool HasClients => Clients is not null;
 
-    private string McpPath => _agents?.McpExecutablePath ?? "Cutlass.Agent.Mcp";
+    /// <summary>The MCP exe the clients start (shown under the group).</summary>
+    public string McpPathText => _agents?.McpExecutablePath ?? "Cutlass.Agent.Mcp";
 
     /// <summary>Wraps a path in double quotes when it holds a space.</summary>
     /// <param name="path">The path.</param>
@@ -131,6 +132,13 @@ public sealed partial class SettingsViewModel
         }
 
         UpdateAgentStatus();
+        if (Clients is { } clients)
+        {
+            // The rows and the discovery URLs at once; the client checks (a CLI may take seconds) finish in the background.
+            await clients.LoadAsync();
+            _ = clients.RefreshAsync(force: false);
+        }
+
         try
         {
             _token = await agents.ReadTokenAsync(CancellationToken.None);
@@ -297,12 +305,6 @@ public sealed partial class SettingsViewModel
             AgentTokenNote = "Could not regenerate the token: " + ex.Message;
         }
     }
-
-    [RelayCommand]
-    private Task CopyClaudeCodeCommandAsync() => _dialogs.CopyToClipboardAsync(ClaudeCodeCommandText);
-
-    [RelayCommand]
-    private Task CopyClaudeDesktopJsonAsync() => _dialogs.CopyToClipboardAsync(ClaudeDesktopJsonText);
 
     [RelayCommand]
     private Task OpenAgentDocsAsync() =>

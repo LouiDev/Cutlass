@@ -15,7 +15,7 @@ public sealed partial class MainWindowViewModel
     /// <param name="page">The page shown first.</param>
     /// <returns>The dialog view model (call <see cref="SettingsViewModel.LoadAsync"/> to fill the cache use and devices).</returns>
     public SettingsViewModel CreateSettingsDialog(SettingsPage page = SettingsPage.General) =>
-        new(_services, _dialogs, ClearRecentProjectsAsync, page, ClearCacheForSettingsAsync, AgentServer);
+        new(_services, _dialogs, ClearRecentProjectsAsync, page, ClearCacheForSettingsAsync, AgentServer, Clients);
 
     private void RegisterSettingsCommands()
     {

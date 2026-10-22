@@ -58,7 +58,32 @@ internal sealed class FakeDialogService : IDialogService
 
     public Task<string?> PickFolderAsync(string title, string? startFolder) => Task.FromResult(NextFolder);
 
-    public Task CopyToClipboardAsync(string text) => Task.CompletedTask;
+    public List<string> Clipboard { get; } = [];
+
+    public Task CopyToClipboardAsync(string text)
+    {
+        Clipboard.Add(text);
+        return Task.CompletedTask;
+    }
+
+    public List<McpStartDialogViewModel> McpDialogs { get; } = [];
+
+    /// <summary>Answers the MCP start dialog (null cancels it).</summary>
+    public Func<McpStartDialogViewModel, Task<bool>>? McpDialogAnswer { get; set; }
+
+    public Task<bool> ShowMcpStartDialogAsync(McpStartDialogViewModel dialog)
+    {
+        McpDialogs.Add(dialog);
+        return McpDialogAnswer?.Invoke(dialog) ?? Task.FromResult(false);
+    }
+
+    public List<ConnectClientsViewModel> ConnectDialogs { get; } = [];
+
+    public Task ShowConnectClientsDialogAsync(ConnectClientsViewModel dialog)
+    {
+        ConnectDialogs.Add(dialog);
+        return Task.CompletedTask;
+    }
 
     public Task RevealInFileManagerAsync(string path) => Task.CompletedTask;
 }

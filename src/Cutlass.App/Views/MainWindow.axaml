@@ -98,6 +98,27 @@
             <Separator />
             <MenuItem Header="Sequence _Settings..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SequenceSettings}" />
           </MenuItem>
+          <!-- AGENT_INTEGRATION 6.6 and 9.4: the Agent menu between Sequence and View. "Copy briefing for" lists one item per
+               client profile (the plain HTTP one last); the plain item renders for the client registered last. -->
+          <MenuItem Header="_Agent">
+            <MenuItem Header="{Binding Agent.ServerMenuText}" InputGesture="F9" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentToggleServer}" />
+            <Separator />
+            <MenuItem Header="_Copy briefing for your agent" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentCopyBriefing}" />
+            <MenuItem Header="Copy _briefing for" ItemsSource="{Binding BriefingTargets}">
+              <MenuItem.ItemContainerTheme>
+                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:BriefingTargetItem">
+                  <Setter Property="Header" Value="{Binding Header}" />
+                  <Setter Property="Command" Value="{Binding Command}" />
+                  <Setter Property="CommandParameter" Value="{Binding CommandId}" />
+                </ControlTheme>
+              </MenuItem.ItemContainerTheme>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="C_onnect an agent client..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentConnectClients}" />
+            <Separator />
+            <MenuItem Header="Agent _panel" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowAgentPanel}" />
+            <MenuItem Header="_Take over" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentTakeOver}" />
+          </MenuItem>
           <MenuItem Header="_View">
             <MenuItem Header="_Timeline Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowTimelineMonitor}" />
             <MenuItem Header="_Source Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowSourceMonitor}" />
@@ -115,8 +136,6 @@
             <Separator />
             <MenuItem Header="_Jobs" Command="{Binding Jobs.ToggleCommand}" />
             <Separator />
-            <MenuItem Header="_Agent Panel" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowAgentPanel}" />
-            <MenuItem Header="Agent: Take _Over" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentTakeOver}" />
             <MenuItem Header="Agent: _Pause / Resume" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentPauseResume}" />
             <MenuItem Header="Agent: _Follow" ToggleType="CheckBox" IsChecked="{Binding Agent.Follow}" />
           </MenuItem>
@@ -259,14 +278,16 @@
             <Rectangle Classes="separator" />
             <Button x:Name="JobsButton" Classes="link" Content="{Binding Jobs.Summary}" ToolTip.Tip="Show jobs"
                     Command="{Binding Jobs.ToggleCommand}" />
-            <!-- AGENT_INTEGRATION 6.3: the agent badge after the jobs; a click opens the AGENT tab. -->
-            <Rectangle Classes="separator" IsVisible="{Binding Agent.IsBadgeVisible}" />
-            <Button Classes="link" Command="{Binding Agent.ShowPanelCommand}" IsVisible="{Binding Agent.IsBadgeVisible}"
-                    ToolTip.Tip="Agent connections: show the AGENT panel">
+            <!-- AGENT_INTEGRATION 6.6: the MCP badge after the jobs ("MCP off", "MCP ready", "MCP: <agent>",
+                 "MCP: port in use"); a click opens the AGENT tab, or Settings > Agents while the server failed. -->
+            <Rectangle Classes="separator" />
+            <Button Classes="link" Command="{Binding Agent.BadgeClickCommand}" ToolTip.Tip="{Binding Agent.BadgeToolTip}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
-                         Classes.accent="{Binding Agent.BadgeIsAccent}" Classes.amber="{Binding Agent.BadgeIsAmber}" />
-                <TextBlock Text="{Binding Agent.BadgeText}" />
+                         Classes.ok="{Binding Agent.BadgeIsOk}" Classes.accent="{Binding Agent.BadgeIsAccent}"
+                         Classes.amber="{Binding Agent.BadgeIsAmber}" Classes.warning="{Binding Agent.BadgeIsWarning}"
+                         Classes.error="{Binding Agent.BadgeIsDanger}" />
+                <TextBlock Text="{Binding Agent.BadgeText}" Classes.danger="{Binding Agent.BadgeIsDanger}" />
               </StackPanel>
             </Button>
             <TextBlock Text="{Binding Agent.PendingText}" Margin="8,0,0,0"

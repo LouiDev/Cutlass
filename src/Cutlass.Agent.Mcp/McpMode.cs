@@ -12,7 +12,7 @@ public enum McpMode
     /// <summary>No MCP: the headless host plus the HTTP API for scripts.</summary>
     Serve,
 
-    /// <summary>Prints the registration command and the Claude Desktop JSON, then exits.</summary>
+    /// <summary>Prints one registration block per agent client profile (docs/AGENT_INTEGRATION.md 9.4), then exits.</summary>
     PrintRegistration,
 
     /// <summary>Prints the usage text, then exits.</summary>

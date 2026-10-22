@@ -18,18 +18,96 @@ public sealed class AgentViewModelTests
     private long _now = 5_000_000;
 
     [Fact]
-    public void FreeShowsNoBannerAndAReadyBadge()
+    public void FreeShowsNoBannerAndTheServerBadge()
     {
         var (vm, _, _) = Create();
-        vm.IsEnabled = true;
         Assert.False(vm.IsBannerVisible);
         Assert.False(vm.IsLocked);
-        Assert.True(vm.IsBadgeVisible);
-        Assert.Equal("Agent ready", vm.BadgeText);
+        Assert.Equal("MCP off", vm.BadgeText);
         Assert.True(vm.BadgeIsIdle);
         Assert.False(vm.TakeOverCommand.CanExecute(null));
-        vm.IsEnabled = false;
-        Assert.False(vm.IsBadgeVisible);
+        Assert.Equal("_Start MCP server", vm.ServerMenuText);
+        Assert.Equal("Start", vm.ServerButtonText);
+
+        // AGENT_INTEGRATION 6.6: the badge follows the server once an agent does not hold the project.
+        // An exe that exists, so the background exe check cannot turn the badge amber.
+        var server = new FakeAgentServer { BaseUrl = "http://localhost:47390/", McpExecutablePath = typeof(AgentViewModelTests).Assembly.Location };
+        vm.Server = server;
+        server.Set(AgentServerStatus.Listening, "Listening on http://localhost:47390/");
+        vm.IsEnabled = true;
+        Assert.Equal("MCP ready", vm.BadgeText);
+        Assert.True(vm.BadgeIsOk);
+        Assert.False(vm.BadgeIsIdle);
+        Assert.Equal("ready", vm.ServerStateText);
+        Assert.Equal("http://localhost:47390/", vm.ServerUrlText);
+        Assert.Equal("_Stop MCP server", vm.ServerMenuText);
+        Assert.Equal("Stop", vm.ServerButtonText);
+
+        server.Set(AgentServerStatus.PortInUse, "Port 47390 is in use");
+        Assert.Equal("MCP: port in use", vm.BadgeText);
+        Assert.True(vm.BadgeIsDanger);
+        Assert.True(vm.IsServerError);
+        Assert.Equal(string.Empty, vm.ServerUrlText);
+        Assert.Contains("Settings > Agents", vm.BadgeToolTip, StringComparison.Ordinal);
+
+        server.Set(AgentServerStatus.Error, "Access denied");
+        Assert.Equal("MCP: error", vm.BadgeText);
+        server.Set(AgentServerStatus.OtherWindow, "Another Cutlass window serves agents");
+        Assert.Equal("MCP: other window", vm.BadgeText);
+        Assert.True(vm.BadgeIsIdle);
+        server.Set(AgentServerStatus.Off, "Off");
+        Assert.Equal("MCP off", vm.BadgeText);
+    }
+
+    [Fact]
+    public async Task AMissingExeTurnsTheReadyBadgeAmber()
+    {
+        var (vm, _, _) = Create();
+        var server = new FakeAgentServer { McpExecutablePath = Path.Combine(Path.GetTempPath(), "cutlass-no-such-dir", "Cutlass.Agent.Mcp.exe") };
+        vm.Server = server;
+        server.Set(AgentServerStatus.Listening, "Listening on http://localhost:47390/");
+        await vm.RefreshExeAsync();
+        Assert.Equal("missing", vm.ExeStateText);
+        Assert.True(vm.IsExeMissing);
+        Assert.Equal("MCP: exe missing", vm.BadgeText);
+        Assert.True(vm.BadgeIsWarning);
+
+        var exe = Path.GetTempFileName();
+        try
+        {
+            server.McpExecutablePath = exe;
+            await vm.RefreshExeAsync();
+            Assert.Equal("found", vm.ExeStateText);
+            Assert.Equal("MCP ready", vm.BadgeText);
+        }
+        finally
+        {
+            File.Delete(exe);
+        }
+    }
+
+    [Fact]
+    public async Task TheBadgeOpensThePanelOrSettingsWhenTheServerFailed()
+    {
+        var (vm, _, _) = Create();
+        var actions = new FakeActions();
+        vm.Actions = actions;
+        var shown = 0;
+        vm.ShowPanelRequested += (_, _) => shown++;
+        await vm.BadgeClickCommand.ExecuteAsync(null);
+        Assert.Equal(1, shown);
+
+        var server = new FakeAgentServer();
+        vm.Server = server;
+        server.Set(AgentServerStatus.PortInUse, "Port 47390 is in use");
+        await vm.BadgeClickCommand.ExecuteAsync(null);
+        Assert.Equal(1, shown);
+        Assert.Equal(["settings"], actions.Calls);
+
+        await vm.ToggleServerCommand.ExecuteAsync(null);
+        await vm.CopyBriefingCommand.ExecuteAsync(null);
+        await vm.ConnectClientsCommand.ExecuteAsync(null);
+        Assert.Equal(["settings", "toggle", "briefing last", "connect"], actions.Calls);
     }
 
     [Fact]
@@ -50,7 +128,7 @@ public sealed class AgentViewModelTests
         Assert.Equal("no calls yet", vm.LastCallText);
         Assert.Equal("0:00", vm.ElapsedText);
         Assert.Equal("Pause", vm.PauseResumeText);
-        Assert.Equal("Agent: Claude Code", vm.BadgeText);
+        Assert.Equal("MCP: Claude Code", vm.BadgeText);
         Assert.True(vm.BadgeIsAccent);
         Assert.True(vm.TakeOverCommand.CanExecute(null));
 
@@ -80,7 +158,7 @@ public sealed class AgentViewModelTests
         Assert.False(vm.IsHeld);
         Assert.True(vm.IsLocked);
         Assert.Equal("Resume", vm.PauseResumeText);
-        Assert.Equal("Agent paused", vm.BadgeText);
+        Assert.Equal("MCP paused", vm.BadgeText);
         Assert.True(vm.BadgeIsAmber);
         Assert.False(vm.BadgeIsAccent);
         Assert.StartsWith("Lease paused, ", vm.LeaseText, StringComparison.Ordinal);
@@ -119,7 +197,7 @@ public sealed class AgentViewModelTests
         Assert.True(vm.IsBannerVisible);
         Assert.False(vm.ShowBannerControls);
         Assert.Equal(text, vm.HeadlineText);
-        Assert.Equal("Agent ready", vm.BadgeText);
+        Assert.Equal("MCP off", vm.BadgeText);
 
         _now += 2_900;
         vm.Refresh();
@@ -144,8 +222,7 @@ public sealed class AgentViewModelTests
         Assert.Equal("Cursor", vm.AgentNameText);
         Assert.Equal("is waiting for the project: Add a title", vm.HeadlineText);
         Assert.Equal("Cursor is waiting for the project", vm.PendingText);
-        Assert.Equal("Agent waiting", vm.BadgeText);
-        Assert.True(vm.IsBadgeVisible);
+        Assert.Equal("MCP waiting", vm.BadgeText);
 
         // The gesture ends: the grant happens and the banner turns into the held banner.
         agentLock.OnUserStateChanged(AgentUserState.Idle, _now);
@@ -211,6 +288,35 @@ public sealed class AgentViewModelTests
         vm.Controls = controls;
         agentLock.Changed += (_, state) => vm.Apply(state);
         return (vm, agentLock, controls);
+    }
+
+    private sealed class FakeActions : IAgentMenuActions
+    {
+        public List<string> Calls { get; } = [];
+
+        public Task ToggleServerAsync()
+        {
+            Calls.Add("toggle");
+            return Task.CompletedTask;
+        }
+
+        public Task CopyBriefingAsync(string? targetId)
+        {
+            Calls.Add("briefing " + (targetId ?? "last"));
+            return Task.CompletedTask;
+        }
+
+        public Task ConnectClientsAsync()
+        {
+            Calls.Add("connect");
+            return Task.CompletedTask;
+        }
+
+        public Task ShowAgentSettingsAsync()
+        {
+            Calls.Add("settings");
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeControls : IAgentLockControls

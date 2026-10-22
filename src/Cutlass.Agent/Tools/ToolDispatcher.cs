@@ -61,6 +61,7 @@ public sealed class ToolDispatcher : IDisposable
         new EventTools(this).Register();
         new BatchTools(this).Register();
         new EditTools(this).Register();
+        new DiscoveryTools(this).Register();
     }
 
     /// <summary>The host.</summary>

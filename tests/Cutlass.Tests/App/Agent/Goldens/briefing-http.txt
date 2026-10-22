@@ -1,0 +1,35 @@
+Cutlass (a video editor) is running on this machine and lets you work in the open project through its tools.
+Do not ask me to click anything; the editor is read only for me while you hold the lock.
+
+Current state
+- Project: "interview" (D:/Edits/interview.cutlass), unsaved changes
+- Sequence: 1920x1080 at 25 fps, 00:00:18:00 (450 frames)
+- Tracks: V2: 1 clip; V1: 2 clips, 1 transition; A1: 1 clip; A2: 1 clip
+- Media: long.mp4, short.mov, still.png, music.wav, uhd.mp4
+- Lock: held by Claude Code
+
+How to work
+1. Read the status, then take the edit lock with your name and a short reason. Wait if it reports busy.
+2. Describe the project before any edit; use clip, track and media ids from it, never guess ids.
+3. Wrap each task in a batch with a short label, so I can undo it as one step.
+4. Check your work by rendering frames (and reading the audio levels for sound) instead of assuming.
+5. Timeline positions are frames; source positions are flicks (705600000 per second); the project frame rate is in the status.
+6. When done, release the lock, then tell me what changed in a few lines.
+
+Tools: you reach Cutlass over its local HTTP API at http://localhost:47390/ with curl. Every request needs the header "Authorization: Bearer $CUTLASS_TOKEN". Set the token once in your shell (bash), and never print it:
+  export CUTLASS_TOKEN="$(cat 'C:/Users/me/AppData/Local/Cutlass/agent/token')"   # the token file of Cutlass
+
+The steps above as curl calls (JSON field names are camelCase):
+1. Read the status, then take the lock and keep result.lockId for every change (wait if it reports busy):
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" http://localhost:47390/v1/status
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" -H "Content-Type: application/json" -d '{"agentName":"<your name>","reason":"<short reason>"}' http://localhost:47390/v1/lock/acquire
+2. Describe the project:
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" http://localhost:47390/v1/project/describe
+3. Edit with the lock id between POST v1/batch/begin {"label":"<short label>"} and POST v1/batch/end {}, for example place media at frame 0:
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" -H "X-Cutlass-Lock: <lockId>" -H "Content-Type: application/json" -d '{"mediaId":"<media id>","at":0,"mode":"overwrite","streams":"both"}' http://localhost:47390/v1/edit/place
+4. Save a frame as a PNG file and look at it:
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" -o frame.png "http://localhost:47390/v1/frame/30?width=640"
+6. Release the lock:
+   curl -s -H "Authorization: Bearer $CUTLASS_TOKEN" -H "X-Cutlass-Lock: <lockId>" -H "Content-Type: application/json" -d '{}' http://localhost:47390/v1/lock/release
+
+Every tool is also reachable as POST http://localhost:47390/v1/call with {"tool": "<name>", "args": { ... }}; the list is at http://localhost:47390/v1/tools?format=markdown, and every endpoint is described in C:/Program Files/Cutlass/AGENT_INTEGRATION.md (section 4).

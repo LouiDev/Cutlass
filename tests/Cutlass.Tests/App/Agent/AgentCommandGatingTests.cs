@@ -36,6 +36,8 @@ public sealed class AgentCommandGatingTests : IDisposable
             CommandIds.Save, CommandIds.SaveAs, CommandIds.Export, CommandIds.Settings, CommandIds.Quit,
             CommandIds.About, CommandIds.OpenLogFolder,
             CommandIds.AgentTakeOver, CommandIds.AgentPauseResume, CommandIds.AgentToggleFollow, CommandIds.ShowAgentPanel,
+            CommandIds.AgentToggleServer, CommandIds.AgentCopyBriefing, CommandIds.AgentCopyBriefingHttp,
+            CommandIds.AgentConnectClients,
         ];
         Assert.Equal(expected.Order(StringComparer.Ordinal), CommandIds.AllowedWhileAgentHolds.Order(StringComparer.Ordinal));
         Assert.Equal(
@@ -45,6 +47,12 @@ public sealed class AgentCommandGatingTests : IDisposable
         {
             Assert.DoesNotContain(edit, CommandIds.AllowedWhileAgentHolds);
         }
+
+        // AGENT_INTEGRATION 9.4: the per-client briefing commands are allowed too, by their prefix.
+        Assert.Equal("agent.copyBriefing.cursor", CommandIds.AgentCopyBriefingFor("cursor"));
+        Assert.True(CommandIds.IsAllowedWhileAgentHolds(CommandIds.AgentCopyBriefingFor("cursor")));
+        Assert.True(CommandIds.IsAllowedWhileAgentHolds(CommandIds.AgentConnectClients));
+        Assert.False(CommandIds.IsAllowedWhileAgentHolds(CommandIds.Split));
     }
 
     [Fact]

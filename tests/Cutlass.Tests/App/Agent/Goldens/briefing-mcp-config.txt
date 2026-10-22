@@ -1,0 +1,35 @@
+Cutlass (a video editor) is running on this machine and lets you work in the open project through its tools.
+Do not ask me to click anything; the editor is read only for me while you hold the lock.
+
+Current state
+- Project: "interview" (D:/Edits/interview.cutlass), unsaved changes
+- Sequence: 1920x1080 at 25 fps, 00:00:18:00 (450 frames)
+- Tracks: V2: 1 clip; V1: 2 clips, 1 transition; A1: 1 clip; A2: 1 clip
+- Media: long.mp4, short.mov, still.png, music.wav, uhd.mp4
+- Lock: held by Claude Code
+
+How to work
+1. Read the status, then take the edit lock with your name and a short reason. Wait if it reports busy.
+2. Describe the project before any edit; use clip, track and media ids from it, never guess ids.
+3. Wrap each task in a batch with a short label, so I can undo it as one step.
+4. Check your work by rendering frames (and reading the audio levels for sound) instead of assuming.
+5. Timeline positions are frames; source positions are flicks (705600000 per second); the project frame rate is in the status.
+6. When done, release the lock, then tell me what changed in a few lines.
+
+Tools: you reach Cutlass through the MCP server "cutlass" in Cursor. The steps above map to these tools:
+1. cutlass_status, then cutlass_acquire_lock
+2. cutlass_describe_project
+3. cutlass_begin_batch and cutlass_end_batch
+4. cutlass_render_frame and cutlass_audio_levels
+6. cutlass_release_lock
+
+If you cannot see any cutlass_* tools, the MCP server is not registered in this session. Register it, then restart the session:
+  Add to <home>/.cursor/mcp.json:
+  {
+    "mcpServers": {
+      "cutlass": {
+        "command": "C:/Program Files/Cutlass/Cutlass.Agent.Mcp.exe",
+        "args": []
+      }
+    }
+  }

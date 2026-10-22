@@ -102,7 +102,8 @@ finally {
 Copy-Item -LiteralPath (Join-Path $root 'docs/AGENT_INTEGRATION.md') -Destination (Join-Path $Output 'AGENT_INTEGRATION.md') -Force
 
 # What a published folder must hold to run: the app, the MCP exe, the OpenAL native for the runtime, the drawtext
-# fonts and the agent docs.
+# fonts, the agent docs and the agent client profiles (AGENT_INTEGRATION 9.3; read by the app and by the MCP exe's
+# --print-registration from beside the exes).
 if ($Runtime -eq 'win-x64') {
     $required = @('Cutlass.App.exe', 'Cutlass.Agent.Mcp.exe', 'soft_oal.dll')
 }
@@ -110,20 +111,29 @@ else {
     $required = @('Cutlass.App', 'Cutlass.Agent.Mcp', 'libopenal.so')
 }
 $required += @('Cutlass.App.deps.json', 'Cutlass.Agent.Mcp.deps.json')
-$required += @('fonts/Inter-Regular.ttf', 'fonts/Inter-SemiBold.ttf', 'fonts/Inter-Bold.ttf', 'fonts/OFL.txt', 'AGENT_INTEGRATION.md')
+$required += @('fonts/Inter-Regular.ttf', 'fonts/Inter-SemiBold.ttf', 'fonts/Inter-Bold.ttf', 'fonts/OFL.txt', 'AGENT_INTEGRATION.md', 'agent-clients.json')
 $missing = @($required | Where-Object { -not (Test-Path -LiteralPath (Join-Path $Output $_) -PathType Leaf) })
 if ($missing.Count -gt 0) {
     throw ("The published folder {0} lacks: {1}" -f $Output, ($missing -join ', '))
 }
 
-# Run the published MCP exe once when it can run here; it must print the registration and exit with 0.
+# Run the published MCP exe once when it can run here; it must print one registration block per client profile
+# (a line that starts with the profile name) and exit with 0.
 $runsHere = ($Runtime -eq 'win-x64' -and [System.IO.Path]::DirectorySeparatorChar -eq '\') -or
     ($Runtime -eq 'linux-x64' -and [System.IO.Path]::DirectorySeparatorChar -eq '/' -and (Test-Path -LiteralPath '/proc'))
 if ($runsHere) {
     $mcpExe = Join-Path $Output $required[1]
     $registration = & $mcpExe --print-registration
-    if ($LASTEXITCODE -ne 0 -or -not ($registration -match 'claude mcp add cutlass')) {
+    if ($LASTEXITCODE -ne 0) {
         throw "The published $($required[1]) --print-registration failed (exit code $LASTEXITCODE)."
+    }
+    $catalog = Get-Content -LiteralPath (Join-Path $Output 'agent-clients.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $absent = @($catalog.clients | Where-Object {
+            $name = $_.name
+            -not ($registration | Where-Object { $_.StartsWith($name + ',') -or $_.StartsWith($name + ':') })
+        } | ForEach-Object { $_.id })
+    if ($catalog.clients.Count -eq 0 -or $absent.Count -gt 0) {
+        throw ("The published {0} --print-registration printed no block for: {1}" -f $required[1], ($absent -join ', '))
     }
     Write-Host ($registration -join [Environment]::NewLine)
 }

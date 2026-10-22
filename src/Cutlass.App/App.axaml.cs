@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Cutlass.Agent.Lock;
 using Cutlass.App.Services;
 using Cutlass.App.Services.Agent;
+using Cutlass.App.Services.Agent.Clients;
 using Cutlass.App.ViewModels;
 using Cutlass.App.Views;
 
@@ -51,6 +52,21 @@ public sealed partial class App : Application
             var agentHost = new AppAgentHost(services, vm, dialogs, vm.Log, leaseOptions: leaseOptions);
             var agentServer = new AgentServerController(services, agentHost, options, vm.Log);
             vm.AgentServer = agentServer;
+
+            // AGENT_INTEGRATION 9.3: the agent clients come from the profile file beside the exe and the user profiles in
+            // <data>/agent/clients. Client CLIs run through CliProcess (never ProcessRunner), off the UI thread. A smoke
+            // run uses a sandbox home next to its script and a runner that starts nothing, so it never touches a real
+            // client configuration (the smoke command "settings agent-home=<dir>" moves the sandbox).
+            vm.ClientRegistry = options.SmokeScriptPath is { } smokeScript
+                ? AgentClientRegistry.ForSandbox(
+                    Path.Combine(Path.GetDirectoryName(Path.GetFullPath(smokeScript)) ?? ".", "agent-clients-home"),
+                    new SmokeCliRunner(smokeLog is null ? null : smokeLog.Write))
+                : new AgentClientRegistry(
+                    AgentClientEnvironment.Current(),
+                    new CliProcess(),
+                    Path.Combine(AppContext.BaseDirectory, AgentClientRegistry.ProfileFileName),
+                    Path.Combine(services.Paths.AgentDirectory, "clients"),
+                    Path.Combine(services.Paths.AgentDirectory, "clients.state.json"));
             vm.AgentRuntime = agentServer;
             window.DataContext = vm;
             desktop.MainWindow = window;
@@ -94,7 +110,8 @@ public sealed partial class App : Application
         {
             code = await new SmokeRunner(vm, services, dialogs, window.CaptureAsync, log)
             {
-                CaptureDialog = (dialog, path) => WindowCapture.CaptureDialogAsync(window, dialog, path),
+                CaptureDialog = (dialog, path, height) => WindowCapture.CaptureDialogAsync(window, dialog, path, height),
+                CaptureMenu = (header, path, submenus) => WindowCapture.CaptureMenuAsync(window, header, path, submenus),
                 AgentServer = agentServer,
             }.RunFileAsync(script);
         }

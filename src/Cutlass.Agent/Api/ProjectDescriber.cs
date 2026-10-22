@@ -127,6 +127,71 @@ public static class ProjectDescriber
         return sb.ToString();
     }
 
+    /// <summary>
+    /// A short track overview for the agent briefing (MCP_HOSTING_CONCEPT 5.1): one line per track, top to bottom,
+    /// with its clip and transition counts and its muted, hidden or locked state, for example
+    /// <c>V1: 2 clips, 1 transition</c>. When the project has more tracks than <paramref name="maxLines"/>, the last
+    /// line counts the rest (<c>... 3 more tracks</c>). Pure; any thread; invariant culture.
+    /// </summary>
+    /// <param name="project">The project.</param>
+    /// <param name="maxLines">The most lines, at least 1.</param>
+    /// <returns>The lines separated by <c>\n</c>, or "no tracks".</returns>
+    public static string Summary(Project project, int maxLines)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxLines, 1);
+        var c = CultureInfo.InvariantCulture;
+        var tracks = ProjectSummaryMapper.TopToBottom(project).ToList();
+        if (tracks.Count == 0)
+        {
+            return "no tracks";
+        }
+
+        var shown = tracks.Count <= maxLines ? tracks.Count : maxLines - 1;
+        var lines = new List<string>(maxLines);
+        foreach (var track in tracks.Take(shown))
+        {
+            var parts = new List<string>
+            {
+                track.Clips.Length switch
+                {
+                    0 => "empty",
+                    1 => "1 clip",
+                    var n => string.Create(c, $"{n} clips"),
+                },
+            };
+            if (track.Transitions.Length > 0)
+            {
+                parts.Add(track.Transitions.Length == 1 ? "1 transition" : string.Create(c, $"{track.Transitions.Length} transitions"));
+            }
+
+            if (track.Kind == TrackKind.Audio && track.Muted)
+            {
+                parts.Add("muted");
+            }
+
+            if (track.Kind == TrackKind.Video && track.Hidden)
+            {
+                parts.Add("hidden");
+            }
+
+            if (track.Locked)
+            {
+                parts.Add("locked");
+            }
+
+            lines.Add(track.Name + ": " + string.Join(", ", parts));
+        }
+
+        if (shown < tracks.Count)
+        {
+            var rest = tracks.Count - shown;
+            lines.Add(rest == 1 ? "... 1 more track" : string.Create(c, $"... {rest} more tracks"));
+        }
+
+        return string.Join('\n', lines);
+    }
+
     private static string MediaLine(MediaAsset asset, bool online)
     {
         var c = CultureInfo.InvariantCulture;

@@ -30,6 +30,12 @@
     <Content Include="Assets/Fonts/*" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />
     <!-- The window icon (DESIGN 8); the same file is the exe icon above. -->
     <AvaloniaResource Include="Assets/cutlass.ico" />
+    <!-- AGENT_INTEGRATION 6.6: the default agent briefing templates (a user copy in <data>/agent/ replaces them). -->
+    <EmbeddedResource Include="Services/Agent/Briefing/*.md" LogicalName="Cutlass.App.Services.Agent.Briefing.%(Filename)%(Extension)" />
+    <!-- AGENT_INTEGRATION 9.3: the agent client profiles, copied beside the exe (users may edit or override them) and
+         embedded as the fallback when the file is missing. -->
+    <Content Include="Assets/agent-clients.json" CopyToOutputDirectory="PreserveNewest" Link="agent-clients.json" />
+    <EmbeddedResource Include="Assets/agent-clients.json" LogicalName="Cutlass.App.Assets.agent-clients.json" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:views="using:Cutlass.App.Views"
+        x:Class="Cutlass.App.Views.ConnectClientsDialog"
+        x:DataType="vm:ConnectClientsViewModel"
+        Title="{x:Static vm:ConnectClientsViewModel.Title}"
+        Width="700" Height="640" MinWidth="560" MinHeight="420"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.note">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBox.output">
+      <Setter Property="FontFamily" Value="monospace" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="IsReadOnly" Value="True" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxHeight" Value="140" />
+      <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+    </Style>
+  </Window.Styles>
+
+  <!-- AGENT_INTEGRATION 9.4: Agent > Connect an agent client... The intro, the client rows, the output of the last
+       action, the token note, Check again and Close. -->
+  <DockPanel Margin="16">
+    <TextBlock DockPanel.Dock="Top" Text="{x:Static vm:ConnectClientsViewModel.IntroText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <Button Content="Check again" Command="{Binding RefreshNowCommand}" MinWidth="96" HorizontalContentAlignment="Center"
+                ToolTip.Tip="Check every client's registration again" />
+        <Button Classes="accent" Content="Close" IsDefault="True" IsCancel="True" Command="{Binding CloseCommand}" MinWidth="80"
+                HorizontalContentAlignment="Center" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" IsVisible="{Binding IsRefreshing}">
+        <ProgressBar IsIndeterminate="True" Width="60" MinWidth="60" Height="4" VerticalAlignment="Center" />
+        <TextBlock Classes="secondary" Text="Checking the clients..." VerticalAlignment="Center" />
+      </StackPanel>
+    </DockPanel>
+    <TextBlock DockPanel.Dock="Bottom" Classes="note" Text="{x:Static vm:ConnectClientsViewModel.TokenNoteText}" Margin="0,8,0,0" />
+    <TextBox DockPanel.Dock="Bottom" Classes="output" Text="{Binding OutputText, Mode=OneWay}" IsVisible="{Binding HasOutput}" Margin="0,8,0,0" />
+    <ScrollViewer>
+      <!-- The right margin keeps the Copy buttons clear of the overlay scrollbar. -->
+      <views:ClientListView Margin="0,0,12,0" />
+    </ScrollViewer>
+  </DockPanel>
+</Window>

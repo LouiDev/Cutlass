@@ -21,7 +21,7 @@ public sealed class McpOptions
           Cutlass.Agent.Mcp serve --project <file> [--create] [--port N] [--allow-read <dir>]... [--allow-write <dir>]...
               No MCP: the headless engine plus the HTTP API for scripts; runs until /v1/shutdown or Ctrl+C.
           Cutlass.Agent.Mcp --print-registration
-              Prints the 'claude mcp add' command and the Claude Desktop JSON for this exe.
+              Prints how to register this exe with every agent client profile (CLI command, config entry or harness text).
           Cutlass.Agent.Mcp --help
         """;
 

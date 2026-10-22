@@ -120,4 +120,19 @@ public interface IDialogService
     /// <param name="path">The file.</param>
     /// <returns>A task that completes when the request was handed to the OS.</returns>
     Task OpenFileAsync(string path) => RevealInFileManagerAsync(path);
+
+    /// <summary>
+    /// Shows the first-start dialog of Agent > Start MCP server (AGENT_INTEGRATION 6.6 and 9.4). The default cancels.
+    /// </summary>
+    /// <param name="dialog">The dialog state.</param>
+    /// <returns>True for Start (or after a registration ran), false for Cancel.</returns>
+    Task<bool> ShowMcpStartDialogAsync(McpStartDialogViewModel dialog) => Task.FromResult(false);
+
+    /// <summary>
+    /// Shows Agent > Connect an agent client..., the client list (AGENT_INTEGRATION 9.4), until it is closed. The
+    /// default shows nothing.
+    /// </summary>
+    /// <param name="dialog">The client list.</param>
+    /// <returns>A task that completes when the dialog closed.</returns>
+    Task ShowConnectClientsDialogAsync(ConnectClientsViewModel dialog) => Task.CompletedTask;
 }

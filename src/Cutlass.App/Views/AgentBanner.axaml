@@ -26,7 +26,7 @@
         <Button Classes="accent" Content="Allow" Command="{Binding AllowCommand}" IsVisible="{Binding IsAsking}" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6" Margin="10,0" VerticalAlignment="Center" ClipToBounds="True">
-        <!-- Name and headline read as one sentence ("Claude Code is editing: ..."): a word space, not the 6 px gap. -->
+        <!-- Name and headline read as one sentence ("&lt;agent&gt; is editing: ..."): a word space, not the 6 px gap. -->
         <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
           <TextBlock FontWeight="SemiBold" Text="{Binding AgentNameText}" VerticalAlignment="Center" />
           <TextBlock Text="{Binding HeadlineText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="520" />

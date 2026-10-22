@@ -91,7 +91,7 @@ public sealed class AgentEventQueue
     /// <param name="after">The last sequence number the client saw.</param>
     /// <param name="timeoutMs">The longest wait (capped at 25 s).</param>
     /// <param name="ct">Cancels the wait.</param>
-    /// <returns>The events, the next cursor and the gap flag.</returns>
+    /// <returns>The events, the sequence number to pass as <paramref name="after"/> next, and the gap flag.</returns>
     public async Task<EventsDto> WaitAsync(long after, int timeoutMs, CancellationToken ct)
     {
         var deadline = TimeSpan.FromMilliseconds(Math.Clamp(timeoutMs, 0, MaxTimeoutMs));

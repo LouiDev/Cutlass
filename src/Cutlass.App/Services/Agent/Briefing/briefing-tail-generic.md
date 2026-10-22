@@ -1,0 +1,3 @@
+How to reach Cutlass
+- Over MCP: the server is named "cutlass". The steps above map to cutlass_status, cutlass_acquire_lock, cutlass_describe_project, cutlass_begin_batch and cutlass_end_batch, cutlass_render_frame and cutlass_audio_levels, and cutlass_release_lock. If you cannot see any cutlass_* tools, the MCP server is not registered in your client: in Cutlass use Agent > Connect an agent client..., then restart the session.
+- Over HTTP (any tool-calling harness or script): the base URL is {url}. Read the workflow from {url}v1/instructions and the tools from {url}v1/tools?format=markdown, and call a tool with POST {url}v1/call and the bearer token from the token file of Cutlass (see {docs}, sections 4 and 9).

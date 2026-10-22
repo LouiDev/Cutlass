@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "toolFormats": ["openai", "anthropic", "gemini", "markdown"],
+  "clients": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "transport": "mcp-stdio",
+      "detect": { "command": "claude" },
+      "register": { "command": "claude", "args": ["mcp", "add", "cutlass", "--scope", "{scope}", "--", "{exe}"] },
+      "probe": {
+        "command": "claude",
+        "args": ["mcp", "get", "cutlass"],
+        "fallbackArgs": ["mcp", "list"],
+        "registeredWhen": "{exe}",
+        "notRegisteredWhen": ["No MCP server named", "No MCP servers configured"],
+        "scopeField": "Scope:",
+        "commandField": "Command:",
+        "listPrefix": "cutlass:"
+      },
+      "remove": { "command": "claude", "args": ["mcp", "remove", "cutlass", "-s", "{scope}"] },
+      "scopes": ["user", "local"],
+      "note": "Restart open Claude Code sessions to see the cutlass tools. Local scope: only sessions started in the project folder."
+    },
+    {
+      "id": "claude-desktop",
+      "name": "Claude Desktop",
+      "transport": "mcp-stdio",
+      "detect": {
+        "file": {
+          "windows": "{appdata}/Claude",
+          "macos": "{home}/Library/Application Support/Claude",
+          "linux": "{home}/.config/Claude"
+        }
+      },
+      "configFile": {
+        "windows": "{appdata}/Claude/claude_desktop_config.json",
+        "macos": "{home}/Library/Application Support/Claude/claude_desktop_config.json",
+        "linux": "{home}/.config/Claude/claude_desktop_config.json"
+      },
+      "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "Quit and restart Claude Desktop to load the server."
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "transport": "mcp-stdio",
+      "detect": { "file": "{home}/.cursor" },
+      "configFile": "{home}/.cursor/mcp.json",
+      "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "Cursor picks the server up in Settings > MCP."
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf",
+      "transport": "mcp-stdio",
+      "detect": { "file": "{home}/.codeium/windsurf" },
+      "configFile": "{home}/.codeium/windsurf/mcp_config.json",
+      "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "Refresh the MCP servers in the Cascade panel."
+    },
+    {
+      "id": "vscode",
+      "name": "VS Code (Copilot agent mode)",
+      "transport": "mcp-stdio",
+      "detect": {
+        "command": "code",
+        "file": {
+          "windows": "{appdata}/Code/User",
+          "macos": "{home}/Library/Application Support/Code/User",
+          "linux": "{home}/.config/Code/User"
+        }
+      },
+      "configFile": {
+        "windows": "{appdata}/Code/User/mcp.json",
+        "macos": "{home}/Library/Application Support/Code/User/mcp.json",
+        "linux": "{home}/.config/Code/User/mcp.json"
+      },
+      "configEntry": { "path": "servers.cutlass", "value": { "type": "stdio", "command": "{exe}", "args": [] } },
+      "note": "Start the server from the MCP: List Servers command, then use agent mode."
+    },
+    {
+      "id": "gemini-cli",
+      "name": "Gemini CLI",
+      "transport": "mcp-stdio",
+      "detect": { "command": "gemini", "file": "{home}/.gemini" },
+      "configFile": "{home}/.gemini/settings.json",
+      "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "Restart the Gemini CLI; /mcp lists the server."
+    },
+    {
+      "id": "codex-cli",
+      "name": "Codex CLI",
+      "transport": "mcp-stdio",
+      "detect": { "command": "codex", "file": "{home}/.codex" },
+      "configFile": "{home}/.codex/config.toml",
+      "configFormat": "toml",
+      "configEntry": { "path": "mcp_servers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "Restart the Codex CLI to load the server."
+    },
+    {
+      "id": "continue",
+      "name": "Continue",
+      "transport": "mcp-stdio",
+      "detect": { "file": "{home}/.continue" },
+      "configFile": "{home}/.continue/mcpServers/cutlass.json",
+      "configEntry": { "path": "mcpServers.cutlass", "value": { "command": "{exe}", "args": [] } },
+      "note": "MCP tools are available in Continue's agent mode."
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "transport": "mcp-stdio",
+      "detect": {
+        "command": "zed",
+        "file": {
+          "windows": "{appdata}/Zed",
+          "macos": "{home}/.config/zed",
+          "linux": "{home}/.config/zed"
+        }
+      },
+      "configFile": {
+        "windows": "{appdata}/Zed/settings.json",
+        "macos": "{home}/.config/zed/settings.json",
+        "linux": "{home}/.config/zed/settings.json"
+      },
+      "configEntry": { "path": "context_servers.cutlass", "value": { "source": "custom", "command": "{exe}", "args": [] } },
+      "note": "Zed starts context servers from its settings; the Agent panel lists the tools."
+    },
+    {
+      "id": "openai-compatible",
+      "name": "OpenAI-compatible harness",
+      "transport": "http",
+      "briefing": "harness",
+      "toolsFormat": "openai",
+      "example": "build/examples/agent-openai-compatible.py",
+      "text": "Cutlass for an OpenAI-compatible tool-calling harness (OpenAI, Azure OpenAI, Ollama, LM Studio, vLLM and others)\nBase URL: {url}\nTool definitions (function calling): {url}v1/tools?format=openai\nCall a tool: POST {url}v1/call with {\"tool\": \"<name>\", \"args\": { ... }} and the header Authorization: Bearer <token>\nWorkflow text for the system prompt: {url}v1/instructions\nToken: {token}\nExample: python build/examples/agent-openai-compatible.py --base-url <endpoint> --model <model> --task \"<task>\""
+    },
+    {
+      "id": "anthropic-sdk",
+      "name": "Anthropic SDK harness",
+      "transport": "http",
+      "briefing": "harness",
+      "toolsFormat": "anthropic",
+      "example": "build/examples/agent-anthropic.py",
+      "text": "Cutlass for an Anthropic SDK tool-use loop\nBase URL: {url}\nTool definitions (tools parameter): {url}v1/tools?format=anthropic\nCall a tool: POST {url}v1/call with {\"tool\": \"<name>\", \"args\": { ... }} and the header Authorization: Bearer <token>\nWorkflow text for the system prompt: {url}v1/instructions\nToken: {token}\nExample: python build/examples/agent-anthropic.py --task \"<task>\""
+    },
+    {
+      "id": "http",
+      "name": "HTTP only (curl)",
+      "transport": "http",
+      "briefing": "http",
+      "example": "build/examples/agent-http.ps1",
+      "text": "Cutlass over plain HTTP (curl, scripts, any language)\nBase URL: {url}\nEvery request needs the header Authorization: Bearer <token>\nToken: {token}\nTools: {url}v1/tools?format=markdown and the OpenAPI document {url}v1/openapi.json\nCall a tool: POST {url}v1/call with {\"tool\": \"<name>\", \"args\": { ... }}\nExample: powershell -File build/examples/agent-http.ps1"
+    }
+  ]
+}

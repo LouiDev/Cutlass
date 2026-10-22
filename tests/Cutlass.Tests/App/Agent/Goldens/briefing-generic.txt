@@ -1,0 +1,21 @@
+Cutlass (a video editor) is running on this machine and lets you work in the open project through its tools.
+Do not ask me to click anything; the editor is read only for me while you hold the lock.
+
+Current state
+- Project: "interview" (D:/Edits/interview.cutlass), unsaved changes
+- Sequence: 1920x1080 at 25 fps, 00:00:18:00 (450 frames)
+- Tracks: V2: 1 clip; V1: 2 clips, 1 transition; A1: 1 clip; A2: 1 clip
+- Media: long.mp4, short.mov, still.png, music.wav, uhd.mp4
+- Lock: held by Claude Code
+
+How to work
+1. Read the status, then take the edit lock with your name and a short reason. Wait if it reports busy.
+2. Describe the project before any edit; use clip, track and media ids from it, never guess ids.
+3. Wrap each task in a batch with a short label, so I can undo it as one step.
+4. Check your work by rendering frames (and reading the audio levels for sound) instead of assuming.
+5. Timeline positions are frames; source positions are flicks (705600000 per second); the project frame rate is in the status.
+6. When done, release the lock, then tell me what changed in a few lines.
+
+How to reach Cutlass
+- Over MCP: the server is named "cutlass". The steps above map to cutlass_status, cutlass_acquire_lock, cutlass_describe_project, cutlass_begin_batch and cutlass_end_batch, cutlass_render_frame and cutlass_audio_levels, and cutlass_release_lock. If you cannot see any cutlass_* tools, the MCP server is not registered in your client: in Cutlass use Agent > Connect an agent client..., then restart the session.
+- Over HTTP (any tool-calling harness or script): the base URL is http://localhost:47390/. Read the workflow from http://localhost:47390/v1/instructions and the tools from http://localhost:47390/v1/tools?format=markdown, and call a tool with POST http://localhost:47390/v1/call and the bearer token from the token file of Cutlass (see C:/Program Files/Cutlass/AGENT_INTEGRATION.md, sections 4 and 9).

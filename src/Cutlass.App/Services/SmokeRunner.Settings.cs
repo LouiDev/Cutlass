@@ -104,6 +104,12 @@ public sealed partial class SmokeRunner
             }
         }
 
+        // AGENT_INTEGRATION 9.3: agent-home=<dir> gives the client registry an empty sandbox home inside the script folder.
+        if (step.Option("agent-home") is { Length: > 0 } agentHome)
+        {
+            await UseAgentHomeAsync(agentHome);
+        }
+
         _log.Write("settings problem: " + (dialog.ProblemText ?? "none"));
         if (step.Option("expect-problem") is { } expected)
         {
@@ -188,6 +194,7 @@ public sealed partial class SmokeRunner
                 case "expect-problem":
                 case "agent-read":
                 case "agent-write":
+                case "agent-home":
                     break;
                 default:
                     throw Fail("settings has no field " + name);

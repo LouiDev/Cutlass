@@ -5,7 +5,7 @@ using Cutlass.Core.Time;
 namespace Cutlass.App.Services;
 
 /// <summary>
-/// The developer smoke script run by <c>--smoke-script &lt;file&gt;</c> (CLAUDE.md, Commands). One command per line;
+/// The developer smoke script run by <c>--smoke-script &lt;file&gt;</c> (the repository guide, Commands). One command per line;
 /// blank lines and lines starting with <c>#</c> are skipped; arguments are separated by spaces and may be quoted with
 /// double quotes. Relative paths resolve against the script's folder. The commands are listed in
 /// <see cref="Commands"/>; <see cref="SmokeRunner"/> executes them through the same view model commands the UI uses
@@ -78,8 +78,8 @@ public static class SmokeScript
         ["select-transition"] = "select-transition <track> [index]: click a transition block",
         ["volume-key"] = "volume-key <track> <pos> <dB>: select the audio clip under the frame and add a volume keyframe there",
         ["expect-section"] = "expect-section <key prefix> [header=<text>]: fail unless the Inspector shows that section (clip, title, transition, gap, sequence)",
-        ["settings"] = "settings [key] [page=general|media|playback|agents|about] [autosave=<min>] [transition=<s>] [still=<s>] [title=<s>] [cache-gb=<n>] [proxy=auto|always|never] [quality=auto|full|half|quarter] [proxies=true|false] [confirm-delete=true|false] [export-preset=<id>] [ffmpeg=<path>|path-search] [agent-read=<folder>] [agent-write=<folder>] [expect-problem=<text>] [validate] [clear-cache] [apply|cancel]: drive the Settings dialog (key opens it with Ctrl+,)",
-        ["show-dialog"] = "show-dialog settings|relink|export|speed|sequence [page=general|media|playback|agents|about] [media=<media>] screenshot=<file.png>: open the dialog through its command, render its real window to a PNG and close it (relink without media= is File > Relink media...)",
+        ["settings"] = "settings [key] [page=general|media|playback|agents|about] [autosave=<min>] [transition=<s>] [still=<s>] [title=<s>] [cache-gb=<n>] [proxy=auto|always|never] [quality=auto|full|half|quarter] [proxies=true|false] [confirm-delete=true|false] [export-preset=<id>] [ffmpeg=<path>|path-search] [agent-read=<folder>] [agent-write=<folder>] [agent-home=<folder>] [expect-problem=<text>] [validate] [clear-cache] [apply|cancel]: drive the Settings dialog (key opens it with Ctrl+,; agent-home replaces the agent client sandbox with an empty fake home inside the script folder)",
+        ["show-dialog"] = "show-dialog settings|relink|export|speed|sequence|mcp-start|connect-clients [page=general|media|playback|agents|about] [media=<media>] [height=<px>] screenshot=<file.png>: open the dialog through its command, render its real window to a PNG and close it (relink without media= is File > Relink media...; mcp-start is the first-start dialog of Agent > Start MCP server; connect-clients is Agent > Connect an agent client...; height= renders a taller window so a long page shows its lower groups)",
         ["remove-file"] = "remove-file <path>: delete a file (retried while a process still holds it), for example to take media offline",
         ["expect-offline"] = "expect-offline <media> [online]: fail unless the media is offline (or, with online, not offline) in the bin",
         ["expect-setting"] = "expect-setting <property> <value>: fail unless the AppSettings property has the value in effect and in settings.json",
@@ -95,6 +95,13 @@ public static class SmokeScript
         ["expect-duration-below"] = "expect-duration-below <frames>: fail unless the sequence has fewer frames (after an agent removed time)",
         ["expect-no-refused"] = "expect-no-refused: fail when the session write gate refused a user write during the run",
         ["panel"] = "panel media|effects|agent: show the media panel's MEDIA, EFFECTS or AGENT tab",
+        ["agent-briefing"] = "agent-briefing [http|target=<profile id>] [save=<file>]: Agent > Copy briefing for your agent (the client registered last, else the generic text), or a Copy briefing for item (http is its HTTP only item); fails unless every placeholder is filled and the text names the project and the target's tail; save= writes it with the token masked",
+        ["write-file"] = "write-file <path> <text> [json]: write a file (\\n is a line end, $var a saved value such as $clienthome; json turns single quotes into double ones), for example a client configuration in the sandbox home",
+        ["agent-clients"] = "agent-clients [expect=<id>:<state>,...] [current=<n>]: check every agent client of the sandbox registry again, log the rows and compare states (not-installed, not-registered, current, stale, foreign, error)",
+        ["agent-client"] = "agent-client <id> register|update|remove [expect=<state>]: run a client row's button in the sandbox registry (the smoke dialog service confirms) and check the state",
+        ["menu-start-mcp"] = "menu-start-mcp: Agent > Start MCP server through the menu command (the first-start dialog answers Start without registering); waits for the server and checks the badge and the menu text",
+        ["menu-stop-mcp"] = "menu-stop-mcp: Agent > Stop MCP server through the menu command; waits until the server is off and checks the badge and the menu text",
+        ["show-menu"] = "show-menu <header> [submenu=\"<header>[ > <header>]\"] screenshot=<file.png>: open a top-level menu (for example Agent) and the submenus given in turn (for example \"Copy briefing for\"), render the window with the open menus to a PNG and close them",
     };
 
     /// <summary>Parses a script.</summary>

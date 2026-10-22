@@ -85,7 +85,7 @@ public sealed partial class MainWindowViewModel
     /// <returns>True when the command may run.</returns>
     public bool IsCommandAllowed(string id) =>
         !Agent.IsLocked
-        || CommandIds.AllowedWhileAgentHolds.Contains(id)
+        || CommandIds.IsAllowedWhileAgentHolds(id)
         || (CommandIds.RoutedToSource.Contains(id) && Viewer.IsSourceActive);
 
     /// <summary>Shows the "agent is editing" toast, at most every 3 s.</summary>
@@ -258,14 +258,18 @@ public sealed partial class MainWindowViewModel
             ShowAgentBlockedToast();
         };
         Agent.LockedChanged += (_, _) => ApplyAgentLock();
-        Agent.ShowPanelRequested += (_, _) => MediaBin.ShowAgentTabPageCommand.Execute(null);
+        Agent.ShowPanelRequested += (_, _) =>
+        {
+            _agentTabRequested = true;
+            MediaBin.ShowAgentTabPageCommand.Execute(null);
+        };
         Agent.LogFolder = _services.LogFolder;
         MediaBin.Agent = Agent;
         Agent.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AgentViewModel.IsEnabled))
             {
-                MediaBin.ShowAgentTab = Agent.IsEnabled || Agent.IsLocked;
+                UpdateAgentTab();
             }
         };
 
@@ -324,7 +328,7 @@ public sealed partial class MainWindowViewModel
         Inspector.IsReadOnly = locked;
         MediaBin.IsReadOnly = locked;
         EffectsTab.IsReadOnly = locked;
-        MediaBin.ShowAgentTab = Agent.IsEnabled || locked;
+        UpdateAgentTab();
         OnPropertyChanged(nameof(CanEditProject));
         RunCommandCommand.NotifyCanExecuteChanged();
         NewCommand.NotifyCanExecuteChanged();

@@ -42,8 +42,7 @@ public static class Program
                 Console.Out.Write(McpOptions.Usage + Environment.NewLine);
                 return 0;
             case McpMode.PrintRegistration:
-                var (command, leading) = Registration.CurrentCommand(Environment.ProcessPath, AppContext.BaseDirectory);
-                Console.Out.Write(Registration.Build(command, leading, OperatingSystem.IsWindows()));
+                Console.Out.Write(await PrintRegistrationAsync().ConfigureAwait(false));
                 return 0;
         }
 
@@ -65,6 +64,33 @@ public static class Program
             log.LogError("{Message}", ex.Message);
             return 1;
         }
+    }
+
+    // docs/AGENT_INTEGRATION.md 9.4: every client profile's registration, from the profile file the app ships beside
+    // the exes (or the checkout's copy); without it the generic entry.
+    private static async Task<string> PrintRegistrationAsync()
+    {
+        var (command, leading) = Registration.CurrentCommand(Environment.ProcessPath, AppContext.BaseDirectory);
+        var windows = OperatingSystem.IsWindows();
+        if (Registration.FindProfileFile(AppContext.BaseDirectory) is { } file)
+        {
+            try
+            {
+                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var appData = windows
+                    ? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+                    : Environment.GetEnvironmentVariable("XDG_CONFIG_HOME") is { Length: > 0 } xdg ? xdg : Path.Combine(home, ".config");
+                var platform = windows ? "windows" : OperatingSystem.IsMacOS() ? "macos" : "linux";
+                var json = await File.ReadAllTextAsync(file).ConfigureAwait(false);
+                return Registration.BuildFromProfiles(json, command, leading, windows, home, appData, platform);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+            {
+                await Console.Error.WriteLineAsync("The client profiles " + file + " could not be read: " + ex.Message).ConfigureAwait(false);
+            }
+        }
+
+        return Registration.Build(command, leading, windows);
     }
 
     private static ILoggerFactory CreateLoggerFactory() =>

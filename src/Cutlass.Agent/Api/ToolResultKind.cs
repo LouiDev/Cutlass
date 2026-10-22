@@ -11,4 +11,10 @@ public enum ToolResultKind
 
     /// <summary>Plain text (the describe text).</summary>
     Text,
+
+    /// <summary>
+    /// A document served as is, not wrapped in the envelope: the discovery routes of AGENT_INTEGRATION 9.2 (tool
+    /// definitions, OpenAPI, instructions) as JSON or Markdown. Through <c>/v1/call</c> it becomes the envelope's result.
+    /// </summary>
+    Document,
 }

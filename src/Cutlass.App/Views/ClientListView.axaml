@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             x:Class="Cutlass.App.Views.ClientListView"
+             x:DataType="vm:ConnectClientsViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.clientRow">
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+    <Style Selector="Border.clientRow Button">
+      <Setter Property="MinWidth" Value="72" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="8,3" />
+    </Style>
+    <Style Selector="Border.clientRow ComboBox">
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style Selector="TextBlock.state">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.state.success">
+      <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+    </Style>
+    <Style Selector="TextBlock.state.warning">
+      <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+    </Style>
+    <Style Selector="TextBlock.state.danger">
+      <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    AGENT_INTEGRATION 9.4: one row per client profile, detected clients first, then the others, then the text-only rows.
+    A row shows its dot (Success current, Warning stale or foreign, Danger when the check failed), name, transport and
+    state, the scope for a CLI with scopes, Register or Update, Remove while an entry exists, and Copy; under it where the
+    registration lives (the configuration file or the CLI). Used by the Connect dialog and Settings > Agents.
+  -->
+  <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}"
+          Background="{DynamicResource Bg0Brush}">
+    <ItemsControl ItemsSource="{Binding Items}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:AgentClientItemViewModel">
+          <Border Classes="clientRow">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+              <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
+                         Classes.ok="{Binding IsCurrent}" Classes.warning="{Binding IsWarning}" Classes.error="{Binding IsDanger}" />
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Classes="secondary" Text="{Binding TransportText}" FontSize="11" VerticalAlignment="Center" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Classes="state" Text="{Binding StateText}" VerticalAlignment="Center" Margin="0,0,4,0"
+                           Classes.success="{Binding IsCurrent}" Classes.warning="{Binding IsWarning}" Classes.danger="{Binding IsDanger}"
+                           ToolTip.Tip="{Binding ToolTip}" />
+                <ComboBox ItemsSource="{Binding Scopes}" SelectedItem="{Binding SelectedScope}" IsVisible="{Binding HasScopes}"
+                          MinWidth="84" ToolTip.Tip="The registration scope of the client's CLI" />
+                <Button Classes="accent" Content="{Binding PrimaryText}" Command="{Binding PrimaryCommand}"
+                        IsVisible="{Binding ShowPrimary}" ToolTip.Tip="{Binding PrimaryToolTip}" />
+                <Button Content="Remove" Command="{Binding RemoveCommand}" IsVisible="{Binding ShowRemove}"
+                        ToolTip.Tip="Remove the cutlass entry from this client (asks first)" />
+                <Button Content="Copy" Command="{Binding CopyCommand}"
+                        ToolTip.Tip="Copy the setup text: the command, the configuration entry or the harness text" />
+              </StackPanel>
+              <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Classes="secondary" FontSize="11" Margin="14,2,0,0"
+                         Text="{Binding WhereText}" TextTrimming="PrefixCharacterEllipsis" ToolTip.Tip="{Binding ToolTip}" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </Border>
+</UserControl>

@@ -79,3 +79,54 @@ wait 300
 screenshot shots/m9-03-panel.png
 panel media
 show-dialog settings page=agents screenshot=shots/m9-04-settings-agents.png
+
+# 10. The Agent menu (AGENT_INTEGRATION 6.6 and 9.4): the plain briefing (no client registered yet: the generic tail)
+# and the HTTP only one fill every placeholder and name the project and the tool steps (the smoke dialog service
+# confirms the token for the HTTP only one; the saved copy masks it); Stop and Start through the menu command switch
+# the server, the badge and the menu text (the first-start dialog answers Start with "Register with: none");
+# screenshots of the panel header, the open Agent menu and the first-start dialog.
+agent-briefing save=shots/m9-briefing.txt
+agent-briefing http save=shots/m9-briefing-http.txt
+panel agent
+wait 1500
+screenshot shots/m9-05-panel-header.png
+show-menu Agent screenshot=shots/m9-06-agent-menu.png
+menu-stop-mcp
+wait 300
+screenshot shots/m9-07-mcp-off.png
+menu-start-mcp
+wait 300
+screenshot shots/m9-08-mcp-ready.png
+show-dialog mcp-start screenshot=shots/m9-09-mcp-start-dialog.png
+panel media
+
+# 11. Agent clients (AGENT_INTEGRATION 9.3 and 9.4). A smoke run's client registry is always a sandbox: a fake home
+# and a client CLI runner that starts nothing, so no real client configuration is read or written. agent-home gives it
+# an empty fake home in this folder; write-file seeds a detected client (.cursor), a stale entry (.gemini), a TOML file
+# with another table (.codex) and a foreign entry (Claude Desktop, in the fake per-user configuration folder).
+settings agent-home=clients-home
+write-file $clienthome/.cursor/mcp.json "{'mcpServers':{'other':{'command':'npx','args':['thing']}}}" json
+write-file $clienthome/.gemini/settings.json "{'theme':'Dark','mcpServers':{'cutlass':{'command':'C:/old/Cutlass.Agent.Mcp.exe','args':[]}}}" json
+write-file $clienthome/.codex/config.toml "model = 'o3'\n\n[mcp_servers.other]\ncommand = 'npx'\n"
+write-file $clientconfig/Claude/claude_desktop_config.json "{'mcpServers':{'cutlass':{'command':'npx','args':['another-server']}}}" json
+agent-clients expect=cursor:not-registered,gemini-cli:stale,codex-cli:not-registered,claude-desktop:foreign,claude-code:not-installed,windsurf:not-installed current=0
+agent-client cursor register expect=current
+agent-client codex-cli register expect=current
+agent-client gemini-cli update expect=current
+agent-clients current=3
+# The plain briefing now renders for the client registered last; a "Copy briefing for" item for any profile.
+agent-briefing save=shots/m9-briefing-last-client.txt
+agent-briefing target=claude-code save=shots/m9-briefing-cli-client.txt
+agent-briefing target=openai-compatible save=shots/m9-briefing-harness.txt
+# The open "Copy briefing for" submenu: one item per profile, the last one HTTP only (DESIGN 8).
+show-menu Agent submenu="Copy briefing for" screenshot=shots/m9-14-briefing-submenu.png
+show-dialog connect-clients screenshot=shots/m9-10-connect-clients.png
+show-dialog settings page=agents height=1500 screenshot=shots/m9-12-settings-connect-clients.png
+panel agent
+wait 800
+screenshot shots/m9-13-panel-clients.png
+agent-client cursor remove expect=not-registered
+agent-clients current=2
+# With Cursor unregistered the first-start dialog picks it in "Register with" and shows the entry it would write.
+show-dialog mcp-start screenshot=shots/m9-11-mcp-start-clients.png
+panel media

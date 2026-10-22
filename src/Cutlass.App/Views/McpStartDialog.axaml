@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        x:Class="Cutlass.App.Views.McpStartDialog"
+        x:DataType="vm:McpStartDialogViewModel"
+        Title="{x:Static vm:McpStartDialogViewModel.Title}"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.status">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="MinHeight" Value="24" />
+    </Style>
+    <Style Selector="TextBox.output">
+      <Setter Property="FontFamily" Value="monospace" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="IsReadOnly" Value="True" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxHeight" Value="180" />
+      <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+    </Style>
+  </Window.Styles>
+
+  <!-- MCP_HOSTING_CONCEPT 4.4 and AGENT_INTEGRATION 6.6 and 9.4: the two server checkboxes, "Register with:" (the detected
+       clients and none) with the exact command or entry, the scope for a client CLI with scopes, Start and Cancel; after
+       a registration the output and Close. -->
+  <StackPanel Margin="20" Spacing="10">
+    <TextBlock Text="{x:Static vm:McpStartDialogViewModel.IntroText}" TextWrapping="Wrap" />
+    <StackPanel Spacing="2">
+      <CheckBox Content="Allow agent connections for this session" IsChecked="{Binding AllowForSession}" IsEnabled="{Binding !IsDone}" />
+      <CheckBox Content="Keep it on in future sessions" IsChecked="{Binding KeepOn}" IsEnabled="{Binding AllowForSession}"
+                ToolTip.Tip="Saves Settings > Agents > Allow agent connections" />
+    </StackPanel>
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="6">
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Register with:" VerticalAlignment="Center" />
+      <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}"
+                HorizontalAlignment="Stretch" IsEnabled="{Binding !IsDone}"
+                ToolTip.Tip="The agent clients detected on this machine; none registers nothing">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:McpClientChoice">
+            <TextBlock Text="{Binding DisplayText}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBlock Grid.Row="1" Grid.Column="0" Text="Scope:" VerticalAlignment="Center" IsVisible="{Binding HasScopes}" />
+      <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasScopes}">
+        <ComboBox ItemsSource="{Binding Scopes}" SelectedItem="{Binding SelectedScope}" MinWidth="100" IsEnabled="{Binding !IsDone}" />
+        <TextBlock Classes="status" FontSize="11" VerticalAlignment="Center" TextTrimming="PrefixCharacterEllipsis" MaxWidth="320"
+                   Text="{Binding LocalFolderText, StringFormat='The CLI runs in {0}'}" ToolTip.Tip="{Binding LocalFolderText}" />
+      </StackPanel>
+    </Grid>
+    <TextBlock Classes="status" Text="{Binding CommandHeader}" IsVisible="{Binding RegisterNow}" />
+    <TextBox Classes="output" Text="{Binding CommandText, Mode=OneWay}" />
+    <TextBlock Classes="status" Text="{Binding StatusText}" IsVisible="{Binding RegisterNow}" />
+    <TextBox Classes="output" Text="{Binding OutputText, Mode=OneWay}" IsVisible="{Binding HasOutput}" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,6,0,0">
+      <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" IsVisible="{Binding ShowCancel}" MinWidth="80"
+              HorizontalContentAlignment="Center" />
+      <Button Classes="accent" Content="{Binding PrimaryText}" IsDefault="True" Command="{Binding PrimaryCommand}" MinWidth="80"
+              HorizontalContentAlignment="Center" />
+    </StackPanel>
+  </StackPanel>
+</Window>

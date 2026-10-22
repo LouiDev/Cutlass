@@ -70,6 +70,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RegisterSettingsCommands();
         InitializeDataServices();
         InitializeAgent();
+        InitializeMcp();
 
         ProjectName = UntitledName;
         FfmpegStatusText = "Looking for ffmpeg...";

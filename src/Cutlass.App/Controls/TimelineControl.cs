@@ -190,7 +190,7 @@ public sealed partial class TimelineControl : Control
     /// <param name="Context">Its pointer state.</param>
     private sealed record ActiveDrag(IDragOperation Operation, DragContext Context);
 
-    /// <summary>Cursor shapes used over the hit zones.</summary>
+    /// <summary>Pointer shapes used over the hit zones.</summary>
     private static class Cursors
     {
         public static readonly Cursor Arrow = new(StandardCursorType.Arrow);

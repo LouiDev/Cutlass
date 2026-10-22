@@ -83,6 +83,7 @@ public static class DefaultKeymap
         new("Ctrl+I", CommandIds.Import),
         new("Ctrl+E", CommandIds.Export),
         new("Ctrl+Q", CommandIds.Quit),
+        new("F9", CommandIds.AgentToggleServer),
     ];
 
     /// <summary>

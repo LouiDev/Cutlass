@@ -134,8 +134,9 @@ public sealed class SettingsAgentsPageTests
         Assert.Equal("Listening on http://localhost:47390/", vm.AgentStatusText);
         Assert.True(vm.IsAgentListening);
         Assert.False(vm.IsAgentError);
-        Assert.Equal("claude mcp add cutlass -- \"C:\\Program Files\\Cutlass\\Cutlass.Agent.Mcp.exe\"", vm.ClaudeCodeCommandText);
-        Assert.Contains("\"command\": \"C:\\\\Program Files\\\\Cutlass\\\\Cutlass.Agent.Mcp.exe\"", vm.ClaudeDesktopJsonText, StringComparison.Ordinal);
+        Assert.Equal("C:\\Program Files\\Cutlass\\Cutlass.Agent.Mcp.exe", vm.McpPathText);
+        Assert.False(vm.HasClients);
+        Assert.Null(vm.Clients);
 
         agents.Status = AgentServerStatus.PortInUse;
         agents.StatusText = "Port 47390 is in use";

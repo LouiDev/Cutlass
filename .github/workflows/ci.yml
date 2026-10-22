@@ -2,7 +2,7 @@ name: CI
 
 # TECH_BRIEF 11.3 and 12 (M7): build Release with warnings as errors, the unit and integration tests with a real
 # ffmpeg, the text check and the M4 smoke run in the real app on Windows and Linux, plus the M7 smoke run (every
-# export preset) on Windows; tags also publish both runtimes.
+# export preset) and the HTTP-only agent example against `serve` on Windows; tags also publish both runtimes.
 # Every step is a script from the repository, so each one runs locally the same way.
 
 on:
@@ -73,6 +73,32 @@ jobs:
         env:
           CUTLASS_SKIP_REALTIME: ${{ runner.os == 'Windows' && '1' || '' }}
         run: dotnet test tests/Cutlass.IntegrationTests -c Release --no-build --disable-build-servers -m:1
+
+      # AGENT_INTEGRATION 9.5: the HTTP-only example in Windows PowerShell 5.1 against `Cutlass.Agent.Mcp serve` on a
+      # new empty project (so it takes the marker path). It finds serve through endpoint.json, like a real client.
+      - name: Agent HTTP example against serve (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP 'cutlass-agent-http'
+          New-Item -ItemType Directory -Force -Path $work | Out-Null
+          $exe = 'src/Cutlass.Agent.Mcp/bin/Release/net10.0/Cutlass.Agent.Mcp.exe'
+          $out = Join-Path $work 'serve.stdout.txt'
+          $err = Join-Path $work 'serve.stderr.txt'
+          $server = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err `
+            -ArgumentList @('serve', '--project', (Join-Path $work 'ci.cutlass'), '--create', '--allow-write', $work)
+          try {
+            $deadline = (Get-Date).AddSeconds(60)
+            while (-not ((Test-Path $out) -and (Select-String -LiteralPath $out -Pattern '^tokenFile: ' -Quiet))) {
+              if ($server.HasExited -or (Get-Date) -gt $deadline) { Get-Content $err; throw 'serve did not start.' }
+              Start-Sleep -Milliseconds 200
+            }
+            powershell -NoProfile -ExecutionPolicy Bypass -File build/examples/agent-http.ps1 -OutFile (Join-Path $work 'frame0.png')
+            if ($LASTEXITCODE -ne 0) { throw "agent-http.ps1 exited with $LASTEXITCODE." }
+          }
+          finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+          }
 
       - name: Text check (no em dashes)
         shell: pwsh

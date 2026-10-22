@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using System.Text.Json;
 using Cutlass.Agent.Api;
@@ -10,12 +11,19 @@ namespace Cutlass.Agent.Http;
 /// in its body; every other route comes from <see cref="ToolCatalog"/>. The arguments are the JSON body with the route
 /// segments and the query parameters merged in (they win). Query values that look like integers or booleans become
 /// numbers and booleans; <c>tracks=a,b</c> and any <c>...Ids=a,b</c> become string arrays (<c>tracks</c> is
-/// <c>trackIds</c>).
+/// <c>trackIds</c>). <c>/v1/call</c> takes the catalog name or the MCP name (AGENT_INTEGRATION 9.2), and image tools
+/// called through it default to <c>format=base64</c> so the answer is the envelope with <c>pngBase64</c> (9.1).
 /// </summary>
 public static class Router
 {
     /// <summary>The generic call route.</summary>
     public const string CallRoute = "/v1/call";
+
+    /// <summary>True when <paramref name="path"/> is the generic call route, whose answers are always the envelope.</summary>
+    /// <param name="path">The path without query.</param>
+    /// <returns>True for <c>/v1/call</c>.</returns>
+    public static bool IsCallRoute(string path) =>
+        string.Equals("/" + (path ?? string.Empty).Trim('/'), CallRoute, StringComparison.Ordinal);
 
     /// <summary>Builds the call.</summary>
     /// <param name="method">The HTTP method.</param>
@@ -36,7 +44,7 @@ public static class Router
     {
         ArgumentNullException.ThrowIfNull(query);
         var cleanPath = "/" + path.Trim('/');
-        if (string.Equals(cleanPath, CallRoute, StringComparison.Ordinal))
+        if (IsCallRoute(cleanPath))
         {
             if (!string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase))
             {
@@ -44,9 +52,20 @@ public static class Router
             }
 
             var call = body.Deserialize(AgentJsonContext.Relaxed.CallRequest) ?? new Api.Requests.CallRequest();
-            var tool = call.Tool ?? throw ApiException.InvalidArgument("tool", "'tool' is required, for example edit.split.");
+            var tool = call.Tool ?? throw ApiException.InvalidArgument("tool", "'tool' is required, for example cutlass_split or edit.split.");
             var args = call.Args is { ValueKind: JsonValueKind.Object } a ? a : AgentCall.EmptyArgs;
-            return new AgentCall(tool, args, lockId, agentName);
+            if (ToolCatalog.FindAny(tool) is not { } target)
+            {
+                // The dispatcher answers not_found with the name the caller used.
+                return new AgentCall(tool, args, lockId, agentName);
+            }
+
+            if (target.Result == ToolResultKind.Png && !args.TryGetProperty("format", out _))
+            {
+                args = Merge(args, FrozenDictionary<string, string>.Empty, [new("format", "base64")]);
+            }
+
+            return new AgentCall(target.Name, args, lockId, agentName);
         }
 
         var info = ToolCatalog.Match(method, cleanPath, out var routeValues)

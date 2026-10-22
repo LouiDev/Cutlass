@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Cutlass.Agent.Api;
+using Cutlass.Agent.Http;
+using Cutlass.Agent.Tools;
 using Cutlass.Tests.Agent.Kit;
 using Cutlass.Tests.TestSupport;
 
@@ -83,6 +85,52 @@ public sealed class ToolCatalogTests
         }
 
         Assert.Equal(path, ToolCatalog.FillRoute(info, k => values.TryGetValue(k, out var v) ? v : null));
+    }
+
+    [Theory]
+    [InlineData("edit.split", "edit.split")]
+    [InlineData("cutlass_split", "edit.split")]
+    [InlineData("cutlass_acquire_lock", "lock.acquire")]
+    [InlineData("discovery.tools", "discovery.tools")]
+    [InlineData("no.such.tool", "no.such.tool")]
+    public void TheGenericCallAcceptsCatalogAndMcpNames(string name, string expected)
+    {
+        using var body = JsonDocument.Parse("{\"tool\":\"" + name + "\",\"args\":{\"frame\":5}}");
+        var call = Router.Route("POST", "/v1/call", [], body.RootElement, "lock-1", "Agent");
+        Assert.Equal(expected, call.Tool);
+        Assert.Equal(5, call.Args.GetProperty("frame").GetInt32());
+        Assert.Equal("lock-1", call.LockId);
+        Assert.Equal(ToolCatalog.Find(expected), ToolCatalog.FindAny(name));
+    }
+
+    [Theory]
+    [InlineData("cutlass_render_frame", """{"frame":5}""", "base64")]
+    [InlineData("frame.render", """{"frame":5,"format":"png"}""", "png")]
+    [InlineData("cutlass_contact_sheet", """{"frames":[1,2]}""", "base64")]
+    public void ImageToolsAnswerBase64ThroughTheGenericCall(string name, string args, string format)
+    {
+        using var body = JsonDocument.Parse("{\"tool\":\"" + name + "\",\"args\":" + args + "}");
+        var call = Router.Route("POST", "/v1/call", [], body.RootElement, null, null);
+        Assert.Equal(format, call.Args.GetProperty("format").GetString());
+
+        // The route itself keeps PNG bytes as its default.
+        var direct = Router.Route("GET", "/v1/frame/5", [], AgentCall.EmptyArgs, null, null);
+        Assert.False(direct.Args.TryGetProperty("format", out _));
+    }
+
+    [Fact]
+    public void TheDiscoveryRoutesAreLockFreeReads()
+    {
+        foreach (var (path, name) in new[] { ("/v1/tools", "discovery.tools"), ("/v1/openapi.json", "discovery.openapi"), ("/v1/instructions", "discovery.instructions") })
+        {
+            var info = ToolCatalog.Match("GET", path, out _);
+            Assert.NotNull(info);
+            Assert.Equal(name, info.Name);
+            Assert.False(info.NeedsLock);
+            Assert.False(info.Mutating);
+            Assert.Null(info.McpName);
+            Assert.Equal(ToolResultKind.Document, info.Result);
+        }
     }
 
     [Fact]
