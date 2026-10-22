@@ -36,6 +36,8 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 
 Debug and Release builds with `--no-incremental` finish with 0 warnings and 0 errors (Release treats warnings as errors). `build/check-text.ps1` is clean.
 
+GitHub Actions (first runs on 2026-10-22): the Ubuntu leg is green end to end, including the real-time playback tests and the M4 smoke under Xvfb, so the Linux build has now run on real hardware. The Windows leg skips the three `[RealtimeFact]` playback tests (`CUTLASS_SKIP_REALTIME=1`) because the shared runners stall for up to a second at a time; everything else runs there too.
+
 ## Smoke scripts
 
 Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine.

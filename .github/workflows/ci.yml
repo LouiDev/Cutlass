@@ -66,7 +66,12 @@ jobs:
       - name: Unit tests
         run: dotnet test tests/Cutlass.Tests -c Release --no-build --disable-build-servers -m:1
 
+      # The real-time playback tests (RealtimeFact) judge dropped frames and A/V lag against the wall clock. The shared
+      # Windows runners stall for up to a second at a time (16 of 125 frames dropped at 4x, lag spikes of 10 to 32
+      # frames in the first run), which says nothing about the engine, so they are skipped there. Ubuntu runs them.
       - name: Integration tests
+        env:
+          CUTLASS_SKIP_REALTIME: ${{ runner.os == 'Windows' && '1' || '' }}
         run: dotnet test tests/Cutlass.IntegrationTests -c Release --no-build --disable-build-servers -m:1
 
       - name: Text check (no em dashes)

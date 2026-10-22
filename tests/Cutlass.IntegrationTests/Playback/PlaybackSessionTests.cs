@@ -31,7 +31,7 @@ public sealed class PlaybackSessionTests
         _output = output;
     }
 
-    [FfmpegFact]
+    [RealtimeFact]
     public async Task TwentySecondsOfTheSyncClipStayInSyncAcrossWindowSeams()
     {
         await using var kit = await PlaybackKit.CreateAsync();
@@ -51,7 +51,7 @@ public sealed class PlaybackSessionTests
         Assert.Equal(0, kit.Preview.Harness.Registry.Count);
     }
 
-    [FfmpegFact]
+    [RealtimeFact]
     public async Task TwoMinutesOfTheSyncClipPlayWithoutDrift()
     {
         await using var kit = await PlaybackKit.CreateAsync();
@@ -75,7 +75,7 @@ public sealed class PlaybackSessionTests
         Assert.Equal(0, kit.Preview.Harness.Registry.Count);
     }
 
-    [FfmpegTheory]
+    [RealtimeTheory]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(4)]
