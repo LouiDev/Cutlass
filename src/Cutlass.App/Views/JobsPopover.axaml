@@ -45,7 +45,7 @@
                 </StackPanel>
                 <!-- Non-fatal warnings (offline media, fallback fonts, an output kept under a free name). -->
                 <TextBlock Grid.Row="3" Grid.ColumnSpan="2" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
-                           Foreground="{DynamicResource AccentBrush}" Text="{Binding WarningText}"
+                           Foreground="{DynamicResource WarningBrush}" Text="{Binding WarningText}"
                            IsVisible="{Binding HasWarnings}" />
               </Grid>
             </Border>

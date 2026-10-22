@@ -15,9 +15,9 @@
   <Application.Styles>
     <FluentTheme>
       <FluentTheme.Palettes>
-        <!-- DESIGN 8: Accent amber, panels Bg1, neutral low-chroma greys. -->
+        <!-- DESIGN 8: Accent green, panels Bg1, neutral low-chroma greys. -->
         <ColorPaletteResources x:Key="Dark"
-                               Accent="#F5A524"
+                               Accent="#4CC38A"
                                AltHigh="#141518"
                                AltLow="#141518"
                                AltMedium="#141518"

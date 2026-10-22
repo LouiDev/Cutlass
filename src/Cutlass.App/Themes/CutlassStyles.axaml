@@ -116,7 +116,7 @@
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
   </Style>
 
-  <!-- Segmented viewer mode pill: Timeline is tinted VideoClip blue, Source Accent amber (DESIGN 4.3). -->
+  <!-- Segmented viewer mode pill: Timeline is tinted VideoClip blue, Source Accent green (DESIGN 4.3). -->
   <Style Selector="Button.segment">
     <Setter Property="Height" Value="22" />
     <Setter Property="Padding" Value="10,0" />
@@ -136,7 +136,7 @@
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
   </Style>
 
-  <!-- Primary (Accent) button: dark text on amber for contrast. -->
+  <!-- Primary (Accent) button: dark text on green for contrast. -->
   <Style Selector="Button.accent">
     <Setter Property="Height" Value="24" />
     <Setter Property="Padding" Value="12,0" />
@@ -149,7 +149,7 @@
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
   </Style>
   <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#FFB84A" />
+    <Setter Property="Background" Value="#6FD3A3" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
   </Style>
   <Style Selector="Button.accent:disabled /template/ ContentPresenter#PART_ContentPresenter">
@@ -306,6 +306,10 @@
     <Setter Property="FontFeatures" Value="+tnum" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
+  <!-- Fluent top-aligns ComboBox; centre it so a 24 px combo lines up with 26 px icon buttons in toolbar rows. -->
+  <Style Selector="ComboBox">
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
   <Style Selector="ComboBox.inspectorCombo">
     <Setter Property="Height" Value="22" />
     <Setter Property="MinHeight" Value="22" />
@@ -317,6 +321,19 @@
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="Padding" Value="4,0" />
     <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <!-- Fluent draws the box in a fixed 32 px high grid and stretches the glyph to it, which overflows the 24 px row. -->
+  <Style Selector="CheckBox.inspectorCheck /template/ Grid#RootGrid > Grid">
+    <Setter Property="Height" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="CheckBox.inspectorCheck /template/ Border#NormalRectangle">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+  </Style>
+  <Style Selector="CheckBox.inspectorCheck /template/ Viewbox">
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
   </Style>
   <Style Selector="Button.inspectorButton">
     <Setter Property="Height" Value="22" />

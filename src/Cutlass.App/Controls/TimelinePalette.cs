@@ -21,7 +21,7 @@ public sealed class TimelinePalette
         TextPrimary = color("TextPrimaryColor", "#E6E8EB");
         TextSecondary = color("TextSecondaryColor", "#9BA1A9");
         TextDisabled = color("TextDisabledColor", "#5C626B");
-        Accent = color("AccentColor", "#F5A524");
+        Accent = color("AccentColor", "#4CC38A");
         OnAccent = color("OnAccentColor", "#141518");
         Playhead = color("PlayheadColor", "#FF4D4D");
         Selection = color("SelectionColor", "#FFFFFF");

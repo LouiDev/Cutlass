@@ -69,7 +69,7 @@
           </StackPanel>
           <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
             <ComboBox ItemsSource="{Binding Qualities}" SelectedItem="{Binding Quality}"
-                      MinWidth="92" Height="24" ToolTip.Tip="Preview quality" />
+                      Height="24" ToolTip.Tip="Preview quality" />
             <Button Classes="chip" Classes.active="{Binding UseProxies}" Content="P"
                     Command="{Binding ToggleProxiesCommand}" ToolTip.Tip="Use proxies (P)" />
             <Button Classes="icon" Classes.active="{Binding ShowGuides}"
@@ -145,7 +145,7 @@
         </StackPanel>
       </Grid>
 
-      <!-- Source mode: the mini ruler. Click or drag to scrub; drag the amber handles to move In and Out. -->
+      <!-- Source mode: the mini ruler. Click or drag to scrub; drag the Accent handles to move In and Out. -->
       <Border DockPanel.Dock="Bottom" Margin="12,6,12,0" Height="20" CornerRadius="3" ClipToBounds="True"
               Background="{DynamicResource Bg2Brush}" IsVisible="{Binding IsSourceActive}"
               ToolTip.Tip="Click or drag to scrub. Drag the In and Out handles to change the range.">
@@ -196,24 +196,24 @@
         </Grid>
         <TextBlock Classes="hint" Margin="32" MaxWidth="320" Text="{Binding PlaceholderText}"
                    IsVisible="{Binding IsEmpty}" />
-        <!-- DESIGN 4.3: the Source monitor is tinted Accent amber so the active monitor is never ambiguous. -->
+        <!-- DESIGN 4.3: the Source monitor is tinted Accent green so the active monitor is never ambiguous. -->
         <Border BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2" IsHitTestVisible="False"
                 IsVisible="{Binding IsSourceActive}" />
         <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16" Padding="10,4" CornerRadius="4"
                 Background="#CC141518" IsVisible="{Binding StatusText, Converter={x:Static ObjectConverters.IsNotNull}}">
-          <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap" MaxWidth="480" />
+          <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap" MaxWidth="480" />
         </Border>
         <!-- DESIGN 4.3: amber badge after 2 s of continuous lag; DESIGN 6: amber badge while the audio device is lost. -->
         <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="16" Orientation="Horizontal" Spacing="6">
           <Border Padding="6,2" CornerRadius="3"
-                  Background="{DynamicResource AccentBrush}" IsVisible="{Binding ShowDroppedBadge}"
+                  Background="{DynamicResource WarningBrush}" IsVisible="{Binding ShowDroppedBadge}"
                   ToolTip.Tip="Playback cannot keep up. Lower the preview quality or turn on proxies (P).">
-            <TextBlock Text="Dropped frames" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}" />
+            <TextBlock Text="Dropped frames" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnWarningBrush}" />
           </Border>
           <Border Padding="6,2" CornerRadius="3"
-                  Background="{DynamicResource AccentBrush}" IsVisible="{Binding IsAudioUnavailable}"
+                  Background="{DynamicResource WarningBrush}" IsVisible="{Binding IsAudioUnavailable}"
                   ToolTip.Tip="The audio device is unavailable. Playback uses a silent clock until a play start reopens it.">
-            <TextBlock Text="Audio unavailable" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}" />
+            <TextBlock Text="Audio unavailable" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnWarningBrush}" />
           </Border>
         </StackPanel>
         <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16" Padding="6,2" CornerRadius="3"

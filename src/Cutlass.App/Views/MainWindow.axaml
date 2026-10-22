@@ -223,7 +223,7 @@
                   <PathIcon Data="{StaticResource IconZoomOut}" />
                 </Button>
                 <Slider Width="180" Minimum="0" Maximum="100" Value="{Binding Timeline.ZoomLevel}" VerticalAlignment="Center"
-                        Margin="0,-8" ToolTip.Tip="Zoom" Focusable="False" />
+                        ToolTip.Tip="Zoom" Focusable="False" />
                 <Button Classes="icon" Command="{Binding Timeline.ZoomInCommand}" ToolTip.Tip="Zoom in (+)">
                   <PathIcon Data="{StaticResource IconZoomIn}" />
                 </Button>
@@ -274,7 +274,7 @@
             <Rectangle Classes="separator" />
             <TextBlock Text="{Binding CacheSummary}" />
             <Rectangle Classes="separator" IsVisible="{Binding IsAudioUnavailable}" />
-            <TextBlock Text="Audio unavailable" Foreground="{DynamicResource AccentBrush}"
+            <TextBlock Text="Audio unavailable" Foreground="{DynamicResource WarningBrush}"
                        IsVisible="{Binding IsAudioUnavailable}" ToolTip.Tip="{Binding AudioToolTip}" />
           </StackPanel>
         </DockPanel>

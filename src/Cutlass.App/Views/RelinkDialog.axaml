@@ -13,7 +13,7 @@
     <TextBlock DockPanel.Dock="Top" Classes="secondary" TextWrapping="Wrap" Margin="0,0,0,10"
                Text="These media files are missing or changed. Locate each file, or search a folder: files are matched by name, then by name without extension, then by size and content." />
     <!-- DESIGN 11: remote paths the open scan did not touch. -->
-    <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource AccentBrush}"
+    <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource WarningBrush}"
                IsVisible="{Binding HasUnconfirmed}"
                Text="Files on a network location were not checked when the project opened, so no credentials were sent to that server. Confirm a location you trust to look the file up." />
 

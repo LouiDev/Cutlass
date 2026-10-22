@@ -35,7 +35,7 @@
 
         <!-- DESIGN 11: autosaves of a session that did not close cleanly. -->
         <StackPanel IsVisible="{Binding HasRecoverable}" Spacing="2" Margin="0,16,0,0">
-          <TextBlock Classes="panelTitle" Text="RECOVER UNSAVED CHANGES" Foreground="{DynamicResource AccentBrush}" />
+          <TextBlock Classes="panelTitle" Text="RECOVER UNSAVED CHANGES" Foreground="{DynamicResource WarningBrush}" />
           <ItemsControl ItemsSource="{Binding Recoverable}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="proj:RecoverableProject">

@@ -792,7 +792,7 @@ The Settings dialog gets a fifth page, Agents, between Playback and About: tab o
 ### 6.2 The lock banner
 
 A 32 px bar across the window under the menu row, shown in `Held` and `Paused`.
-- **Look.** Bg2 background, a 3 px Accent left edge, and a 1 px Border bottom line. While paused the edge and the badge use the Snap/Marker token (`#F5D547`), because Accent itself is amber.
+- **Look.** Bg2 background, a 3 px Accent left edge, and a 1 px Border bottom line. While paused the edge and the badge use the Snap/Marker token (`#F5D547`), because amber is the Warning token and Accent itself is green.
 - **Above the welcome overlay.** With no project open the welcome overlay covers only the panels, so the banner (and its Allow, Deny, Pause and Take over) stays visible; the overlay's actions are disabled while an agent holds the project.
 - **Left side:**
   - "**Claude Code** is editing: Remove silences, add title" (TextPrimary);

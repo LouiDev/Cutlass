@@ -21,10 +21,10 @@
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
     <Style Selector="Border.badge.hdr">
-      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Background" Value="{DynamicResource WarningBrush}" />
     </Style>
     <Style Selector="Border.badge.hdr > TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource OnWarningBrush}" />
     </Style>
     <Style Selector="ListBox.bin">
       <Setter Property="Background" Value="Transparent" />
@@ -77,14 +77,15 @@
       </Border>
 
       <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="8,8,8,4" IsVisible="{Binding IsMediaTab}">
-        <TextBox Grid.Column="0" Watermark="Search media" Margin="0,0,4,0" Text="{Binding SearchText}">
+        <TextBox Grid.Column="0" Watermark="Search media" Margin="0,0,4,0" Height="24" VerticalContentAlignment="Center"
+                 Text="{Binding SearchText}">
           <TextBox.InnerLeftContent>
             <PathIcon Data="{StaticResource IconSearch}" Width="12" Height="12" Margin="6,0,0,0"
                       Foreground="{DynamicResource TextSecondaryBrush}" />
           </TextBox.InnerLeftContent>
         </TextBox>
         <ComboBox Grid.Column="1" ItemsSource="{Binding SortOrders}" SelectedItem="{Binding SortOrder}" Height="24"
-                  MinWidth="70" Margin="0,0,4,0" ToolTip.Tip="Sort" />
+                  Margin="0,0,4,0" ToolTip.Tip="Sort" />
         <Button Grid.Column="2" Classes="icon" Classes.active="{Binding IsGridView}" Command="{Binding ShowGridCommand}"
                 ToolTip.Tip="Grid view">
           <PathIcon Data="{StaticResource IconGrid}" />
@@ -228,7 +229,7 @@
                 <Grid ColumnDefinitions="*,58,78,44,84,40" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
                   <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
                     <Ellipse Width="6" Height="6" Fill="{DynamicResource DangerBrush}" IsVisible="{Binding IsOffline}" />
-                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" IsVisible="{Binding IsChanged}" />
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource WarningBrush}" IsVisible="{Binding IsChanged}" />
                     <TextBlock Text="{Binding Name}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Classes="cell" Text="{Binding DurationText}" />

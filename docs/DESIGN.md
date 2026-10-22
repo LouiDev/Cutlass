@@ -157,7 +157,7 @@ It covers the panels and the timeline only: the menu row with the agent banner a
   - Fades: Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades. Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
-- **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent amber, so the active monitor is never ambiguous.
+- **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.
 - **Canvas and overlays.**
   - Pure black canvas, letterboxed.
   - Safe guides (G) at 90% and 80%.
@@ -447,7 +447,8 @@ Dark, neutral and low-chroma, so footage colors read correctly. The theme is Flu
 | TextPrimary | `#E6E8EB` | text |
 | TextSecondary | `#9BA1A9` | labels, ruler |
 | TextDisabled | `#5C626B` | disabled |
-| Accent | `#F5A524` | active tool, focus ring, tab underline, primary button, Source pill |
+| Accent | `#4CC38A` | active tool, focus ring, tab underline, primary button, Source pill |
+| Warning | `#F5A524` | amber warnings: HDR and CHANGED badges, Dropped frames, Audio unavailable, job warnings |
 | Playhead | `#FF4D4D` | playhead |
 | Selection | `#FFFFFF` | clip outline |
 | VideoClip | `#3A6EA5` | video clips, Timeline pill |
