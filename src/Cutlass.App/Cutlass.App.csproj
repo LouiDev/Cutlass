@@ -6,6 +6,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationIcon>Assets/cutlass.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,8 @@
   <ItemGroup>
     <!-- Bundled Inter TTFs and OFL.txt for drawtext; copied to <cache>/work/ by the work directory (TECH_BRIEF 5.5). -->
     <Content Include="Assets/Fonts/*" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />
+    <!-- The window icon (DESIGN 8); the same file is the exe icon above. -->
+    <AvaloniaResource Include="Assets/cutlass.ico" />
   </ItemGroup>
 
 </Project>

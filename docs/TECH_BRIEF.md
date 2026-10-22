@@ -65,6 +65,7 @@ Cutlass/
   - `OutputType=WinExe`, `AvaloniaUseCompiledBindingsByDefault=true`.
   - `ApplicationManifest=app.manifest` and `BuiltInComInteropSupport=true`, as in the Avalonia template.
   - `<Content Include="Assets/Fonts/*" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />`.
+  - `ApplicationIcon=Assets/cutlass.ico` for the exe, and the same file as `<AvaloniaResource>` for the window icon, which a `:is(Window)` style in `CutlassStyles.axaml` sets on every window.
   - Never reference an icon file that does not exist.
 - **Test projects:** `IsPackable=false`, referencing Core, Compiler and Media.
 

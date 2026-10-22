@@ -461,6 +461,8 @@ Dark, neutral and low-chroma, so footage colors read correctly. The theme is Flu
 | Success | `#3DDC84` | ffmpeg ok |
 | Meter | `#3DDC84` to -6 dBFS, `#F5D547` to -1 dBFS, `#FF4D4D` above | meters |
 
+**App icon.** `Assets/cutlass.ico` (16 to 256 px): a rounded Bg2-to-Bg0 tile with a VideoClip and an AudioClip bar, cut diagonally by a cutlass with an Accent green blade, a TextPrimary guard and knuckle bow and a TextSecondary grip. At 24 px and below the bow is left out and the shapes are drawn thicker.
+
 **Typography.** Inter via `Avalonia.Fonts.Inter` and `.WithInterFont()`.
 - Body text 12 px.
 - Panel titles 11 px semibold uppercase, +4% letter spacing.

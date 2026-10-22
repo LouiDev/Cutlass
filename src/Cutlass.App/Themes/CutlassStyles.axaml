@@ -9,6 +9,10 @@
     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
   </Style>
+  <!-- :is() so MainWindow and every dialog, all Window subclasses, get the app icon. -->
+  <Style Selector=":is(Window)">
+    <Setter Property="Icon" Value="/Assets/cutlass.ico" />
+  </Style>
 
   <!-- Panels and headers -->
   <Style Selector="Border.panel">
