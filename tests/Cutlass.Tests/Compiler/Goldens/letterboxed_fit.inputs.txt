@@ -1,0 +1,3 @@
+-ss 0.000000 -t 1.100000 -i D:/Clips/four_three.mp4
+-ss 0.000000 -t 1.100000 -i D:/Clips/a.mp4
+-ss 1.000000 -t 0.766666 -i D:/Clips/four_three.mp4

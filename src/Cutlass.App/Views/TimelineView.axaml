@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:controls="using:Cutlass.App.Controls"
+             x:Class="Cutlass.App.Views.TimelineView"
+             x:DataType="vm:TimelineViewModel"
+             Background="{DynamicResource Bg0Brush}">
+
+  <!-- DESIGN 4.5 and 5.1: the TimelineControl draws the 150 px track headers, the 28 px ruler and the lanes itself,
+       so headers always line up with their rows. The scroll bars sit beside the lanes. The overlay canvas holds the
+       inline track rename box and the marker editor (DESIGN 4.5, 5.5). -->
+  <Grid RowDefinitions="*,Auto" ColumnDefinitions="*,Auto">
+    <controls:TimelineControl x:Name="Timeline" Grid.Row="0" Grid.Column="0" ViewModel="{Binding}" />
+
+    <!-- Tracks are added through the toolbar's "+ Track" menu (DESIGN 4.5) and the header context menu. -->
+    <Canvas x:Name="Overlay" Grid.Row="0" Grid.Column="0" ClipToBounds="True">
+      <TextBox x:Name="RenameBox" IsVisible="False" Width="104" Height="22" MinHeight="22" Padding="4,1"
+               FontSize="11" VerticalContentAlignment="Center" />
+
+      <Border x:Name="MarkerEditor" IsVisible="False" Width="236" Padding="8" CornerRadius="6"
+              Background="{DynamicResource Bg3Brush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Marker" FontWeight="SemiBold" FontSize="12" />
+          <TextBox x:Name="MarkerName" Watermark="Name" FontSize="12" />
+          <WrapPanel x:Name="MarkerSwatches" Orientation="Horizontal" />
+          <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+            <Button x:Name="MarkerDelete" Content="Delete" Focusable="False" />
+            <Button x:Name="MarkerCancel" Content="Cancel" Focusable="False" />
+            <Button x:Name="MarkerOk" Content="OK" Classes="accent" Focusable="False" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Canvas>
+
+    <ScrollBar Grid.Row="0" Grid.Column="1"
+               Orientation="Vertical"
+               AllowAutoHide="False"
+               Margin="0,28,0,0"
+               Minimum="0"
+               Maximum="{Binding VerticalMaximum}"
+               ViewportSize="{Binding VerticalViewport}"
+               Value="{Binding VerticalOffset, Mode=TwoWay}"
+               Visibility="Auto" />
+
+    <ScrollBar Grid.Row="1" Grid.Column="0"
+               Orientation="Horizontal"
+               AllowAutoHide="False"
+               Margin="150,0,0,0"
+               Minimum="0"
+               Maximum="{Binding HorizontalMaximum}"
+               ViewportSize="{Binding HorizontalViewport}"
+               Value="{Binding HorizontalOffset, Mode=TwoWay}" />
+  </Grid>
+</UserControl>

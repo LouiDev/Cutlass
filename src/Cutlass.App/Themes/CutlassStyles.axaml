@@ -1,0 +1,433 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:Cutlass.App.Controls">
+
+  <!-- Control styles on top of Fluent that apply the DESIGN 8 tokens from CutlassTheme.axaml. -->
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+  </Style>
+
+  <!-- Panels and headers -->
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource Bg1Brush}" />
+  </Style>
+  <Style Selector="Border.header">
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Height" Value="{DynamicResource ToolbarHeight}" />
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector="TextBlock.panelTitle">
+    <Setter Property="FontSize" Value="{DynamicResource FontSizePanelTitle}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="{DynamicResource LetterSpacingPanelTitle}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.panelTitle.active">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="TextBlock.secondary">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+  <Style Selector="TextBlock.hint">
+    <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.timecode">
+    <Setter Property="FontFeatures" Value="+tnum" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.viewerTimecode">
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeViewerTimecode}" />
+  </Style>
+  <Style Selector="TextBlock.toolbarTimecode">
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeToolbarTimecode}" />
+  </Style>
+  <Style Selector="Border.tabUnderline">
+    <Setter Property="Height" Value="2" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <!-- Splitters: 1 px Border line inside a 4 px grab area. -->
+  <Style Selector="GridSplitter">
+    <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+  </Style>
+  <Style Selector="GridSplitter:pointerover">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+  </Style>
+
+  <!-- 26x26 icon buttons (DESIGN 8). Classes.active marks the current tool or an enabled toggle. -->
+  <Style Selector="Button.icon">
+    <Setter Property="Width" Value="{DynamicResource IconButtonSize}" />
+    <Setter Property="Height" Value="{DynamicResource IconButtonSize}" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+  <Style Selector="Button.icon PathIcon">
+    <Setter Property="Width" Value="{DynamicResource IconSize}" />
+    <Setter Property="Height" Value="{DynamicResource IconSize}" />
+  </Style>
+  <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="Button.icon.active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+  <Style Selector="Button.icon.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+
+  <!-- Small text chips in headers (target chip, M, S, P, G). -->
+  <Style Selector="Button.chip">
+    <Setter Property="MinWidth" Value="22" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeClipLabel}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.chip.active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+
+  <!-- Segmented viewer mode pill: Timeline is tinted VideoClip blue, Source Accent amber (DESIGN 4.3). -->
+  <Style Selector="Button.segment">
+    <Setter Property="Height" Value="22" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeClipLabel}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.segment.timeline.active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource VideoClipBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="Button.segment.source.active /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+
+  <!-- Primary (Accent) button: dark text on amber for contrast. -->
+  <Style Selector="Button.accent">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+  </Style>
+  <Style Selector="Button.accent /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+  <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#FFB84A" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+  <Style Selector="Button.accent:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
+  </Style>
+
+  <!-- Menu bar: compact, on window chrome. -->
+  <Style Selector="Menu">
+    <Setter Property="Height" Value="{DynamicResource ToolbarHeight}" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Menu > MenuItem">
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+  </Style>
+
+  <!-- Status bar -->
+  <Style Selector="Border.statusBar">
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Height" Value="{DynamicResource StatusBarHeight}" />
+    <Setter Property="Padding" Value="8,0" />
+  </Style>
+  <Style Selector="Border.statusBar TextBlock">
+    <Setter Property="FontSize" Value="{DynamicResource FontSizePanelTitle}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Ellipse.statusDot">
+    <Setter Property="Fill" Value="{DynamicResource TextDisabledBrush}" />
+  </Style>
+  <Style Selector="Ellipse.statusDot.ok">
+    <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+  <Style Selector="Ellipse.statusDot.error">
+    <Setter Property="Fill" Value="{DynamicResource DangerBrush}" />
+  </Style>
+  <!-- AGENT_INTEGRATION 6.3 badge: Accent while an agent holds the project, amber (the Snap/Marker yellow) while paused. -->
+  <Style Selector="Ellipse.statusDot.accent">
+    <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="Ellipse.statusDot.amber">
+    <Setter Property="Fill" Value="{DynamicResource MarkerBrush}" />
+  </Style>
+  <Style Selector="Rectangle.separator">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Margin" Value="8,5" />
+    <Setter Property="Fill" Value="{DynamicResource BorderBrush}" />
+  </Style>
+
+  <!-- Placeholder timeline lanes and headers (replaced by TimelineControl in M4). -->
+  <Style Selector="Border.trackHeader">
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,1" />
+    <Setter Property="Padding" Value="6,0" />
+  </Style>
+  <Style Selector="Border.lane">
+    <Setter Property="Background" Value="{DynamicResource Bg0Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+
+  <!-- M4 shell additions: text links in the status bar, the toolbar timecode box and danger text. -->
+  <Style Selector="Button.link">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="2,0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizePanelTitle}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="TextBox.timecodeBox">
+    <Setter Property="FontFeatures" Value="+tnum" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeToolbarTimecode}" />
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="Padding" Value="4,1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="TextBlock.danger">
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+  </Style>
+
+  <!-- M6 inspector and effects: dense 24 px rows, labels left and fields right (DESIGN 4.4, 8). -->
+  <Style Selector="Grid.inspectorRow">
+    <Setter Property="Height" Value="24" />
+  </Style>
+  <Style Selector="TextBlock.inspectorLabel">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
+  <Style Selector="TextBlock.inspectorValue">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+  <Style Selector="TextBlock.inspectorNotice">
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="FontSize" Value="{DynamicResource FontSizeClipLabel}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Margin" Value="0,4,0,4" />
+  </Style>
+  <Style Selector="TextBlock.inspectorNotice.danger">
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+  </Style>
+  <Style Selector="ctl|ScrubbyNumberBox">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ctl|ScrubbyNumberBox TextBlock">
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
+  <Style Selector="ctl|ScrubbyNumberBox:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+  </Style>
+  <Style Selector="ctl|ScrubbyNumberBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="ctl|ScrubbyNumberBox:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="TextBox.scrubEditor">
+    <Setter Property="Height" Value="20" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
+  <Style Selector="TextBox.inspectorField">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBox.timecodeField">
+    <Setter Property="Height" Value="22" />
+    <Setter Property="FontFeatures" Value="+tnum" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ComboBox.inspectorCombo">
+    <Setter Property="Height" Value="22" />
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="CheckBox.inspectorCheck">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.inspectorButton">
+    <Setter Property="Height" Value="22" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+  </Style>
+  <Style Selector="Border.swatch">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Margin" Value="0,0,6,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup PathIcon.chevron">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="RenderTransform" Value="rotate(0deg)" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:checked PathIcon.chevron">
+    <Setter Property="RenderTransform" Value="rotate(90deg)" />
+  </Style>
+  <Style Selector="ToggleButton.inspectorGroup:pointerover TextBlock.panelTitle">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="Button.icon.small">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+  </Style>
+  <Style Selector="Button.icon.small PathIcon">
+    <Setter Property="Width" Value="10" />
+    <Setter Property="Height" Value="10" />
+  </Style>
+
+  <!-- AGENT_INTEGRATION 6.2 lock banner: Bg2, a 3 px Accent left edge (amber while paused), a 1 px Border bottom line. -->
+  <Style Selector="Border.agentBanner">
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="Border.agentEdge">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="Border.agentEdge.paused">
+    <Setter Property="Background" Value="{DynamicResource MarkerBrush}" />
+  </Style>
+  <Style Selector="Border.agentEdge.idle">
+    <Setter Property="Background" Value="{DynamicResource TextSecondaryBrush}" />
+  </Style>
+  <Style Selector="TextBlock.agentClock">
+    <Setter Property="FontFeatures" Value="+tnum" />
+  </Style>
+  <Style Selector="Button.agentSecondary">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+  </Style>
+  <Style Selector="ToggleButton.agentFollow">
+    <Setter Property="Height" Value="24" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+  </Style>
+  <Style Selector="ToggleButton.agentFollow:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="Border.agentCard">
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+    <Setter Property="Padding" Value="8,6" />
+  </Style>
+  <Style Selector="ListBox.agentCalls ListBoxItem">
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Height" Value="22" />
+  </Style>
+</Styles>

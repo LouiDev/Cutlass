@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:proj="using:Cutlass.Media.Projects"
+             x:Class="Cutlass.App.Views.WelcomeOverlay"
+             x:DataType="vm:WelcomeViewModel"
+             DragDrop.AllowDrop="True"
+             Background="#F2141518">
+
+  <!-- DESIGN 4.1: New, Open, recent projects, a large drop target and the ffmpeg status. -->
+  <Border HorizontalAlignment="Center" VerticalAlignment="Center" Width="760" Padding="28"
+          Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+          CornerRadius="6">
+    <Grid ColumnDefinitions="260,24,*" RowDefinitions="Auto,*,Auto">
+      <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Spacing="2" Margin="0,0,0,20">
+        <TextBlock Text="Cutlass" FontSize="22" FontWeight="Bold" />
+        <TextBlock Classes="secondary" Text="{x:Static vm:WelcomeViewModel.Subtitle}" />
+      </StackPanel>
+
+      <StackPanel Grid.Row="1" Grid.Column="0" Spacing="8">
+        <Button Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Height="30"
+                Command="{Binding NewProjectCommand}">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="Ctrl+N" FontWeight="Normal" Opacity="0.7" Margin="12,0,0,0" />
+            <TextBlock Text="New project" />
+          </DockPanel>
+        </Button>
+        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Height="30"
+                VerticalContentAlignment="Center" Command="{Binding OpenProjectCommand}">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="Ctrl+O" Classes="secondary" />
+            <TextBlock Text="Open project..." />
+          </DockPanel>
+        </Button>
+
+        <!-- DESIGN 11: autosaves of a session that did not close cleanly. -->
+        <StackPanel IsVisible="{Binding HasRecoverable}" Spacing="2" Margin="0,16,0,0">
+          <TextBlock Classes="panelTitle" Text="RECOVER UNSAVED CHANGES" Foreground="{DynamicResource AccentBrush}" />
+          <ItemsControl ItemsSource="{Binding Recoverable}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="proj:RecoverableProject">
+                <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">
+                  <StackPanel Grid.Column="0" Margin="6,2" ToolTip.Tip="{Binding AutosavePath}">
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding SavedText, StringFormat='Autosaved {0}'}" FontSize="10" Classes="secondary" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Content="Recover" Padding="6,2" VerticalAlignment="Center" Margin="0,0,4,0"
+                          Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).RecoverCommand}"
+                          CommandParameter="{Binding}" ToolTip.Tip="Open the autosaved state" />
+                  <Button Grid.Column="2" Classes="icon" Width="22" Height="22" VerticalAlignment="Center"
+                          Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).DiscardRecoveryCommand}"
+                          CommandParameter="{Binding}" ToolTip.Tip="Discard (delete the autosave)">
+                    <PathIcon Data="{StaticResource IconClose}" Width="9" Height="9" />
+                  </Button>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <TextBlock Classes="panelTitle" Text="RECENT" Margin="0,16,0,2" />
+        <TextBlock Classes="secondary" FontSize="11" Text="No recent projects." IsVisible="{Binding !HasRecent}" />
+        <ItemsControl ItemsSource="{Binding Recent}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:RecentProjectItem">
+              <Grid ColumnDefinitions="*,Auto" Margin="0,1">
+                <Button Grid.Column="0" Background="Transparent" Padding="6,3" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left" IsEnabled="{Binding Exists}"
+                        Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).OpenRecentCommand}"
+                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                    <!-- Middle ellipsis: the drive and the last folders stay visible, so projects under one long
+                         folder prefix remain distinguishable. -->
+                    <TextBlock Text="{Binding Folder}" FontSize="10" Classes="secondary" TextTrimming="PrefixCharacterEllipsis" />
+                  </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Classes="icon" Width="22" Height="22" VerticalAlignment="Center"
+                        Command="{Binding $parent[ItemsControl].((vm:WelcomeViewModel)DataContext).RemoveRecentCommand}"
+                        CommandParameter="{Binding}" ToolTip.Tip="Remove from list">
+                  <PathIcon Data="{StaticResource IconClose}" Width="9" Height="9" />
+                </Button>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Drop target: an untitled project with the dropped media end to end on V1/A1. -->
+      <Border Grid.Row="1" Grid.Column="2" MinHeight="240" CornerRadius="6" BorderThickness="2"
+              BorderBrush="{DynamicResource Bg3Brush}" Background="{DynamicResource Bg0Brush}">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+          <PathIcon Data="{StaticResource IconFolder}" Width="36" Height="36" Foreground="{DynamicResource TextDisabledBrush}" />
+          <TextBlock Text="{x:Static vm:WelcomeViewModel.DropTitle}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Classes="hint" MaxWidth="300" TextWrapping="Wrap" TextAlignment="Center"
+                     Text="{x:Static vm:WelcomeViewModel.DropHint}" />
+          <Button HorizontalAlignment="Center" Content="Import media..." Command="{Binding ImportMediaCommand}" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="2" Grid.ColumnSpan="3" Margin="0,20,0,0" Padding="12,10" CornerRadius="4"
+              Background="{DynamicResource Bg2Brush}">
+        <StackPanel Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
+                     Classes.ok="{Binding IsFfmpegOk}" Classes.error="{Binding IsFfmpegMissing}" />
+            <TextBlock Text="{Binding FfmpegStatusText}" TextWrapping="Wrap" MaxWidth="660" />
+          </StackPanel>
+          <DockPanel IsVisible="{Binding IsFfmpegMissing}">
+            <Button DockPanel.Dock="Right" Content="Locate ffmpeg..." Command="{Binding LocateFfmpegCommand}" />
+            <TextBlock Classes="secondary" Text="{x:Static vm:WelcomeViewModel.InstallHint}" TextWrapping="Wrap"
+                       VerticalAlignment="Center" Margin="16,0,12,0" />
+          </DockPanel>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- docs/AGENT_INTEGRATION.md 5.1: a console exe; stdout is the MCP protocol, every log line goes to stderr. -->
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Cutlass.Agent.Mcp</RootNamespace>
+    <AssemblyName>Cutlass.Agent.Mcp</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cutlass.Core\Cutlass.Core.csproj" />
+    <ProjectReference Include="..\Cutlass.Compiler\Cutlass.Compiler.csproj" />
+    <ProjectReference Include="..\Cutlass.Media\Cutlass.Media.csproj" />
+    <ProjectReference Include="..\Cutlass.Agent\Cutlass.Agent.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Headless titles need the bundled Inter fonts next to the exe, exactly as next to the app (TECH_BRIEF 5.5). -->
+    <Content Include="..\Cutlass.App\Assets\Fonts\*" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

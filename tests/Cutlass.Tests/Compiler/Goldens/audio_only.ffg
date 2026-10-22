@@ -1,0 +1,3 @@
+[0:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=56000,atrim=end_sample=56000,afade=t=out:ss=40000:ns=16000:curve=tri,asetpts=PTS-STARTPTS,adelay=0S:all=1[a0s0];
+[1:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=56000,atrim=end_sample=56000,afade=t=in:ss=0:ns=16000:curve=tri,asetpts=PTS-STARTPTS,adelay=40000S:all=1[a0s1];
+[a0s0][a0s1]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,apad=whole_len=96000,atrim=end_sample=96000,alimiter=limit=0.98:level=0:latency=1,apad=whole_len=96000,atrim=end_sample=96000[aout]

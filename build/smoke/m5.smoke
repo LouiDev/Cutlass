@@ -1,0 +1,70 @@
+# Cutlass M5 smoke test (TECH_BRIEF 12, M5 Verify). Run it with build/smoke.ps1 -Script m5, which generates
+# clipA.mp4 (1280x720), clipB.mp4 (2560x1440, so the Auto policy builds a proxy) and music.wav (audio only) next to a
+# copy of this file and starts the app with --import clipA.mp4 clipB.mp4, which places both end to end on V1/A1.
+# Paths are relative to the script. Commands: SmokeScript.Commands. Lines with CAPTURE mark moments for an outside
+# screen capture (the jobs popover is its own window, so window screenshots do not show it).
+expect-length 720
+expect-clips V1 2
+expect-clips A1 2
+zoom-fit
+import music.wav
+place music.wav A2 0
+expect-clips A2 1
+
+# Media jobs: index, thumbnails, waveform and the auto proxy of the 1440p clip.
+jobs open
+log CAPTURE jobs-running
+wait 1500
+wait-jobs timeout=300
+expect-artifacts clipA.mp4 thumbs peaks
+expect-artifacts clipB.mp4 thumbs peaks proxy
+expect-artifacts music.wav peaks
+jobs open
+log CAPTURE jobs-done
+wait 1500
+jobs close
+wait 500
+screenshot shots/01-jobs-done.png
+
+# 10 s at 1x on the audio device, across the cut at frame 360 into the proxied clipB.
+playhead 200
+frame
+play
+wait 4000
+log CAPTURE playing
+wait 1000
+screenshot shots/02-playing.png
+wait 5000
+stop
+wait 600
+log CAPTURE stopped
+screenshot shots/03-stopped.png
+wait 1000
+
+# Live mute and solo: the master meter follows the mixer without a restart. With A1 muted the music on A2 still
+# plays; soloing the muted A1 then silences everything; unsoloing brings the music back.
+playhead start
+play
+wait 1500
+expect-meter min=-24
+mute A1
+wait 2000
+expect-meter min=-24
+solo A1
+wait 2500
+expect-meter max=-40
+solo A1
+wait 1500
+expect-meter min=-24
+stop
+mute A1
+
+# Shuttle: 2x and 4x run silently on the Stopwatch clock and skip frames.
+playhead start
+play speed=2
+wait 3000
+stop max-drift=3
+playhead start
+play speed=4
+wait 2000
+stop max-drift=4

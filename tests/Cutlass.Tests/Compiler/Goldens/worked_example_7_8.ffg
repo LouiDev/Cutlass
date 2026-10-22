@@ -1,0 +1,14 @@
+color=c=black:s=1920x1080:r=30,trim=end_frame=270,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=165,trim=end_frame=165,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p[v0s0];
+[1:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=135,trim=end_frame=135,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,eq=saturation=1.200000,setsar=1,format=yuva420p[v0s1];
+[v0s0][v0s1]xfade=transition=fade:duration=1.000000:offset=4.500000,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass[c0];
+color=c=black@0:s=1920x1080:r=30,trim=end_frame=90,format=yuva420p,drawtext=fontfile=Inter-Bold.ttf:textfile=t_58fdd4da.txt:expansion=none:fontsize=96:fontcolor=0xFFFFFF:borderw=3:bordercolor=0x000000@0.6:x=(w-text_w)/2:y=h*0.8-text_h/2,fade=t=in:st=0.000000:d=0.500000:alpha=1,fade=t=out:st=2.500000:d=0.500000:alpha=1,setpts=PTS-STARTPTS+30[v1r0];
+[c0][v1r0]overlay=x=0:y=0:format=yuv420:eof_action=pass[c1];
+[2:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=90,trim=end_frame=90,scale=w=768:h=432:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,setpts=PTS-STARTPTS+180[v1r1];
+[c1][v1r1]overlay=x=1056:y=54:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p[vout];
+[0:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=264000,atrim=end_sample=264000,afade=t=out:ss=216000:ns=48000:curve=tri,asetpts=PTS-STARTPTS,adelay=0S:all=1[a0s0];
+[1:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=216000,atrim=end_sample=216000,afade=t=in:ss=0:ns=48000:curve=tri,asetpts=PTS-STARTPTS,adelay=216000S:all=1[a0s1];
+[a0s0][a0s1]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,apad=whole_len=432000,atrim=end_sample=432000[a0];
+[2:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=144000,atrim=end_sample=144000,volume=volume='pow(10,(if(lt(t,1.000000),-20.000000+(20.000000)*(t-0.000000)/1.000000,0.000000))/20)':eval=frame,asetpts=PTS-STARTPTS,adelay=288000S:all=1,apad=whole_len=432000,atrim=end_sample=432000[a1];
+[a0][a1]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,alimiter=limit=0.98:level=0:latency=1,apad=whole_len=432000,atrim=end_sample=432000[aout]

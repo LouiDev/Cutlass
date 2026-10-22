@@ -1,0 +1,81 @@
+# m9: the agent integration (AGENT_INTEGRATION 7.3). build/smoke.ps1 -Script m9 generates clipA.mp4, clipB.mp4 and
+# gap.mp4 (6 s, 180 frames each at 30 fps; gap.mp4's tone drops out from 2.25 s to 3.75 s) and starts the app with
+# --agent-server --port 47399. The agent calls go over real HTTP through an in-process AgentClient (POST /v1/call).
+# JSON arguments write strings in single quotes; a whole argument with spaces goes in double quotes. $name is a value
+# saved earlier with save=name=path (dot paths, [n] indexes, [field=value] filters); $dir is this script's folder.
+
+# The user imports the media, saves the project and lets agents write into this folder (Settings > Agents; the run
+# restores the settings it started with).
+import clipA.mp4 clipB.mp4 gap.mp4
+save m9.cutlass
+settings page=agents agent-write=. apply
+agent-connect name=Smoke
+agent-call status {} save=rev0=revision
+agent-call media.list {} save=a=result[0].id save=b=result[1].id save=g=result[2].id
+
+# 2. A mutating call without the lock.
+agent-call edit.split {'frame':10} expect=lock_required
+
+# 3. Acquire: the banner shows and the editing UI is read-only; the user's keys are swallowed (revision unchanged).
+agent-call lock.acquire "{'agentName':'Smoke','reason':'m9 smoke test'}" save=lock=result.lockId
+expect-locked holder=Smoke
+expect-readonly keys=Ctrl+Z,Delete,Ctrl+K
+wait 300
+screenshot shots/m9-01-banner.png
+
+# 4. One agent batch: place, split and a title.
+agent-call batch.begin {'label':'Assemble'}
+agent-call edit.place {'mediaId':'$a','at':0,'mode':'overwrite','streams':'both'}
+agent-call edit.place {'mediaId':'$g','at':180,'mode':'overwrite','streams':'both'}
+agent-call edit.split {'frame':90}
+agent-call project.get {} save=v2=result.tracks[name=V2].id
+agent-call edit.title.add "{'trackId':'$v2','at':0,'durationFrames':60,'mode':'overwrite','title':{'text':'Meet Ana'}}"
+agent-call batch.end {}
+expect-clips 7
+expect-duration 360
+expect-agent-log batch.end
+
+# The silence in gap.mp4 found through the API and removed as a second batch.
+agent-call audio.silences {'start':180,'end':360,'thresholdDb':-40,'minDurationMs':500,'padMs':100} save=s0=result.ranges[0].start save=s1=result.ranges[0].end
+agent-call batch.begin "{'label':'Remove silences'}"
+agent-call edit.remove-ranges {'ranges':[{'start':$s0,'end':$s1}],'ripple':true}
+agent-call batch.end {}
+expect-duration-below 360
+
+# 5. A frame rendered through the API, saved as a PNG.
+agent-call frame.render {'frame':30,'width':640,'format':'base64'} png=shots/m9-frame30.png
+
+# 6. Pause: a mutating call waits (1 s in smoke runs) and fails with paused; reads still work. Then resume.
+agent-pause
+expect-locked holder=Smoke paused
+agent-call edit.split {'frame':20} expect=paused
+agent-call project.describe {}
+agent-resume
+expect-locked holder=Smoke
+expect-agent-log edit.split code=paused
+
+# 7. Take over: the next call gets lock_lost; one Ctrl+Z reverts the whole "Remove silences" batch.
+agent-takeover
+expect-unlocked
+agent-call edit.split {'frame':20} expect=lock_lost
+key Ctrl+Z edit
+expect-duration 360
+expect-clips 7
+wait 300
+screenshot shots/m9-02-after-undo.png
+
+# 8. Acquire again, export through the API, check it with ffprobe, release.
+agent-call lock.acquire "{'agentName':'Smoke','reason':'export'}" save=lock=result.lockId
+agent-call exports.start "{'preset':'h264','quality':'draft','range':'whole','outputPath':'$dir/m9-export.mp4','overwrite':true}" save=exp=result.id
+agent-call exports.get {'exportId':'$exp','waitMs':20000} until=result.state=completed timeout=300
+probe m9-export.mp4 vcodec=h264 frames=360
+agent-call lock.release {}
+expect-unlocked
+
+# 9. The write gate never fired, and the Agent panel shows the calls.
+expect-no-refused
+panel agent
+wait 300
+screenshot shots/m9-03-panel.png
+panel media
+show-dialog settings page=agents screenshot=shots/m9-04-settings-agents.png

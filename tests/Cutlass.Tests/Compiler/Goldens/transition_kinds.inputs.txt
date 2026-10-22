@@ -1,0 +1,10 @@
+-ss 1.000000 -t 1.266666 -i D:/Clips/a.mp4
+-ss 1.833333 -t 1.433333 -i D:/Clips/b.mp4
+-ss 2.833333 -t 1.433333 -i D:/Clips/a.mp4
+-ss 3.833333 -t 1.433333 -i D:/Clips/b.mp4
+-ss 4.833333 -t 1.266666 -i D:/Clips/a.mp4
+-ss 6.000000 -t 1.266666 -i D:/Clips/b.mp4
+-ss 6.833333 -t 1.433333 -i D:/Clips/a.mp4
+-ss 7.833333 -t 1.433333 -i D:/Clips/b.mp4
+-ss 8.833333 -t 1.433333 -i D:/Clips/a.mp4
+-ss 9.833333 -t 1.266666 -i D:/Clips/b.mp4

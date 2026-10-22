@@ -1,0 +1,6 @@
+color=c=black:s=1920x1080:r=30,trim=end_frame=60,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=35,trim=end_frame=35,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p[v0s0];
+color=c=black@0:s=1920x1080:r=30,trim=end_frame=35,format=yuva420p[v0s1];
+[v0s0][v0s1]xfade=transition=fade:duration=0.333333:offset=0.833333,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p[vout];
+anullsrc=r=48000:cl=stereo,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,atrim=end_sample=96000[aout]

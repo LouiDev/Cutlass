@@ -1,0 +1,135 @@
+name: CI
+
+# TECH_BRIEF 11.3 and 12 (M7): build Release with warnings as errors, the unit and integration tests with a real
+# ffmpeg, the text check and the M4 smoke run in the real app on Windows and Linux, plus the M7 smoke run (every
+# export preset) on Windows; tags also publish both runtimes.
+# Every step is a script from the repository, so each one runs locally the same way.
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # A pinned Windows ffmpeg (gyan.dev release build, which has every encoder of the DESIGN 9 presets and the
+  # -/filter_complex script syntax). Ubuntu 24.04 ships ffmpeg 6.1, which exercises -filter_complex_script.
+  FFMPEG_WINDOWS_URL: https://github.com/GyanD/codexffmpeg/releases/download/7.1/ffmpeg-7.1-full_build.zip
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install ffmpeg and the X server (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg xvfb xauth libice6 libsm6 libfontconfig1 fonts-dejavu-core
+          ffmpeg -hide_banner -version | head -n 1
+
+      - name: Install ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'ffmpeg.zip'
+          $dest = Join-Path $env:RUNNER_TEMP 'ffmpeg'
+          Invoke-WebRequest -Uri $env:FFMPEG_WINDOWS_URL -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath $dest -Force
+          $bin = Get-ChildItem -Path $dest -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          $bin.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & $bin.FullName -hide_banner -version | Select-Object -First 1
+
+      - name: Restore
+        run: dotnet restore Cutlass.slnx
+
+      # Release turns warnings into errors (Directory.Build.props).
+      - name: Build (Release)
+        run: dotnet build Cutlass.slnx -c Release --no-restore --disable-build-servers -m:1
+
+      - name: Unit tests
+        run: dotnet test tests/Cutlass.Tests -c Release --no-build --disable-build-servers -m:1
+
+      - name: Integration tests
+        run: dotnet test tests/Cutlass.IntegrationTests -c Release --no-build --disable-build-servers -m:1
+
+      - name: Text check (no em dashes)
+        shell: pwsh
+        run: ./build/check-text.ps1
+
+      # The M4 smoke run in the real app (TECH_BRIEF 10.4). Windows runners have a desktop session; Linux runs under
+      # Xvfb. Without an audio device the app falls back to the silent clock, which the M4 script does not need.
+      - name: Smoke test M4 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/smoke.ps1 -Script m4 -Configuration Release -NoBuild -OutDir "${{ runner.temp }}/cutlass-smoke"
+
+      - name: Smoke test M4 (Linux, Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a --server-args="-screen 0 1920x1080x24" pwsh ./build/smoke.ps1 -Script m4 -Configuration Release -NoBuild -OutDir "${{ runner.temp }}/cutlass-smoke"
+
+      # M7: the Settings dialog and one export per DESIGN 9 preset, each checked with ffprobe (a few minutes). Windows
+      # only: the pinned full build has every preset encoder, while Ubuntu's ffmpeg lacks some and stays on M4.
+      - name: Smoke test M7 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/smoke.ps1 -Script m7 -Configuration Release -NoBuild -OutDir "${{ runner.temp }}/cutlass-smoke-m7"
+
+      - name: Upload the smoke log and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/cutlass-smoke/*.log
+            ${{ runner.temp }}/cutlass-smoke/shots/
+            ${{ runner.temp }}/cutlass-smoke-m7/*.log
+            ${{ runner.temp }}/cutlass-smoke-m7/shots/
+          if-no-files-found: ignore
+
+  publish:
+    name: publish (${{ matrix.rid }})
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    strategy:
+      matrix:
+        rid: [win-x64, linux-x64]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Self-contained, one folder, nothing trimmed; the script checks the OpenAL native and the bundled fonts.
+      - name: Publish
+        run: bash build/publish.sh ${{ matrix.rid }}
+
+      # A tarball keeps the execute bit of the Linux app, which the artifact zip would drop.
+      - name: Pack
+        run: tar -czf "cutlass-${{ github.ref_name }}-${{ matrix.rid }}.tar.gz" -C "artifacts/publish/${{ matrix.rid }}" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cutlass-${{ github.ref_name }}-${{ matrix.rid }}
+          path: cutlass-${{ github.ref_name }}-${{ matrix.rid }}.tar.gz
+          if-no-files-found: error

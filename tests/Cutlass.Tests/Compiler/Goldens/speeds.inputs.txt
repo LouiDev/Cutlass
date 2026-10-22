@@ -1,0 +1,6 @@
+-ss 2.000000 -t 0.351000 -i D:/Clips/pal.mp4
+-ss 2.000000 -t 0.601000 -i D:/Clips/pal.mp4
+-ss 2.000000 -t 2.101000 -i D:/Clips/pal.mp4
+-ss 1.801000 -t 0.550000 -i D:/Clips/pal.mp4
+-ss 1.801000 -t 0.800000 -i D:/Clips/pal.mp4
+-ss 1.801000 -t 2.300000 -i D:/Clips/pal.mp4

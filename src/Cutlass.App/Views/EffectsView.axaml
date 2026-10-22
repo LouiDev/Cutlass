@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             x:Class="Cutlass.App.Views.EffectsView"
+             x:DataType="vm:EffectsViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.effectRow">
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.effectRow:pointerover">
+      <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+    </Style>
+    <Style Selector="Border.effectRow.selected">
+      <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.effectRow Button.link">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.effectRow:pointerover Button.link">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.effectRow.selected Button.link">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.effectBadge">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.effectBadge.transition">
+      <Setter Property="Background" Value="{DynamicResource VideoClipBrush}" />
+    </Style>
+    <Style Selector="Border.effectBadge.title">
+      <Setter Property="Background" Value="{DynamicResource TitleClipBrush}" />
+    </Style>
+    <Style Selector="Border.effectBadge > TextBlock">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.groupTitle">
+      <Setter Property="Margin" Value="4,10,0,4" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:EffectItem">
+      <Border Classes="effectRow" Classes.selected="{Binding IsSelected}" ToolTip.Tip="{Binding Description}">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+          <Border Classes="effectBadge" Classes.transition="{Binding IsTransition}" Classes.title="{Binding IsTitle}">
+            <TextBlock Text="{Binding Badge}" />
+          </Border>
+          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                     Text="{Binding Name}" />
+          <TextBlock Grid.Column="2" Margin="0,0,6,0" VerticalAlignment="Center" Text="&#x2605;"
+                     Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsDefault}"
+                     ToolTip.Tip="Default transition (Ctrl+D)" />
+          <TextBlock Grid.Column="3" Classes="secondary" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center"
+                     Text="{Binding Detail}" />
+          <Button Grid.Column="4" Classes="link" Content="Apply" CommandParameter="{Binding}"
+                  Command="{Binding $parent[UserControl].((vm:EffectsViewModel)DataContext).ApplyItemCommand}"
+                  ToolTip.Tip="Apply to the selection" />
+        </Grid>
+      </Border>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <!-- DESIGN 4.2 Effects tab: transitions (double-click sets the default), title templates and fade presets.
+       Click selects, Apply or double-click applies to the timeline selection, and items drag out as cutlass/effect-id. -->
+  <Border Classes="panel">
+    <DockPanel>
+      <Border DockPanel.Dock="Bottom" Background="{DynamicResource Bg2Brush}" BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="0,1,0,0" Padding="8,4">
+        <DockPanel>
+          <Button DockPanel.Dock="Right" Classes="accent" Content="Apply" Command="{Binding ApplySelectedCommand}"
+                  ToolTip.Tip="Apply the selected effect to the timeline selection" />
+          <TextBlock Classes="secondary" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"
+                     Text="{Binding StatusText}" />
+        </DockPanel>
+      </Border>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="Lists" Margin="6,0,6,8">
+          <TextBlock Classes="panelTitle groupTitle" Text="TRANSITIONS" />
+          <ItemsControl ItemsSource="{Binding Transitions}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="TITLES" />
+          <ItemsControl ItemsSource="{Binding Titles}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="FADES" />
+          <ItemsControl ItemsSource="{Binding Adjustments}" />
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Border>
+</UserControl>

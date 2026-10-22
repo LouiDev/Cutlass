@@ -1,0 +1,307 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:views="using:Cutlass.App.Views"
+        xmlns:conv="using:Cutlass.App.Converters"
+        xmlns:controls="using:Cutlass.App.Controls"
+        xmlns:services="using:Cutlass.App.Services"
+        mc:Ignorable="d" d:DesignWidth="1600" d:DesignHeight="900"
+        x:Class="Cutlass.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1600" Height="900"
+        MinWidth="1100" MinHeight="650"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+
+  <Panel>
+    <!-- DESIGN 3: menu row, top panels (58%), timeline (42%), status bar. Every boundary is a GridSplitter. -->
+    <Grid x:Name="RootGrid" RowDefinitions="Auto,58*,4,42*,Auto">
+
+      <!-- Menu row: menus, project name with * when dirty, Export as the primary button; under it the agent banner. -->
+      <DockPanel Grid.Row="0">
+      <!-- AGENT_INTEGRATION 6.2: the lock banner across the window under the menu row. -->
+      <views:AgentBanner DockPanel.Dock="Bottom" DataContext="{Binding Agent}" IsVisible="{Binding IsBannerVisible}" />
+      <Grid ColumnDefinitions="Auto,*,Auto" Height="{DynamicResource ToolbarHeight}"
+            Background="{DynamicResource Bg0Brush}">
+        <Menu Grid.Column="0">
+          <MenuItem Header="_File">
+            <MenuItem Header="_New" InputGesture="Ctrl+N" Command="{Binding NewCommand}" />
+            <MenuItem Header="_Open..." InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
+            <MenuItem Header="_Save" InputGesture="Ctrl+S" Command="{Binding SaveCommand}" />
+            <MenuItem Header="Save _As..." InputGesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+            <Separator />
+            <MenuItem Header="_Import..." InputGesture="Ctrl+I" Command="{Binding ImportCommand}" />
+            <MenuItem Header="_Relink media..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RelinkMedia}" />
+            <MenuItem Header="_Export..." InputGesture="Ctrl+E" Command="{Binding ExportCommand}" />
+            <Separator />
+            <MenuItem Header="E_xit" InputGesture="Ctrl+Q" Command="{Binding QuitCommand}" />
+          </MenuItem>
+          <MenuItem Header="_Edit">
+            <MenuItem Header="{Binding UndoMenuText}" InputGesture="Ctrl+Z" Command="{Binding Timeline.UndoCommand}" />
+            <MenuItem Header="{Binding RedoMenuText}" InputGesture="Ctrl+Shift+Z" Command="{Binding Timeline.RedoCommand}" />
+            <Separator />
+            <MenuItem Header="Cu_t" InputGesture="Ctrl+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Cut}" />
+            <MenuItem Header="_Copy" InputGesture="Ctrl+C" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Copy}" />
+            <MenuItem Header="_Paste" InputGesture="Ctrl+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Paste}" />
+            <MenuItem Header="Paste _Insert" InputGesture="Ctrl+Shift+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PasteInsert}" />
+            <Separator />
+            <MenuItem Header="_Delete" InputGesture="Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Lift}" />
+            <MenuItem Header="Ripple D_elete" InputGesture="Shift+Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleDelete}" />
+            <Separator />
+            <MenuItem Header="Select _All" InputGesture="Ctrl+A" Command="{Binding Timeline.SelectAllCommand}" />
+            <MenuItem Header="Deselect" InputGesture="Escape" Command="{Binding Timeline.ClearSelectionCommand}" />
+            <Separator />
+            <MenuItem Header="Se_ttings..." InputGesture="Ctrl+OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Settings}" />
+          </MenuItem>
+          <MenuItem Header="_Clip">
+            <MenuItem Header="_Insert from Source" InputGesture="OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Insert}" />
+            <MenuItem Header="_Overwrite from Source" InputGesture="OemPeriod" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Overwrite}" />
+            <MenuItem Header="_Match Frame" InputGesture="F" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MatchFrame}" />
+            <Separator />
+            <MenuItem Header="_Split at Playhead" InputGesture="Ctrl+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Split}" />
+            <MenuItem Header="Split _All Tracks" InputGesture="Ctrl+Shift+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SplitAll}" />
+            <MenuItem Header="Trim Start to Playhead" InputGesture="Q" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleTrimStart}" />
+            <MenuItem Header="Trim End to Playhead" InputGesture="W" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleTrimEnd}" />
+            <Separator />
+            <MenuItem Header="Add Default _Transition" InputGesture="Ctrl+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddTransition}" />
+            <MenuItem Header="Add Audio _Crossfade" InputGesture="Ctrl+Shift+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioCrossfade}" />
+            <MenuItem Header="New T_itle" InputGesture="Ctrl+T" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NewTitle}" />
+            <Separator />
+            <MenuItem Header="Sp_eed..." InputGesture="Ctrl+R" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Speed}" />
+            <MenuItem Header="_Link / Unlink" InputGesture="Ctrl+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.LinkUnlink}" />
+            <MenuItem Header="Move into S_ync" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MoveIntoSync}" />
+            <MenuItem Header="_Enable / Disable" InputGesture="Shift+E" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ToggleEnabled}" />
+            <MenuItem Header="Nudge Left" InputGesture="Alt+Left" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NudgeLeft}" />
+            <MenuItem Header="Nudge Right" InputGesture="Alt+Right" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NudgeRight}" />
+          </MenuItem>
+          <MenuItem Header="_Sequence">
+            <MenuItem Header="Mark _In" InputGesture="I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkIn}" />
+            <MenuItem Header="Mark _Out" InputGesture="O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkOut}" />
+            <MenuItem Header="Mark Cli_p" InputGesture="X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkClip}" />
+            <MenuItem Header="_Clear In and Out" InputGesture="Ctrl+Shift+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ClearInOut}" />
+            <MenuItem Header="Go to In" InputGesture="Shift+I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.GoToIn}" />
+            <MenuItem Header="Go to Out" InputGesture="Shift+O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.GoToOut}" />
+            <MenuItem Header="Select In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SelectInOutRange}" />
+            <MenuItem Header="Ripple Delete In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleDeleteInOutRange}" />
+            <Separator />
+            <MenuItem Header="Add _Marker" InputGesture="M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddMarker}" />
+            <MenuItem Header="Next Marker" InputGesture="Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NextMarker}" />
+            <MenuItem Header="Previous Marker" InputGesture="Ctrl+Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PreviousMarker}" />
+            <Separator />
+            <MenuItem Header="Add _Video Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddVideoTrack}" />
+            <MenuItem Header="Add _Audio Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioTrack}" />
+            <MenuItem Header="_Remove Selected Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RemoveSelectedTrack}" />
+            <MenuItem Header="Close _Gap" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.CloseGap}" />
+            <Separator />
+            <MenuItem Header="Sequence _Settings..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SequenceSettings}" />
+          </MenuItem>
+          <MenuItem Header="_View">
+            <MenuItem Header="_Timeline Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowTimelineMonitor}" />
+            <MenuItem Header="_Source Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowSourceMonitor}" />
+            <Separator />
+            <MenuItem Header="Play / Pause" InputGesture="Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PlayPause}" />
+            <MenuItem Header="Play In to Out" InputGesture="Shift+Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PlayInToOut}" />
+            <MenuItem Header="_Loop" InputGesture="Ctrl+Shift+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ToggleLoop}" />
+            <Separator />
+            <MenuItem Header="Zoom _In" InputGesture="OemPlus" Command="{Binding Timeline.ZoomInCommand}" />
+            <MenuItem Header="Zoom _Out" InputGesture="OemMinus" Command="{Binding Timeline.ZoomOutCommand}" />
+            <MenuItem Header="Zoom to _Fit" InputGesture="Shift+Z" Command="{Binding Timeline.ZoomToFitCommand}" />
+            <Separator />
+            <MenuItem Header="Safe _Guides" InputGesture="G" Command="{Binding Viewer.ToggleGuidesCommand}" />
+            <MenuItem Header="Use _Proxies" InputGesture="P" Command="{Binding Viewer.ToggleProxiesCommand}" />
+            <Separator />
+            <MenuItem Header="_Jobs" Command="{Binding Jobs.ToggleCommand}" />
+            <Separator />
+            <MenuItem Header="_Agent Panel" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowAgentPanel}" />
+            <MenuItem Header="Agent: Take _Over" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentTakeOver}" />
+            <MenuItem Header="Agent: _Pause / Resume" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentPauseResume}" />
+            <MenuItem Header="Agent: _Follow" ToggleType="CheckBox" IsChecked="{Binding Agent.Follow}" />
+          </MenuItem>
+          <MenuItem Header="_Help">
+            <MenuItem Header="_Locate ffmpeg..." Command="{Binding LocateFfmpegCommand}" />
+            <MenuItem Header="Open _Log Folder" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.OpenLogFolder}" />
+            <Separator />
+            <MenuItem Header="_About Cutlass" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.About}" />
+          </MenuItem>
+        </Menu>
+        <TextBlock Grid.Column="1" Text="{Binding TitleText}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Classes="secondary" IsVisible="{Binding HasProject}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0" Command="{Binding ExportCommand}" ToolTip.Tip="Export (Ctrl+E)">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{StaticResource IconExport}" Width="12" Height="12" />
+            <TextBlock Text="Export" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </Grid>
+      </DockPanel>
+
+      <!-- Top row: Media 22% | Viewer 56% | Inspector 22% -->
+      <Grid x:Name="TopGrid" Grid.Row="1" ColumnDefinitions="22*,4,56*,4,22*">
+        <views:MediaBinView Grid.Column="0" MinWidth="200" DataContext="{Binding MediaBin}" />
+        <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+        <views:ViewerView Grid.Column="2" MinWidth="360" DataContext="{Binding Viewer}" />
+        <GridSplitter Grid.Column="3" ResizeDirection="Columns" />
+        <views:InspectorView Grid.Column="4" MinWidth="220" DataContext="{Binding Inspector}" />
+      </Grid>
+
+      <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
+
+      <!-- Timeline panel -->
+      <Border x:Name="TimelinePanel" Grid.Row="3" Classes="panel" MinHeight="200">
+        <DockPanel>
+          <!-- Toolbar (30 px): tools, snap, linked selection, playhead timecode, zoom, + Track. -->
+          <Border DockPanel.Dock="Top" Classes="header" Padding="4,0">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                <Button Classes="icon"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Select}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Select}"
+                        ToolTip.Tip="Select (V)">
+                  <PathIcon Data="{StaticResource IconSelect}" />
+                </Button>
+                <Button Classes="icon"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Ripple}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Ripple}"
+                        ToolTip.Tip="Ripple (B)">
+                  <PathIcon Data="{StaticResource IconRipple}" />
+                </Button>
+                <Button Classes="icon"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Roll}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Roll}"
+                        ToolTip.Tip="Roll (N)">
+                  <PathIcon Data="{StaticResource IconRoll}" />
+                </Button>
+                <Button Classes="icon"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Slip}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Slip}"
+                        ToolTip.Tip="Slip (Y)">
+                  <PathIcon Data="{StaticResource IconSlip}" />
+                </Button>
+                <Button Classes="icon"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Razor}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Razor}"
+                        ToolTip.Tip="Razor (C)">
+                  <PathIcon Data="{StaticResource IconRazor}" />
+                </Button>
+                <Rectangle Classes="separator" />
+                <Button Classes="icon" Classes.active="{Binding Timeline.SnapEnabled}"
+                        Command="{Binding Timeline.ToggleSnapCommand}" ToolTip.Tip="Snapping (S)">
+                  <PathIcon Data="{StaticResource IconSnap}" />
+                </Button>
+                <Button Classes="icon" Classes.active="{Binding Timeline.LinkedSelection}"
+                        Command="{Binding Timeline.ToggleLinkedSelectionCommand}" ToolTip.Tip="Linked selection">
+                  <PathIcon Data="{StaticResource IconLink}" />
+                </Button>
+                <Rectangle Classes="separator" />
+                <TextBox x:Name="PlayheadBox" Classes="timecodeBox" Text="{Binding PlayheadText}" Width="104"
+                         ToolTip.Tip="Playhead: type a timecode or +N / -N frames, then Enter">
+                  <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding CommitPlayheadTextCommand}" />
+                  </TextBox.KeyBindings>
+                </TextBox>
+              </StackPanel>
+              <Button DockPanel.Dock="Right" Height="24" Padding="8,0" VerticalAlignment="Center"
+                      VerticalContentAlignment="Center" ToolTip.Tip="Add or delete tracks" IsEnabled="{Binding CanEditProject}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <PathIcon Data="{StaticResource IconPlus}" Width="10" Height="10" />
+                  <TextBlock Text="Track" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button.Flyout>
+                  <MenuFlyout Placement="BottomEdgeAlignedRight">
+                    <MenuItem Header="Add video track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddVideoTrack}" />
+                    <MenuItem Header="Add audio track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioTrack}" />
+                    <Separator />
+                    <MenuItem Header="Delete selected track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RemoveSelectedTrack}" />
+                  </MenuFlyout>
+                </Button.Flyout>
+              </Button>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                <Button Classes="icon" Command="{Binding Timeline.ZoomOutCommand}" ToolTip.Tip="Zoom out (-)">
+                  <PathIcon Data="{StaticResource IconZoomOut}" />
+                </Button>
+                <Slider Width="180" Minimum="0" Maximum="100" Value="{Binding Timeline.ZoomLevel}" VerticalAlignment="Center"
+                        Margin="0,-8" ToolTip.Tip="Zoom" Focusable="False" />
+                <Button Classes="icon" Command="{Binding Timeline.ZoomInCommand}" ToolTip.Tip="Zoom in (+)">
+                  <PathIcon Data="{StaticResource IconZoomIn}" />
+                </Button>
+                <Button Classes="icon" Command="{Binding Timeline.ZoomToFitCommand}" ToolTip.Tip="Zoom to fit (Shift+Z)">
+                  <PathIcon Data="{StaticResource IconGrid}" />
+                </Button>
+              </StackPanel>
+            </DockPanel>
+          </Border>
+
+          <!-- DESIGN 4.5: the stereo master peak meter at the timeline's right edge. -->
+          <Border DockPanel.Dock="Right" Width="40" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+                  ToolTip.Tip="Master peak meter (dBFS)">
+            <controls:AudioMeter LeftDb="{Binding Viewer.MeterLeftDb}" RightDb="{Binding Viewer.MeterRightDb}"
+                                 LeftPeakDb="{Binding Viewer.MeterLeftPeakDb}" RightPeakDb="{Binding Viewer.MeterRightPeakDb}" />
+          </Border>
+          <views:TimelineView DataContext="{Binding Timeline}" />
+        </DockPanel>
+      </Border>
+
+      <!-- Status bar -->
+      <Border Grid.Row="4" Classes="statusBar">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Right" Text="{Binding SequenceFormatText}" />
+          <StackPanel Orientation="Horizontal">
+            <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center" Classes="statusDot"
+                     Classes.ok="{Binding IsFfmpegOk}" Classes.error="{Binding IsFfmpegError}" />
+            <TextBlock Text="{Binding FfmpegStatusText}" ToolTip.Tip="{Binding FfmpegToolTip}" />
+            <Button Classes="link" Content="Locate..." Margin="6,0,0,0" IsVisible="{Binding IsFfmpegError}"
+                    Command="{Binding LocateFfmpegCommand}" ToolTip.Tip="Locate ffmpeg" />
+            <Button Classes="link" Content="Settings..." Margin="6,0,0,0" IsVisible="{Binding IsFfmpegError}"
+                    Command="{Binding OpenFfmpegSettingsCommand}" ToolTip.Tip="ffmpeg location in Settings (Media)" />
+            <Rectangle Classes="separator" />
+            <Button x:Name="JobsButton" Classes="link" Content="{Binding Jobs.Summary}" ToolTip.Tip="Show jobs"
+                    Command="{Binding Jobs.ToggleCommand}" />
+            <!-- AGENT_INTEGRATION 6.3: the agent badge after the jobs; a click opens the AGENT tab. -->
+            <Rectangle Classes="separator" IsVisible="{Binding Agent.IsBadgeVisible}" />
+            <Button Classes="link" Command="{Binding Agent.ShowPanelCommand}" IsVisible="{Binding Agent.IsBadgeVisible}"
+                    ToolTip.Tip="Agent connections: show the AGENT panel">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
+                         Classes.accent="{Binding Agent.BadgeIsAccent}" Classes.amber="{Binding Agent.BadgeIsAmber}" />
+                <TextBlock Text="{Binding Agent.BadgeText}" />
+              </StackPanel>
+            </Button>
+            <TextBlock Text="{Binding Agent.PendingText}" Margin="8,0,0,0"
+                       IsVisible="{Binding Agent.PendingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <Rectangle Classes="separator" />
+            <TextBlock Text="{Binding CacheSummary}" />
+            <Rectangle Classes="separator" IsVisible="{Binding IsAudioUnavailable}" />
+            <TextBlock Text="Audio unavailable" Foreground="{DynamicResource AccentBrush}"
+                       IsVisible="{Binding IsAudioUnavailable}" ToolTip.Tip="{Binding AudioToolTip}" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <!-- Welcome overlay: covers the panels (rows 1 to 3) while no project is open. The menu row with the agent
+           banner and the status bar stay visible and usable, so Take over, Pause and the ask-first Allow and Deny
+           are never hidden under it. While an agent holds the project the welcome actions are disabled. -->
+      <Panel Grid.Row="1" Grid.RowSpan="3" IsVisible="{Binding ShowWelcome}" IsEnabled="{Binding !Agent.IsLocked}">
+        <views:WelcomeOverlay DataContext="{Binding Welcome}" />
+      </Panel>
+    </Grid>
+
+    <!-- Jobs popover, anchored to the status bar job summary. -->
+    <Popup PlacementTarget="{Binding #JobsButton}" Placement="TopEdgeAlignedLeft" VerticalOffset="-4"
+           IsOpen="{Binding Jobs.IsOpen, Mode=TwoWay}" IsLightDismissEnabled="True">
+      <Border Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+              CornerRadius="4" Padding="12">
+        <views:JobsPopover DataContext="{Binding Jobs}" />
+      </Border>
+    </Popup>
+
+    <!-- Toast -->
+    <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40" Padding="14,8" CornerRadius="4"
+            Background="{DynamicResource Bg3Brush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+            IsVisible="{Binding IsToastVisible}" IsHitTestVisible="False" MaxWidth="720">
+      <TextBlock Text="{Binding ToastText}" TextWrapping="Wrap" />
+    </Border>
+  </Panel>
+</Window>

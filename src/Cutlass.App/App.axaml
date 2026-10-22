@@ -1,0 +1,53 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Cutlass.App.App"
+             RequestedThemeVariant="Dark">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Cutlass.App/Themes/CutlassTheme.axaml" />
+        <ResourceInclude Source="avares://Cutlass.App/Themes/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <!-- DESIGN 8: Accent amber, panels Bg1, neutral low-chroma greys. -->
+        <ColorPaletteResources x:Key="Dark"
+                               Accent="#F5A524"
+                               AltHigh="#141518"
+                               AltLow="#141518"
+                               AltMedium="#141518"
+                               AltMediumHigh="#141518"
+                               AltMediumLow="#141518"
+                               BaseHigh="#E6E8EB"
+                               BaseLow="#30343A"
+                               BaseMedium="#9BA1A9"
+                               BaseMediumHigh="#C2C7CD"
+                               BaseMediumLow="#5C626B"
+                               ChromeAltLow="#C2C7CD"
+                               ChromeBlackHigh="#000000"
+                               ChromeBlackLow="#C2C7CD"
+                               ChromeBlackMedium="#000000"
+                               ChromeBlackMediumLow="#000000"
+                               ChromeDisabledHigh="#30343A"
+                               ChromeDisabledLow="#5C626B"
+                               ChromeGray="#5C626B"
+                               ChromeHigh="#5C626B"
+                               ChromeLow="#1C1E22"
+                               ChromeMedium="#25282D"
+                               ChromeMediumLow="#30343A"
+                               ChromeWhite="#FFFFFF"
+                               ListLow="#25282D"
+                               ListMedium="#30343A"
+                               RegionColor="#1C1E22"
+                               ErrorText="#E5484D" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Cutlass.App/Themes/CutlassStyles.axaml" />
+  </Application.Styles>
+
+</Application>

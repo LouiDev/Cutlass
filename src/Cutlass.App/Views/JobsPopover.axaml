@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             x:Class="Cutlass.App.Views.JobsPopover"
+             x:DataType="vm:JobsViewModel"
+             Width="420">
+
+  <!-- DESIGN 4.5: every job with progress, ETA, cancel and, on failure, Details. -->
+  <DockPanel>
+    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+      <Button DockPanel.Dock="Right" Content="Clear finished" Padding="8,2" FontSize="11"
+              Command="{Binding ClearFinishedCommand}" />
+      <TextBlock Classes="panelTitle active" Text="JOBS" />
+    </DockPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="hint" Text="No jobs yet. Media analysis, proxies and exports show their progress here."
+               IsVisible="{Binding !HasJobs}" Margin="0,12" />
+    <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Jobs}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:JobItemViewModel">
+            <Border Background="{DynamicResource Bg2Brush}" CornerRadius="4" Padding="10,8" Margin="0,0,0,6">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{Binding Kind}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" MaxWidth="240" />
+                </StackPanel>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}" Classes="secondary"
+                           Classes.danger="{Binding IsFailed}" HorizontalAlignment="Right" />
+                <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding Percent}"
+                             Height="4" MinHeight="4" Margin="0,6" IsVisible="{Binding IsActive}" />
+                <!-- The second line only when it has something to show, so finished rows stay one line (DESIGN 8). -->
+                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center"
+                            IsVisible="{Binding HasFooter}">
+                  <TextBlock Classes="secondary" FontSize="11" Text="{Binding SpeedText}" />
+                  <TextBlock Classes="secondary" FontSize="11" Text="{Binding EtaText}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right"
+                            IsVisible="{Binding HasFooter}">
+                  <Button Content="Cancel" Padding="8,2" FontSize="11" Command="{Binding CancelCommand}"
+                          IsVisible="{Binding IsActive}" />
+                  <Button Content="Open folder" Padding="8,2" FontSize="11" Command="{Binding OpenFolderCommand}"
+                          IsVisible="{Binding ShowOpenFolder}" />
+                  <Button Content="Details" Padding="8,2" FontSize="11" Command="{Binding DetailsCommand}"
+                          IsVisible="{Binding IsFailed}" />
+                </StackPanel>
+                <!-- Non-fatal warnings (offline media, fallback fonts, an output kept under a free name). -->
+                <TextBlock Grid.Row="3" Grid.ColumnSpan="2" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                           Foreground="{DynamicResource AccentBrush}" Text="{Binding WarningText}"
+                           IsVisible="{Binding HasWarnings}" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

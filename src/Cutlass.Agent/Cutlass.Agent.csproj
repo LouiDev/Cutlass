@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Cutlass.Agent</RootNamespace>
+  </PropertyGroup>
+
+  <!-- AGENT_INTEGRATION 2.1: Core, Compiler and Media only; never Avalonia. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Cutlass.Core\Cutlass.Core.csproj" />
+    <ProjectReference Include="..\Cutlass.Compiler\Cutlass.Compiler.csproj" />
+    <ProjectReference Include="..\Cutlass.Media\Cutlass.Media.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cutlass.Tests" />
+    <InternalsVisibleTo Include="Cutlass.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+out/
+*.binlog
+
+# IDE and user files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.swp
+.DS_Store
+Thumbs.db
+
+# Test results and coverage
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.json
+coverage*.xml
+*.coverage
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+
+# Cutlass cache and runtime data (normally under LocalAppData or XDG dirs, ignored if redirected into the repo)
+.cutlass-cache/
+[Cc]ache/v1/
+*.cutlass.user
+*.partial.*

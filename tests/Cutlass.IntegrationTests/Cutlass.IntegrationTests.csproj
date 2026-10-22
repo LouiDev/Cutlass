@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Cutlass.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Cutlass.Core\Cutlass.Core.csproj" />
+    <ProjectReference Include="..\..\src\Cutlass.Compiler\Cutlass.Compiler.csproj" />
+    <ProjectReference Include="..\..\src\Cutlass.Media\Cutlass.Media.csproj" />
+    <ProjectReference Include="..\..\src\Cutlass.Agent\Cutlass.Agent.csproj" />
+    <!-- McpEndToEndTests launches the built MCP exe with dotnet: build it first, but do not reference its assembly. -->
+    <ProjectReference Include="..\..\src\Cutlass.Agent.Mcp\Cutlass.Agent.Mcp.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The MCP client side of McpEndToEndTests (AGENT_INTEGRATION 7.2), pinned with the server's version. -->
+    <PackageReference Include="ModelContextProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The bundled Inter fonts sit next to the test assembly exactly as next to the app (FontLocator tests). -->
+    <Content Include="..\..\src\Cutlass.App\Assets\Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,70 @@
+# Cutlass M4 smoke test (TECH_BRIEF 12, M4 Verify). Run it with build/smoke.ps1, which generates clipA.mp4 and
+# clipB.mp4 next to a copy of this file. Paths are relative to the script. Commands: SmokeScript.Commands.
+import clipA.mp4 clipB.mp4
+wait 1500
+screenshot shots/01-imported.png
+
+# Both clips end to end on V1/A1 (',' inserts at the playhead, which then moves to the end of the clip).
+playhead start
+insert clipA.mp4
+insert clipB.mp4
+expect-length 360
+expect-clips V1 2
+expect-clips A1 2
+zoom-fit
+
+# Scrub: the middle of the sequence, then a frame inside each clip.
+playhead middle
+frame
+playhead 45
+frame
+playhead 300
+frame
+playhead middle
+frame
+wait 800
+screenshot shots/02-middle.png
+
+# Cut the middle piece out of clipA with ripple delete, then undo it. Ctrl+K splits the selection when there
+# is one, so deselect first to split the targeted tracks.
+deselect
+playhead 60
+split
+playhead 120
+split
+expect-clips V1 4
+expect-clips A1 4
+select-at 90
+ripple-delete
+expect-length 300
+expect-clips V1 3
+playhead 60
+frame
+wait 800
+screenshot shots/03-ripple-deleted.png
+undo
+expect-length 360
+expect-clips V1 4
+
+# Save and reopen with the sidecar.
+save out/smoke.cutlass
+open out/smoke.cutlass
+expect-length 360
+expect-clips V1 4
+playhead middle
+frame
+
+# Export through the export dialog and check the file.
+export h264 out/smoke.mp4 quality=draft
+probe out/smoke.mp4 frames=export vcodec=h264 acodec=aac size=1280x720 bt709
+wait 500
+screenshot shots/04-exported.png
+
+# A file manager drop onto the timeline of a new project imports the files and places them end to end.
+new
+drop-files V1 0 clipB.mp4 clipA.mp4
+expect-length 360
+expect-clips V1 2
+expect-clips A1 2
+playhead 200
+frame

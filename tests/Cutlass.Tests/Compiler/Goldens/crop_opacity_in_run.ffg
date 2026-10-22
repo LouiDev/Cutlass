@@ -1,0 +1,8 @@
+color=c=black:s=1920x1080:r=30,trim=end_frame=60,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=60,trim=end_frame=60,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass[c0];
+[1:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=30,trim=end_frame=30,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p[v1s0];
+[2:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=30,trim=end_frame=30,crop=w=iw*0.700000:h=ih*0.950000:x=iw*0.100000:y=ih*0.050000,scale=w=806:h=616:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,lut=a=val*0.500000,[cv1s1]overlay=x=699:y=148:format=yuv420:eof_action=pass:threads=1[v1s1];
+color=c=black@0:s=1920x1080:r=30,trim=end_frame=30,format=yuva420p[cv1s1];
+[v1s0][v1s1]concat=n=2:v=1:a=0,settb=1/30,setpts=PTS-STARTPTS+0[v1r0];
+[c0][v1r0]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p[vout]

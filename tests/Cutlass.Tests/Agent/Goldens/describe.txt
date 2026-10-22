@@ -1,0 +1,12 @@
+Project "interview" (unsaved) rev 57 | 1920x1080 @ 25 (25/1) | 48 kHz | 450 frames (00:00:18:00)
+In 10 | Out - | Playhead 120 | Lock: Claude Code (Remove silences)
+Media: m_long long.mp4 100 s, h264 1920x1080 25, aac 48k 2ch
+Media: m_short short.mov 4 s, h264 1920x1080 25, aac 48k 2ch OFFLINE
+Media: m_still still.png 0 s, png 1920x1080 still
+Media: m_music music.wav 60 s, aac 48k 2ch
+Media: m_uhd uhd.mp4 10 s, h264 3840x2160 29.97, aac 48k 2ch
+V2 tr_v2: c_02 title "Meet Ana" 0+120
+V1 tr_v1: c_01 long.mp4 0+150 src 2.000-8.000 s link l_01 | x_01 crossfade 30 @150 | c_05 long.mp4 150+300 src 16.000-40.000 s speed 200%
+A1 tr_a1 0 dB: c_11 long.mp4 0+150 src 2.000-8.000 s link l_01
+A2 tr_a2 0 dB: c_music music.wav 0+300 src 0.000-12.000 s gain -6 dB fade 0/12 keys 1
+Markers: k_3m9q0aa1 300 "Drop"

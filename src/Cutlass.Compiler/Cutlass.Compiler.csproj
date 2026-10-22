@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Cutlass.Compiler</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cutlass.Core\Cutlass.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cutlass.Tests" />
+    <InternalsVisibleTo Include="Cutlass.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,264 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:views="using:Cutlass.App.Views"
+             x:Class="Cutlass.App.Views.MediaBinView"
+             x:DataType="vm:MediaBinViewModel"
+             DragDrop.AllowDrop="True">
+
+  <UserControl.Styles>
+    <Style Selector="Border.badge">
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="Height" Value="15" />
+      <Setter Property="Margin" Value="0,0,3,0" />
+      <Setter Property="Background" Value="#CC30343A" />
+    </Style>
+    <Style Selector="Border.badge > TextBlock">
+      <Setter Property="FontSize" Value="9" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Border.badge.hdr">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Border.badge.hdr > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+    </Style>
+    <Style Selector="ListBox.bin">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="ListBox.grid ListBoxItem">
+      <Setter Property="Padding" Value="4" />
+      <Setter Property="Margin" Value="2" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="ListBox.list ListBoxItem">
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="MinHeight" Value="24" />
+    </Style>
+    <Style Selector="TextBlock.cell">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- DESIGN 4.2: grid (default) and list views, search, sort, badges; drag cards onto the timeline. -->
+  <Border Classes="panel">
+    <DockPanel>
+      <Border DockPanel.Dock="Top" Classes="header">
+        <DockPanel>
+          <Button DockPanel.Dock="Right" Classes="icon" Command="{Binding ImportCommand}" ToolTip.Tip="Import media (Ctrl+I)"
+                  IsVisible="{Binding IsMediaTab}">
+            <PathIcon Data="{StaticResource IconPlus}" />
+          </Button>
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <Panel Cursor="Hand" Background="Transparent" Tapped="OnMediaTabTapped">
+              <TextBlock Classes="panelTitle" Classes.active="{Binding IsMediaTab}" Text="MEDIA" />
+              <Border Classes="tabUnderline" Margin="0,0,0,-1" IsVisible="{Binding IsMediaTab}" />
+            </Panel>
+            <!-- DESIGN 4.2 Effects tab: transitions and title templates, mounted through EffectsHost. -->
+            <Panel Cursor="Hand" Background="Transparent" Tapped="OnEffectsTabTapped" IsEnabled="{Binding HasEffects}">
+              <TextBlock Classes="panelTitle" Classes.active="{Binding IsEffectsTab}" Text="EFFECTS" />
+              <Border Classes="tabUnderline" Margin="0,0,0,-1" IsVisible="{Binding IsEffectsTab}" />
+            </Panel>
+            <!-- AGENT_INTEGRATION 6.3: the AGENT tab while agent connections are allowed. -->
+            <Panel Cursor="Hand" Background="Transparent" Tapped="OnAgentTabTapped" IsVisible="{Binding ShowAgentTab}">
+              <TextBlock Classes="panelTitle" Classes.active="{Binding IsAgentTab}" Text="AGENT" />
+              <Border Classes="tabUnderline" Margin="0,0,0,-1" IsVisible="{Binding IsAgentTab}" />
+            </Panel>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="8,8,8,4" IsVisible="{Binding IsMediaTab}">
+        <TextBox Grid.Column="0" Watermark="Search media" Margin="0,0,4,0" Text="{Binding SearchText}">
+          <TextBox.InnerLeftContent>
+            <PathIcon Data="{StaticResource IconSearch}" Width="12" Height="12" Margin="6,0,0,0"
+                      Foreground="{DynamicResource TextSecondaryBrush}" />
+          </TextBox.InnerLeftContent>
+        </TextBox>
+        <ComboBox Grid.Column="1" ItemsSource="{Binding SortOrders}" SelectedItem="{Binding SortOrder}" Height="24"
+                  MinWidth="70" Margin="0,0,4,0" ToolTip.Tip="Sort" />
+        <Button Grid.Column="2" Classes="icon" Classes.active="{Binding IsGridView}" Command="{Binding ShowGridCommand}"
+                ToolTip.Tip="Grid view">
+          <PathIcon Data="{StaticResource IconGrid}" />
+        </Button>
+        <Button Grid.Column="3" Classes="icon" Classes.active="{Binding IsListView}" Command="{Binding ShowListCommand}"
+                ToolTip.Tip="List view">
+          <PathIcon Data="{StaticResource IconList}" />
+        </Button>
+      </Grid>
+
+      <Panel>
+      <!-- AGENT tab content: the agent panel. -->
+      <ContentControl Content="{Binding Agent}" IsVisible="{Binding IsAgentTab}"
+                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="vm:AgentViewModel">
+            <views:AgentPanelView />
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+
+      <!-- EFFECTS tab content (an EffectsViewModel with its DataTemplate, or a view). -->
+      <ContentControl x:Name="EffectsHost" Content="{Binding Effects}" IsVisible="{Binding IsEffectsTab}"
+                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="vm:EffectsViewModel">
+            <views:EffectsView />
+          </DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+
+      <Panel IsVisible="{Binding IsMediaTab}">
+        <!-- Empty bin: drop hint (and why import is unavailable). -->
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" Margin="16"
+                    IsVisible="{Binding IsEmpty}">
+          <PathIcon Data="{StaticResource IconFolder}" Width="28" Height="28"
+                    Foreground="{DynamicResource TextDisabledBrush}" />
+          <TextBlock Classes="hint" Text="{x:Static vm:MediaBinViewModel.EmptyHint}" />
+          <TextBlock Classes="hint" Text="{Binding ImportUnavailableReason}" Foreground="{DynamicResource DangerBrush}"
+                     IsVisible="{Binding !CanImport}" />
+        </StackPanel>
+
+        <ListBox x:Name="GridList" Classes="bin grid" ItemsSource="{Binding VisibleItems}"
+                 SelectedItem="{Binding SelectedItem}" IsVisible="{Binding IsGridView}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:MediaItemViewModel">
+              <StackPanel Width="160" Spacing="2" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
+                <Panel Width="160" Height="90">
+                  <Border Background="{DynamicResource Bg0Brush}" CornerRadius="3" ClipToBounds="True">
+                    <Panel>
+                      <TextBlock Text="{Binding KindGlyph}" FontSize="10" FontWeight="SemiBold" LetterSpacing="1"
+                                 Foreground="{DynamicResource TextDisabledBrush}" HorizontalAlignment="Center"
+                                 VerticalAlignment="Center" IsVisible="{Binding !HasPoster}" />
+                      <Image Source="{Binding Poster}" Stretch="Uniform" IsVisible="{Binding !IsSkimming}" />
+                      <!-- DESIGN 4.2 hover skim: the thumbnail sprite under the mouse replaces the poster. -->
+                      <Image Source="{Binding SkimImage}" Stretch="Uniform" IsVisible="{Binding IsSkimming}" />
+                    </Panel>
+                  </Border>
+                  <!-- Offline: red diagonal stripes. -->
+                  <Border CornerRadius="3" IsVisible="{Binding IsOffline}">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="8,8" SpreadMethod="Repeat">
+                        <GradientStop Color="#99E5484D" Offset="0" />
+                        <GradientStop Color="#99E5484D" Offset="0.5" />
+                        <GradientStop Color="Transparent" Offset="0.5" />
+                        <GradientStop Color="Transparent" Offset="1" />
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="4">
+                    <Border Classes="badge" IsVisible="{Binding IsVfr}" ToolTip.Tip="Variable frame rate">
+                      <TextBlock Text="VFR" />
+                    </Border>
+                    <Border Classes="badge hdr" IsVisible="{Binding IsHdr}" ToolTip.Tip="Shown and exported without tone mapping">
+                      <TextBlock Text="HDR" />
+                    </Border>
+                    <!-- DESIGN 11: a file that changed since import is re-probed and marked. -->
+                    <Border Classes="badge hdr" IsVisible="{Binding IsChanged}" ToolTip.Tip="Changed since import: read again">
+                      <TextBlock Text="CHANGED" />
+                    </Border>
+                  </StackPanel>
+                  <Border Classes="badge" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="4"
+                          IsVisible="{Binding DurationText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding DurationText}" />
+                  </Border>
+                  <!-- Proxy: progress while it builds, then the P chip. -->
+                  <Border Classes="badge hdr" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4"
+                          IsVisible="{Binding HasProxy}" ToolTip.Tip="Proxy ready (used while Use proxies is on)">
+                    <TextBlock Text="P" />
+                  </Border>
+                  <Border Classes="badge" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4"
+                          IsVisible="{Binding IsProxyBuilding}" ToolTip.Tip="Building a proxy">
+                    <TextBlock Text="{Binding ProxyText, StringFormat='P {0}'}" />
+                  </Border>
+                  <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProxyPercent}" VerticalAlignment="Bottom" Height="3"
+                               MinHeight="3" MinWidth="0" Margin="0" IsVisible="{Binding IsProxyBuilding}" />
+                  <ProgressBar IsIndeterminate="True" VerticalAlignment="Bottom" Height="3" MinHeight="3" MinWidth="0"
+                               Margin="0" IsVisible="{Binding IsBusy}" />
+                </Panel>
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="11" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+          <ListBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem Header="Open in Source" Command="{Binding OpenInSourceCommand}" />
+              <MenuItem Header="Insert at playhead" Command="{Binding InsertAtPlayheadCommand}" />
+              <MenuItem Header="Overwrite at playhead" Command="{Binding OverwriteAtPlayheadCommand}" />
+              <Separator />
+              <MenuItem Header="Create proxy" Command="{Binding CreateProxyCommand}" />
+              <MenuItem Header="Delete proxy" Command="{Binding DeleteProxyCommand}" />
+              <MenuItem Header="Relink..." Command="{Binding RelinkCommand}" />
+              <Separator />
+              <MenuItem Header="Reveal in file manager" Command="{Binding RevealCommand}" />
+              <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" />
+              <Separator />
+              <MenuItem Header="Remove from project" Command="{Binding RemoveCommand}" />
+            </ContextMenu>
+          </ListBox.ContextMenu>
+        </ListBox>
+
+        <DockPanel IsVisible="{Binding IsListView}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,58,78,44,84,40" Margin="10,0,10,2">
+            <TextBlock Grid.Column="0" Classes="panelTitle" Text="NAME" />
+            <TextBlock Grid.Column="1" Classes="panelTitle" Text="DURATION" />
+            <TextBlock Grid.Column="2" Classes="panelTitle" Text="SIZE" />
+            <TextBlock Grid.Column="3" Classes="panelTitle" Text="FPS" />
+            <TextBlock Grid.Column="4" Classes="panelTitle" Text="CODEC" />
+            <TextBlock Grid.Column="5" Classes="panelTitle" Text="PROXY" />
+          </Grid>
+          <ListBox x:Name="RowList" Classes="bin list" ItemsSource="{Binding VisibleItems}"
+                   SelectedItem="{Binding SelectedItem}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:MediaItemViewModel">
+                <Grid ColumnDefinitions="*,58,78,44,84,40" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource DangerBrush}" IsVisible="{Binding IsOffline}" />
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" IsVisible="{Binding IsChanged}" />
+                    <TextBlock Text="{Binding Name}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Classes="cell" Text="{Binding DurationText}" />
+                  <TextBlock Grid.Column="2" Classes="cell" Text="{Binding ResolutionText}" />
+                  <TextBlock Grid.Column="3" Classes="cell" Text="{Binding FpsText}" />
+                  <TextBlock Grid.Column="4" Classes="cell" Text="{Binding CodecText}" />
+                  <TextBlock Grid.Column="5" Classes="cell" Text="{Binding ProxyText}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Open in Source" Command="{Binding OpenInSourceCommand}" />
+                <MenuItem Header="Insert at playhead" Command="{Binding InsertAtPlayheadCommand}" />
+                <MenuItem Header="Overwrite at playhead" Command="{Binding OverwriteAtPlayheadCommand}" />
+                <Separator />
+                <MenuItem Header="Create proxy" Command="{Binding CreateProxyCommand}" />
+                <MenuItem Header="Delete proxy" Command="{Binding DeleteProxyCommand}" />
+                <MenuItem Header="Relink..." Command="{Binding RelinkCommand}" />
+                <Separator />
+                <MenuItem Header="Reveal in file manager" Command="{Binding RevealCommand}" />
+                <MenuItem Header="Copy path" Command="{Binding CopyPathCommand}" />
+                <Separator />
+                <MenuItem Header="Remove from project" Command="{Binding RemoveCommand}" />
+              </ContextMenu>
+            </ListBox.ContextMenu>
+          </ListBox>
+        </DockPanel>
+      </Panel>
+      </Panel>
+    </DockPanel>
+  </Border>
+</UserControl>

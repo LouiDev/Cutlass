@@ -1,0 +1,87 @@
+# Cutlass M7 smoke test (TECH_BRIEF 12, M7: every preset, settings). Run it with build/smoke.ps1 -Script m7, which
+# generates clipA.mp4 and clipB.mp4 (4 s, 640x360, 30 fps, 120 frames each, with tones) next to a copy of this file.
+# Paths are relative to the script. Commands: SmokeScript.Commands. The settings in effect at the start are written
+# back when the run ends.
+import clipA.mp4 clipB.mp4
+wait 500
+
+# Settings (Ctrl+, through the keymap): an invalid field blocks Apply, then shorter default transitions and titles
+# apply live, so the sequence below stays 120 frames long.
+settings key page=general autosave=0 expect-problem=autosave cancel
+settings key page=general autosave=3 transition=0.5 title=1 cache-gb=25 proxy=never quality=half apply
+expect-setting autosaveIntervalMinutes 3
+expect-setting defaultTransitionSeconds 0.5
+expect-setting defaultTitleSeconds 1
+expect-setting cacheLimitGb 25
+expect-setting proxyPolicy Never
+expect-setting defaultPreviewQuality Half
+# The ffmpeg location: Re-detect on the PATH search runs -version and the capability probe off the UI thread.
+settings page=media ffmpeg=path-search validate cancel
+settings page=about cancel
+
+# The sequence: 60 frames each of clipA and clipB end to end (120 frames), a 15-frame crossfade at the cut (xfade,
+# Ctrl+D with the 0.5 s default) and a 30-frame title (drawtext, Ctrl+T with the 1 s default) on V2. Source In/Out
+# leave 30 frames of handle on each side of the cut for the crossfade.
+source-open clipA.mp4
+source-in 30
+source-out 89
+key OemComma edit
+source-open clipB.mp4
+source-in 30
+source-out 89
+key OemComma edit
+monitor timeline
+expect-length 120
+expect-clips V1 2
+expect-clips A1 2
+deselect
+playhead 62
+key Ctrl+D edit
+expect-transitions V1 1
+playhead 20
+key Ctrl+T edit
+expect-section title
+expect-length 120
+playhead 60
+frame
+wait 500
+screenshot shots/01-sequence.png
+
+# Every preset of DESIGN 9 through the export dialog, each checked with ffprobe. H.265 and AV1 use a custom 180-line
+# size (even, aspect locked) to stay fast.
+export h264 out/m7-h264.mp4 quality=draft
+probe out/m7-h264.mp4 frames=export vcodec=h264 acodec=aac container=mp4 size=640x360 pixfmt=yuv420p bt709
+
+export h265 out/m7-h265.mp4 quality=draft height=180
+probe out/m7-h265.mp4 frames=export vcodec=hevc acodec=aac container=mp4 size=320x180 tag=hvc1 pixfmt=yuv420p bt709
+
+export vp9 out/m7-vp9.webm quality=draft
+probe out/m7-vp9.webm frames=export vcodec=vp9 acodec=opus container=webm size=640x360 pixfmt=yuv420p bt709
+
+export av1 out/m7-av1.mp4 quality=draft height=180
+probe out/m7-av1.mp4 frames=export vcodec=av1 acodec=aac container=mp4 size=320x180 pixfmt=yuv420p bt709
+
+export prores out/m7-prores.mov
+probe out/m7-prores.mov frames=export vcodec=prores acodec=pcm_s16le container=mov size=640x360 pixfmt=yuv422p10le bt709
+
+# GIF runs at 15 fps: 4 s of timeline give 60 frames, at the chosen width with no audio.
+export gif out/m7.gif width=320
+probe out/m7.gif frames=60 vcodec=gif container=gif size=320x180 noaudio
+
+export mp3 out/m7.mp3 quality=draft
+probe out/m7.mp3 acodec=mp3 container=mp3 novideo duration=export
+
+export aac out/m7.m4a
+probe out/m7.m4a acodec=aac container=m4a novideo duration=export
+
+export wav out/m7.wav
+probe out/m7.wav acodec=pcm_s16le container=wav novideo duration=export tolerance=0.001
+
+export flac out/m7.flac
+probe out/m7.flac acodec=flac container=flac novideo duration=export tolerance=0.001
+
+# Replacing an existing file asks first (the smoke dialog service confirms), and the export dialog remembers the
+# folder and preset of the last export in the settings.
+export h264 out/m7-h264.mp4 quality=draft
+probe out/m7-h264.mp4 frames=export vcodec=h264 bt709
+expect-setting exportPreset h264

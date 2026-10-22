@@ -1,0 +1,8 @@
+color=c=black:s=1920x1080:r=30,trim=end_frame=150,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=60,trim=end_frame=60,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass[c0];
+[1:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=60,trim=end_frame=60,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,setpts=PTS-STARTPTS+90[v0r1];
+[c0][v0r1]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p[vout];
+[0:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=96000,atrim=end_sample=96000,asetpts=PTS-STARTPTS,adelay=0S:all=1[a0s0];
+[1:1]aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=96000,atrim=end_sample=96000,asetpts=PTS-STARTPTS,adelay=144000S:all=1[a0s1];
+[a0s0][a0s1]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,apad=whole_len=240000,atrim=end_sample=240000,alimiter=limit=0.98:level=0:latency=1,apad=whole_len=240000,atrim=end_sample=240000[aout]

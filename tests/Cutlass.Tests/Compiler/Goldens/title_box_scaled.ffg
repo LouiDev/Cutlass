@@ -1,0 +1,5 @@
+color=c=black:s=960x540:r=30,trim=end_frame=30,format=yuv420p[base];
+color=c=black@0:s=960x540:r=30,trim=end_frame=30,format=yuva420p,drawtext=fontfile=Inter-Bold.ttf:textfile=t_25c33e13.txt:expansion=none:fontsize=48:fontcolor=0xFFCC00:borderw=2:bordercolor=0x000000@0.6:box=1:boxcolor=0x000000@0.502:boxborderw=8:x=(w-text_w)/2+11:y=(h-text_h)/2-20,lut=a=val*0.750000,fade=t=in:st=0.000000:d=0.166666:alpha=1,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass[c0];
+color=c=black@0:s=960x540:r=30,trim=end_frame=20,format=yuva420p,drawtext=fontfile=Inter-Regular.ttf:textfile=t_d5cdfcf7.txt:expansion=none:fontsize=48:fontcolor=0xFFFFFF@0.502:borderw=0:bordercolor=0x000000@0.6:x=(w-text_w)/2:y=h*0.1,setpts=PTS-STARTPTS+10[v1r0];
+[c0][v1r0]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=bgra[vout]

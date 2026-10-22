@@ -1,0 +1,2 @@
+-ss 0.320000 -t 1.446684 -i D:/Clips/broadcast.ts
+-ss 0.333350 -t 1.433333 -i D:/Clips/broadcast.ts

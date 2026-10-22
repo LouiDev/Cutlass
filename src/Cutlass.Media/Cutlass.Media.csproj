@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Cutlass.Media</RootNamespace>
+    <!-- Needed for the Silk.NET OpenAL pointer APIs and LibraryImport (Windows Job Object). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cutlass.Core\Cutlass.Core.csproj" />
+    <ProjectReference Include="..\Cutlass.Compiler\Cutlass.Compiler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silk.NET.OpenAL" />
+    <PackageReference Include="Silk.NET.OpenAL.Soft.Native" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cutlass.Tests" />
+    <InternalsVisibleTo Include="Cutlass.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

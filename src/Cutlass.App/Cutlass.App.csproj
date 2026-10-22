@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Cutlass.App</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cutlass.Core\Cutlass.Core.csproj" />
+    <ProjectReference Include="..\Cutlass.Compiler\Cutlass.Compiler.csproj" />
+    <ProjectReference Include="..\Cutlass.Media\Cutlass.Media.csproj" />
+    <!-- AGENT_INTEGRATION 2.1: the App hosts the agent API (AppAgentHost, AgentServerController). -->
+    <ProjectReference Include="..\Cutlass.Agent\Cutlass.Agent.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled Inter TTFs and OFL.txt for drawtext; copied to <cache>/work/ by the work directory (TECH_BRIEF 5.5). -->
+    <Content Include="Assets/Fonts/*" CopyToOutputDirectory="PreserveNewest" Link="fonts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

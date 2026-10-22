@@ -1,0 +1,7 @@
+# Goldens are compiler output compared byte for byte: no final newline, no trimming.
+root = false
+
+[*]
+insert_final_newline = false
+trim_trailing_whitespace = false
+end_of_line = lf

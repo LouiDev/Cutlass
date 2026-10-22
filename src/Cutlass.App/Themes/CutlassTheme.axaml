@@ -1,0 +1,97 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- DESIGN 8 palette. Every token exists as a Color (<Name>Color) and a SolidColorBrush (<Name>Brush). -->
+  <Color x:Key="Bg0Color">#141518</Color>
+  <Color x:Key="Bg1Color">#1C1E22</Color>
+  <Color x:Key="Bg2Color">#25282D</Color>
+  <Color x:Key="Bg3Color">#30343A</Color>
+  <Color x:Key="BorderColor">#2F3238</Color>
+  <Color x:Key="TextPrimaryColor">#E6E8EB</Color>
+  <Color x:Key="TextSecondaryColor">#9BA1A9</Color>
+  <Color x:Key="TextDisabledColor">#5C626B</Color>
+  <Color x:Key="AccentColor">#F5A524</Color>
+  <Color x:Key="PlayheadColor">#FF4D4D</Color>
+  <Color x:Key="SelectionColor">#FFFFFF</Color>
+  <Color x:Key="VideoClipColor">#3A6EA5</Color>
+  <Color x:Key="AudioClipColor">#2E8B6E</Color>
+  <Color x:Key="TitleClipColor">#8E5BD6</Color>
+  <Color x:Key="StillClipColor">#4F7C9A</Color>
+  <Color x:Key="SnapColor">#F5D547</Color>
+  <Color x:Key="MarkerColor">#F5D547</Color>
+  <!-- White at 8% (0x14 = 20 of 255). -->
+  <Color x:Key="InOutRangeColor">#14FFFFFF</Color>
+  <Color x:Key="DangerColor">#E5484D</Color>
+  <Color x:Key="SuccessColor">#3DDC84</Color>
+  <!-- Meter: green up to -6 dBFS, yellow up to -1 dBFS, red above. -->
+  <Color x:Key="MeterLowColor">#3DDC84</Color>
+  <Color x:Key="MeterMidColor">#F5D547</Color>
+  <Color x:Key="MeterHighColor">#FF4D4D</Color>
+  <!-- Foreground on Accent fills (primary button, active tool). -->
+  <Color x:Key="OnAccentColor">#141518</Color>
+  <Color x:Key="CanvasColor">#000000</Color>
+
+  <SolidColorBrush x:Key="Bg0Brush" Color="{StaticResource Bg0Color}" />
+  <SolidColorBrush x:Key="Bg1Brush" Color="{StaticResource Bg1Color}" />
+  <SolidColorBrush x:Key="Bg2Brush" Color="{StaticResource Bg2Color}" />
+  <SolidColorBrush x:Key="Bg3Brush" Color="{StaticResource Bg3Color}" />
+  <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+  <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+  <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+  <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+  <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+  <SolidColorBrush x:Key="PlayheadBrush" Color="{StaticResource PlayheadColor}" />
+  <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}" />
+  <SolidColorBrush x:Key="VideoClipBrush" Color="{StaticResource VideoClipColor}" />
+  <SolidColorBrush x:Key="AudioClipBrush" Color="{StaticResource AudioClipColor}" />
+  <SolidColorBrush x:Key="TitleClipBrush" Color="{StaticResource TitleClipColor}" />
+  <SolidColorBrush x:Key="StillClipBrush" Color="{StaticResource StillClipColor}" />
+  <SolidColorBrush x:Key="SnapBrush" Color="{StaticResource SnapColor}" />
+  <SolidColorBrush x:Key="MarkerBrush" Color="{StaticResource MarkerColor}" />
+  <SolidColorBrush x:Key="InOutRangeBrush" Color="{StaticResource InOutRangeColor}" />
+  <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+  <SolidColorBrush x:Key="MeterLowBrush" Color="{StaticResource MeterLowColor}" />
+  <SolidColorBrush x:Key="MeterMidBrush" Color="{StaticResource MeterMidColor}" />
+  <SolidColorBrush x:Key="MeterHighBrush" Color="{StaticResource MeterHighColor}" />
+  <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccentColor}" />
+  <SolidColorBrush x:Key="CanvasBrush" Color="{StaticResource CanvasColor}" />
+
+  <!-- Typography (DESIGN 8). Inter comes from Avalonia.Fonts.Inter via WithInterFont(). -->
+  <x:Double x:Key="FontSizeBody">12</x:Double>
+  <x:Double x:Key="FontSizePanelTitle">11</x:Double>
+  <!-- +4% of the 11 px panel title size. -->
+  <x:Double x:Key="LetterSpacingPanelTitle">0.44</x:Double>
+  <x:Double x:Key="FontSizeClipLabel">11</x:Double>
+  <x:Double x:Key="FontSizeRuler">10</x:Double>
+  <x:Double x:Key="FontSizeViewerTimecode">20</x:Double>
+  <x:Double x:Key="FontSizeToolbarTimecode">13</x:Double>
+
+  <!-- Spacing and geometry (DESIGN 8 and 5.1). -->
+  <x:Double x:Key="GridUnit">4</x:Double>
+  <x:Double x:Key="ToolbarHeight">30</x:Double>
+  <x:Double x:Key="IconButtonSize">26</x:Double>
+  <x:Double x:Key="IconSize">14</x:Double>
+  <x:Double x:Key="StatusBarHeight">24</x:Double>
+  <x:Double x:Key="SplitterThickness">4</x:Double>
+  <x:Double x:Key="TrackHeaderWidth">150</x:Double>
+  <x:Double x:Key="RulerHeight">28</x:Double>
+  <x:Double x:Key="VideoTrackHeight">56</x:Double>
+  <x:Double x:Key="AudioTrackHeight">48</x:Double>
+  <x:Double x:Key="MeterWidth">28</x:Double>
+  <CornerRadius x:Key="ClipCornerRadius">3</CornerRadius>
+  <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+  <CornerRadius x:Key="OverlayCornerRadius">4</CornerRadius>
+  <Thickness x:Key="FocusRingThickness">1</Thickness>
+
+  <!-- Fluent overrides: dense editing-suite layout, 12 px body text, 1 px Accent focus ring. -->
+  <x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+  <x:Double x:Key="ContentControlFontSize">12</x:Double>
+  <x:Double x:Key="TextControlThemeMinHeight">24</x:Double>
+  <Thickness x:Key="TextControlThemePadding">6,3,6,3</Thickness>
+  <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="{StaticResource AccentColor}" />
+  <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="Transparent" />
+  <Thickness x:Key="SystemControlFocusVisualPrimaryThickness">1</Thickness>
+  <Thickness x:Key="SystemControlFocusVisualSecondaryThickness">0</Thickness>
+
+</ResourceDictionary>

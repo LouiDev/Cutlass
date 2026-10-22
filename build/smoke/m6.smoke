@@ -1,0 +1,183 @@
+# Cutlass M6 smoke test (TECH_BRIEF 12, M6). Run it with build/smoke.ps1 -Script m6, which generates clipA.mp4 and
+# clipB.mp4 (6 s, 1280x720, 30 fps, 180 frames each) next to a copy of this file. Paths are relative to the script.
+# Commands: SmokeScript.Commands. Keys go through the real keymap (key <chord>), menu commands through the registry.
+import clipA.mp4 clipB.mp4
+wait 1000
+
+# Source mode and a three-point insert: clipA frames 30..119 go to the empty timeline at the playhead with ','.
+source-open clipA.mp4
+expect-source media=clipA.mp4 playhead=0 in=- out=-
+source-in 30
+source-out 119
+expect-source in=30 out=120 playhead=119
+frame
+wait 500
+screenshot shots/01-source.png
+key OemComma edit
+expect-duration 90
+expect-playhead 90
+expect-clips V1 1
+expect-clips A1 1
+
+# A three-point overwrite with '.': clipB from its frame 30 to its end (150 frames) at the playhead.
+source-open clipB.mp4
+source-in 30
+key OemPeriod edit
+expect-duration 240
+expect-playhead 240
+expect-clips V1 2
+expect-clips 4
+
+# Click-to-type timecode in the Source readout moves the Source playhead.
+timecode 00:00:02:00
+expect-source media=clipB.mp4 playhead=60 in=30 out=-
+frame
+
+# Match frame (F): sequence frame 45 is frame 75 of clipA; Source keeps clipA's In and Out.
+monitor timeline
+playhead 45
+frame
+match-frame frame=75
+expect-source media=clipA.mp4 in=30 out=120
+frame
+wait 500
+screenshot shots/02-match-frame.png
+
+# Click-to-type timecode in the Timeline readout with a relative entry.
+monitor timeline
+timecode +15
+expect-playhead 60
+
+# Copy and paste: clipA (video and its linked audio) pasted at the end in overwrite mode.
+select-at 45
+copy
+deselect
+playhead end
+paste
+expect-duration 330
+expect-clips V1 3
+expect-clips A1 3
+
+# Q and W: ripple trims to the playhead on the pasted clip [240, 330).
+deselect
+playhead 250
+key Q edit
+expect-duration 320
+playhead 280
+key W edit
+expect-duration 280
+
+# Transitions centred on the cut at 90 through the Effects tab: Ctrl+D adds the default video transition (Crossfade,
+# 1 s = 30 frames) and Ctrl+Shift+D an audio crossfade, at the cut nearest the playhead on the targeted tracks.
+deselect
+playhead 95
+key Ctrl+D edit
+key Ctrl+Shift+D edit
+expect-transitions V1 1
+expect-transitions A1 1
+# add-transition sets kind and length directly: a dip to black replaces the crossfade at the same cut.
+add-transition diptoblack 20
+expect-transitions V1 1
+expect-duration 280
+frame
+wait 500
+screenshot shots/03-transitions.png
+
+# Speed (Ctrl+R, answered by the smoke dialog service): the 40-frame pasted clip at 200 percent becomes 20 frames.
+select-at 260
+speed 200
+expect-duration 260
+
+# A gap: clipB placed at 300 leaves [260, 300) empty on V1 and A1; closing it pulls clipB back to 260.
+deselect
+place clipB.mp4 V1 300
+expect-duration 480
+select-gap V1 270
+close-gap
+expect-duration 440
+expect-clips V1 4
+
+# Tracks: + Track adds V3.
+add-track video
+expect-clips V3 0
+playhead 100
+frame
+wait 500
+screenshot shots/04-edited.png
+
+# Export through the export dialog and check the frame count with ffprobe.
+export h264 out/m6.mp4 quality=draft
+probe out/m6.mp4 frames=440 vcodec=h264 acodec=aac size=1280x720 bt709
+
+# ---- DESIGN 5 checklist screenshots (M6 verify). The export above is final; these steps only add state to look at.
+# Effects tab drops (the same calls the timeline control makes on a drop): 1 s fades on clipB, and a wipe dropped
+# near the cut at 90 replaces the dip to black there.
+deselect
+zoom-fit
+effect-drop adjust:FadeInOut V1 150
+effect-drop transition:WipeLeft V1 95
+expect-transitions V1 1
+
+# A selected clip with its fade handles and the Inspector Clip section.
+select-at 150 V1
+expect-section clip
+playhead 150
+frame
+wait 500
+screenshot shots/05-clip-fades.png
+
+# Source drags (DESIGN 4.3): "Video only" onto V2, "Audio only" onto A2 and the canvas (both streams) onto V2.
+source-open clipA.mp4
+source-in 30
+source-out 59
+source-drop video V2 0
+source-drop audio A2 300
+source-drop both V2 120
+expect-clips V2 2
+expect-clips A2 2
+frame
+wait 500
+screenshot shots/06-source-inout.png
+monitor timeline
+
+# A title (Ctrl+T, Lower Third at the playhead) with the Inspector Title section.
+playhead 20
+key Ctrl+T edit
+expect-section title
+frame
+wait 500
+screenshot shots/07-title.png
+
+# A transition longer than the handles allow is clamped (red corner flag) and selected for the Inspector.
+deselect
+playhead 90
+add-transition crossfade 200
+select-transition V1 0
+expect-section transition
+frame
+wait 500
+screenshot shots/08-transition.png
+
+# A gap selection on V2 between the two Source drops, with the Inspector Gap section.
+select-gap V2 60
+expect-section gap
+screenshot shots/09-gap.png
+
+# Markers in the ruler (M at the playhead).
+deselect
+playhead 60
+key M edit
+playhead 200
+key M edit
+screenshot shots/10-markers.png
+
+# Volume keyframes on clipB's audio (selected, so the dots and the volume line show).
+volume-key A1 150 -6
+volume-key A1 200 -20
+expect-section clip
+screenshot shots/11-keyframes.png
+
+# The Effects tab.
+panel effects
+screenshot shots/12-effects.png
+panel media

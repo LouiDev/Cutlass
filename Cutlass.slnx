@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cutlass.Core/Cutlass.Core.csproj" />
+    <Project Path="src/Cutlass.Compiler/Cutlass.Compiler.csproj" />
+    <Project Path="src/Cutlass.Media/Cutlass.Media.csproj" />
+    <Project Path="src/Cutlass.Agent/Cutlass.Agent.csproj" />
+    <Project Path="src/Cutlass.Agent.Mcp/Cutlass.Agent.Mcp.csproj" />
+    <Project Path="src/Cutlass.App/Cutlass.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cutlass.Tests/Cutlass.Tests.csproj" />
+    <Project Path="tests/Cutlass.IntegrationTests/Cutlass.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

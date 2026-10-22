@@ -1,0 +1,3 @@
+# Serializer goldens are compared byte for byte and the serializer writes LF on every OS,
+# so keep LF line endings even where core.autocrlf is on (Windows CI checkouts).
+*.json text eol=lf

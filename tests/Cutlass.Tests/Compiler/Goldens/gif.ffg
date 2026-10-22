@@ -1,0 +1,5 @@
+color=c=black:s=480x270:r=30,trim=end_frame=30,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=30,trim=end_frame=30,scale=w=480:h=270:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,setpts=PTS-STARTPTS+0[v0r0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,fps=15,split[g0][g1];
+[g0]palettegen=stats_mode=diff[p];
+[g1][p]paletteuse=dither=bayer:bayer_scale=4[vout]

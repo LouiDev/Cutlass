@@ -1,0 +1,357 @@
+{
+  "revision": 57,
+  "path": "D:/Edits/interview.cutlass",
+  "name": "interview",
+  "dirty": true,
+  "sequence": {
+    "width": 1920,
+    "height": 1080,
+    "frameRate": "25/1",
+    "fps": 25,
+    "sampleRate": 48000,
+    "durationFrames": 450,
+    "inFrame": 10,
+    "outFrame": null,
+    "playhead": 120
+  },
+  "tracks": [
+    {
+      "id": "tr_v2",
+      "kind": "video",
+      "name": "V2",
+      "index": 2,
+      "hidden": false,
+      "locked": false,
+      "targeted": false,
+      "clips": [
+        {
+          "id": "c_02",
+          "type": "title",
+          "start": 0,
+          "duration": 120,
+          "end": 120,
+          "enabled": true,
+          "linkId": null,
+          "displayName": "Meet Ana",
+          "title": {
+            "text": "Meet Ana",
+            "font": "builtin:Inter-Bold",
+            "size": 96,
+            "color": "#FFFFFFFF",
+            "outlineWidth": 3,
+            "outlineColor": "#00000099",
+            "box": false,
+            "boxColor": "#00000080",
+            "boxPadding": 16,
+            "anchor": "lowerThird",
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "opacity": 1,
+          "fadeInFrames": 0,
+          "fadeOutFrames": 0
+        }
+      ],
+      "transitions": []
+    },
+    {
+      "id": "tr_v1",
+      "kind": "video",
+      "name": "V1",
+      "index": 1,
+      "hidden": false,
+      "locked": false,
+      "targeted": true,
+      "clips": [
+        {
+          "id": "c_01",
+          "type": "media",
+          "start": 0,
+          "duration": 150,
+          "end": 150,
+          "enabled": true,
+          "linkId": "l_01",
+          "mediaId": "m_long",
+          "stream": "video",
+          "displayName": "long.mp4",
+          "offline": false,
+          "sourceInFlicks": 1411200000,
+          "sourceOutFlicks": 5644800000,
+          "sourceInSeconds": 2,
+          "sourceOutSeconds": 8,
+          "speedPercent": 100,
+          "video": {
+            "transform": {
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "cropLeft": 0,
+              "cropTop": 0,
+              "cropRight": 0,
+              "cropBottom": 0
+            },
+            "opacity": 1,
+            "color": {
+              "brightness": 0,
+              "contrast": 1,
+              "saturation": 1,
+              "gamma": 1
+            },
+            "fadeInFrames": 0,
+            "fadeOutFrames": 0
+          }
+        },
+        {
+          "id": "c_05",
+          "type": "media",
+          "start": 150,
+          "duration": 300,
+          "end": 450,
+          "enabled": true,
+          "linkId": null,
+          "mediaId": "m_long",
+          "stream": "video",
+          "displayName": "long.mp4",
+          "offline": false,
+          "sourceInFlicks": 11289600000,
+          "sourceOutFlicks": 28224000000,
+          "sourceInSeconds": 16,
+          "sourceOutSeconds": 40,
+          "speedPercent": 200,
+          "video": {
+            "transform": {
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "cropLeft": 0,
+              "cropTop": 0,
+              "cropRight": 0,
+              "cropBottom": 0
+            },
+            "opacity": 1,
+            "color": {
+              "brightness": 0,
+              "contrast": 1,
+              "saturation": 1,
+              "gamma": 1
+            },
+            "fadeInFrames": 0,
+            "fadeOutFrames": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "id": "x_01",
+          "kind": "crossfade",
+          "leftClipId": "c_01",
+          "rightClipId": "c_05",
+          "durationFrames": 30,
+          "cutFrame": 150
+        }
+      ]
+    },
+    {
+      "id": "tr_a1",
+      "kind": "audio",
+      "name": "A1",
+      "index": 1,
+      "muted": false,
+      "solo": false,
+      "locked": false,
+      "targeted": true,
+      "gainDb": 0,
+      "clips": [
+        {
+          "id": "c_11",
+          "type": "media",
+          "start": 0,
+          "duration": 150,
+          "end": 150,
+          "enabled": true,
+          "linkId": "l_01",
+          "mediaId": "m_long",
+          "stream": "audio",
+          "displayName": "long.mp4",
+          "offline": false,
+          "sourceInFlicks": 1411200000,
+          "sourceOutFlicks": 5644800000,
+          "sourceInSeconds": 2,
+          "sourceOutSeconds": 8,
+          "speedPercent": 100,
+          "audio": {
+            "gainDb": 0,
+            "fadeInFrames": 0,
+            "fadeOutFrames": 0,
+            "keys": []
+          }
+        }
+      ],
+      "transitions": []
+    },
+    {
+      "id": "tr_a2",
+      "kind": "audio",
+      "name": "A2",
+      "index": 2,
+      "muted": false,
+      "solo": false,
+      "locked": false,
+      "targeted": false,
+      "gainDb": 0,
+      "clips": [
+        {
+          "id": "c_music",
+          "type": "media",
+          "start": 0,
+          "duration": 300,
+          "end": 300,
+          "enabled": true,
+          "linkId": null,
+          "mediaId": "m_music",
+          "stream": "audio",
+          "displayName": "music.wav",
+          "offline": false,
+          "sourceInFlicks": 0,
+          "sourceOutFlicks": 8467200000,
+          "sourceInSeconds": 0,
+          "sourceOutSeconds": 12,
+          "speedPercent": 100,
+          "audio": {
+            "gainDb": -6,
+            "fadeInFrames": 0,
+            "fadeOutFrames": 12,
+            "keys": [
+              {
+                "frame": 90,
+                "db": -3
+              }
+            ]
+          }
+        }
+      ],
+      "transitions": []
+    }
+  ],
+  "markers": [
+    {
+      "id": "k_3m9q0aa1",
+      "frame": 300,
+      "name": "Drop",
+      "color": "#F5D547"
+    }
+  ],
+  "media": [
+    {
+      "id": "m_long",
+      "path": "D:/Footage/long.mp4",
+      "fileName": "long.mp4",
+      "online": true,
+      "durationSeconds": 100,
+      "still": false,
+      "formatName": "mov,mp4,m4a,3gp,3g2,mj2",
+      "video": {
+        "codec": "h264",
+        "width": 1920,
+        "height": 1080,
+        "displayWidth": 1920,
+        "displayHeight": 1080,
+        "rotation": 0,
+        "frameRate": "25/1",
+        "vfr": false,
+        "hdr": false
+      },
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      }
+    },
+    {
+      "id": "m_short",
+      "path": "D:/Footage/short.mov",
+      "fileName": "short.mov",
+      "online": false,
+      "durationSeconds": 4,
+      "still": false,
+      "formatName": "mov,mp4,m4a,3gp,3g2,mj2",
+      "video": {
+        "codec": "h264",
+        "width": 1920,
+        "height": 1080,
+        "displayWidth": 1920,
+        "displayHeight": 1080,
+        "rotation": 0,
+        "frameRate": "25/1",
+        "vfr": false,
+        "hdr": false
+      },
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      }
+    },
+    {
+      "id": "m_still",
+      "path": "D:/Footage/still.png",
+      "fileName": "still.png",
+      "online": true,
+      "durationSeconds": 0,
+      "still": true,
+      "formatName": "png_pipe",
+      "video": {
+        "codec": "png",
+        "width": 1920,
+        "height": 1080,
+        "displayWidth": 1920,
+        "displayHeight": 1080,
+        "rotation": 0,
+        "frameRate": "25/1",
+        "vfr": false,
+        "hdr": false
+      },
+      "audio": null
+    },
+    {
+      "id": "m_music",
+      "path": "D:/Footage/music.wav",
+      "fileName": "music.wav",
+      "online": true,
+      "durationSeconds": 60,
+      "still": false,
+      "formatName": "mov,mp4,m4a,3gp,3g2,mj2",
+      "video": null,
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      }
+    },
+    {
+      "id": "m_uhd",
+      "path": "D:/Footage/uhd.mp4",
+      "fileName": "uhd.mp4",
+      "online": true,
+      "durationSeconds": 10,
+      "still": false,
+      "formatName": "mov,mp4,m4a,3gp,3g2,mj2",
+      "video": {
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "displayWidth": 3840,
+        "displayHeight": 2160,
+        "rotation": 0,
+        "frameRate": "30000/1001",
+        "vfr": false,
+        "hdr": false
+      },
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      }
+    }
+  ]
+}

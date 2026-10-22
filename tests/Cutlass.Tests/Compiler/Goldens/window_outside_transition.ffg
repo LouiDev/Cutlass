@@ -1,0 +1,4 @@
+color=c=black:s=960x540:r=30,trim=end_frame=1,format=yuv420p[base];
+[0:0]fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=1,trim=end_frame=1,scale=w=480:h=270:flags=bilinear:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,[cv0s0]overlay=x=290:y=135:format=yuv420:eof_action=pass:threads=1,format=yuva444p,setpts=PTS-STARTPTS+0[v0r0];
+color=c=black@0:s=960x540:r=30,trim=end_frame=1,format=yuva420p[cv0s0];
+[base][v0r0]overlay=x=0:y=0:format=yuv420:eof_action=pass,setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=bgra[vout]

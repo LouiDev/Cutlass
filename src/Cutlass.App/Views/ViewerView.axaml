@@ -1,0 +1,226 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:controls="using:Cutlass.App.Controls"
+             x:Class="Cutlass.App.Views.ViewerView"
+             x:DataType="vm:ViewerViewModel">
+
+  <UserControl.Styles>
+    <!-- The readout invites a click: it turns into a timecode field (DESIGN 4.3). -->
+    <Style Selector="Border.timecodeHit">
+      <Setter Property="Cursor" Value="Ibeam" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="4,0" />
+    </Style>
+    <Style Selector="Border.timecodeHit:pointerover">
+      <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    </Style>
+    <Style Selector="TextBox.viewerTimecodeBox">
+      <Setter Property="FontSize" Value="{DynamicResource FontSizeViewerTimecode}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontFeatures" Value="+tnum" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="Width" Value="150" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <!-- DESIGN 4.3: "Video only" and "Audio only" grips drag one stream of the Source range onto the timeline. -->
+    <Style Selector="Border.dragHandle">
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Background" Value="{DynamicResource Bg3Brush}" />
+      <Setter Property="Cursor" Value="SizeAll" />
+    </Style>
+    <Style Selector="Border.dragHandle:pointerover">
+      <Setter Property="Background" Value="{DynamicResource Bg2Brush}" />
+    </Style>
+    <Style Selector="Border.dragHandle:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="Border.dragHandle TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.sourceEdit">
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- DESIGN 4.3: mode switch, quality, proxies, guides; letterboxed black canvas; readout; Source ruler; transport. -->
+  <Border Classes="panel">
+    <DockPanel>
+      <Border DockPanel.Dock="Top" Classes="header">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Classes="segment timeline" Classes.active="{Binding IsTimelineMode}" CornerRadius="4,0,0,4"
+                    Content="Timeline" Command="{Binding SetModeCommand}"
+                    CommandParameter="{x:Static vm:ViewerMode.Timeline}" ToolTip.Tip="Show the sequence" />
+            <Button Classes="segment source" Classes.active="{Binding IsSourceMode}" CornerRadius="0,4,4,0"
+                    Content="Source" Command="{Binding SetModeCommand}" IsEnabled="{Binding CanShowSource}"
+                    CommandParameter="{x:Static vm:ViewerMode.Source}"
+                    ToolTip.Tip="Show the media opened in Source (double-click a bin item to open one)" />
+            <TextBlock Classes="secondary" Margin="10,0,0,0" VerticalAlignment="Center" MaxWidth="260"
+                       TextTrimming="CharacterEllipsis" Text="{Binding Source.Name}" IsVisible="{Binding IsSourceMode}" />
+          </StackPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <ComboBox ItemsSource="{Binding Qualities}" SelectedItem="{Binding Quality}"
+                      MinWidth="92" Height="24" ToolTip.Tip="Preview quality" />
+            <Button Classes="chip" Classes.active="{Binding UseProxies}" Content="P"
+                    Command="{Binding ToggleProxiesCommand}" ToolTip.Tip="Use proxies (P)" />
+            <Button Classes="icon" Classes.active="{Binding ShowGuides}"
+                    Command="{Binding ToggleGuidesCommand}" ToolTip.Tip="Safe guides (G)">
+              <PathIcon Data="{StaticResource IconGuides}" />
+            </Button>
+          </StackPanel>
+          <Panel />
+        </DockPanel>
+      </Border>
+
+      <!-- Transport -->
+      <Border DockPanel.Dock="Bottom" Height="{DynamicResource ToolbarHeight}" Margin="0,0,0,4">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+          <Button Classes="icon" Command="{Binding GoToInCommand}" ToolTip.Tip="Go to In (Shift+I)">
+            <PathIcon Data="{StaticResource IconGoToIn}" />
+          </Button>
+          <Button Classes="icon" Command="{Binding StepBackwardCommand}" ToolTip.Tip="Step back (Left)">
+            <PathIcon Data="{StaticResource IconStepBack}" />
+          </Button>
+          <Button Classes="icon" Classes.active="{Binding IsPlaying}" Command="{Binding PlayPauseCommand}"
+                  ToolTip.Tip="Play / pause (Space)">
+            <Panel>
+              <PathIcon Data="{StaticResource IconPlay}" IsVisible="{Binding IsPaused}" />
+              <PathIcon Data="{StaticResource IconPause}" IsVisible="{Binding IsPlaying}" />
+            </Panel>
+          </Button>
+          <Button Classes="icon" Command="{Binding StepForwardCommand}" ToolTip.Tip="Step forward (Right)">
+            <PathIcon Data="{StaticResource IconStepForward}" />
+          </Button>
+          <Button Classes="icon" Command="{Binding GoToOutCommand}" ToolTip.Tip="Go to Out (Shift+O)">
+            <PathIcon Data="{StaticResource IconGoToOut}" />
+          </Button>
+          <Button Classes="icon" Classes.active="{Binding IsLooping}" Margin="12,0,0,0"
+                  Command="{Binding ToggleLoopCommand}" ToolTip.Tip="Loop In to Out (Ctrl+Shift+L)">
+            <PathIcon Data="{StaticResource IconLoop}" />
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Source mode: In/Out readout, mark buttons and the three-point edit buttons (DESIGN 4.3). -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="12,2,12,0" IsVisible="{Binding IsSourceActive}">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button Classes="sourceEdit" Content="Mark In" Command="{Binding SourceMarkInCommand}" ToolTip.Tip="Mark Source In (I)" />
+          <Button Classes="sourceEdit" Content="Mark Out" Command="{Binding SourceMarkOutCommand}" ToolTip.Tip="Mark Source Out (O)" />
+          <Border x:Name="VideoOnlyHandle" Classes="dragHandle" Margin="8,0,0,0" IsEnabled="{Binding Source.HasVideo}"
+                  ToolTip.Tip="Drag the Source range's video onto the timeline (no audio)">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <PathIcon Data="{StaticResource IconGrip}" Width="8" Height="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Text="Video only" />
+            </StackPanel>
+          </Border>
+          <Border x:Name="AudioOnlyHandle" Classes="dragHandle" IsEnabled="{Binding Source.HasAudio}"
+                  ToolTip.Tip="Drag the Source range's audio onto the timeline (no video)">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <PathIcon Data="{StaticResource IconGrip}" Width="8" Height="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Text="Audio only" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        <!-- The readout yields (clips) before it overlaps the buttons when the viewer is narrow. -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="8,0" ClipToBounds="True">
+          <TextBlock Classes="timecode secondary" Text="{Binding Source.InText, StringFormat='In {0}'}" />
+          <TextBlock Classes="timecode secondary" Text="{Binding Source.OutText, StringFormat='Out {0}'}" />
+          <TextBlock Classes="timecode secondary" Text="{Binding Source.RangeText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button Classes="sourceEdit" Content="Insert" Command="{Binding InsertFromSourceCommand}"
+                  ToolTip.Tip="Insert the Source range at the timeline playhead (,)" />
+          <Button Classes="sourceEdit accent" Content="Overwrite" Command="{Binding OverwriteFromSourceCommand}"
+                  ToolTip.Tip="Overwrite with the Source range at the timeline playhead (.)" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Source mode: the mini ruler. Click or drag to scrub; drag the amber handles to move In and Out. -->
+      <Border DockPanel.Dock="Bottom" Margin="12,6,12,0" Height="20" CornerRadius="3" ClipToBounds="True"
+              Background="{DynamicResource Bg2Brush}" IsVisible="{Binding IsSourceActive}"
+              ToolTip.Tip="Click or drag to scrub. Drag the In and Out handles to change the range.">
+        <Canvas x:Name="SourceRuler" Background="Transparent">
+          <Rectangle x:Name="SourceRange" Height="20" Fill="{DynamicResource InOutRangeBrush}" />
+          <Rectangle x:Name="SourceInHandle" Width="3" Height="20" Fill="{DynamicResource AccentBrush}" />
+          <Rectangle x:Name="SourceOutHandle" Width="3" Height="20" Fill="{DynamicResource AccentBrush}" />
+          <Rectangle x:Name="SourcePlayhead" Width="2" Height="20" Fill="{DynamicResource PlayheadBrush}" />
+        </Canvas>
+      </Border>
+
+      <!-- Readout: click the timecode to type a timecode or a +N / -N frame offset (DESIGN 4.3). -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,*" Margin="12,4">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+          <Border x:Name="TimecodeHit" Classes="timecodeHit" IsVisible="{Binding !IsEditingTimecode}"
+                  ToolTip.Tip="Click to type a timecode or +N / -N frames">
+            <TextBlock Classes="timecode viewerTimecode" Text="{Binding TimecodeText}" />
+          </Border>
+          <TextBox x:Name="TimecodeBox" Classes="viewerTimecodeBox" Text="{Binding TimecodeEditText}"
+                   IsVisible="{Binding IsEditingTimecode}"
+                   ToolTip.Tip="Enter seeks, Esc cancels. 00:00:12:04, 12:04, 150, +15, -00:00:01:00">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Enter" Command="{Binding CommitTimecodeEditingCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
+          <TextBlock Classes="timecode secondary" VerticalAlignment="Center" Text="/" />
+          <TextBlock Classes="timecode secondary" VerticalAlignment="Center" Text="{Binding DurationText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+          <TextBlock Classes="secondary" VerticalAlignment="Center" Text="{Binding SpeedText}"
+                     ToolTip.Tip="Shuttle speed (L: 1x, 2x, 4x; audio plays at 1x)" />
+          <TextBlock Classes="secondary" VerticalAlignment="Center" Text="{Binding DroppedText}"
+                     ToolTip.Tip="Frames skipped during playback" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Canvas: pure black, letterboxed to the sequence (or Source media) aspect ratio. -->
+      <!-- In Source mode a drag on the canvas places the Source range (video and audio) on the timeline. -->
+      <Panel x:Name="PictureArea" Background="{DynamicResource Bg0Brush}" ClipToBounds="True">
+        <!-- DESIGN 4.3 two-up during roll and slip: the left surface is the main one, the right shows the second frame. -->
+        <Grid ColumnDefinitions="*,*">
+          <controls:VideoSurface x:Name="Surface" Grid.ColumnSpan="2" Margin="8"
+                                 CanvasWidth="{Binding CanvasWidth}" CanvasHeight="{Binding CanvasHeight}"
+                                 ShowGuides="{Binding ShowGuides}" IsBlank="{Binding IsBlank}"
+                                 IsPlaceholderVisible="{Binding IsPlaceholderVisible}" />
+          <controls:VideoSurface x:Name="SecondSurface" Grid.Column="1" Margin="4,8,8,8" IsVisible="{Binding IsTwoUp}"
+                                 CanvasWidth="{Binding CanvasWidth}" CanvasHeight="{Binding CanvasHeight}" />
+        </Grid>
+        <TextBlock Classes="hint" Margin="32" MaxWidth="320" Text="{Binding PlaceholderText}"
+                   IsVisible="{Binding IsEmpty}" />
+        <!-- DESIGN 4.3: the Source monitor is tinted Accent amber so the active monitor is never ambiguous. -->
+        <Border BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2" IsHitTestVisible="False"
+                IsVisible="{Binding IsSourceActive}" />
+        <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16" Padding="10,4" CornerRadius="4"
+                Background="#CC141518" IsVisible="{Binding StatusText, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap" MaxWidth="480" />
+        </Border>
+        <!-- DESIGN 4.3: amber badge after 2 s of continuous lag; DESIGN 6: amber badge while the audio device is lost. -->
+        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="16" Orientation="Horizontal" Spacing="6">
+          <Border Padding="6,2" CornerRadius="3"
+                  Background="{DynamicResource AccentBrush}" IsVisible="{Binding ShowDroppedBadge}"
+                  ToolTip.Tip="Playback cannot keep up. Lower the preview quality or turn on proxies (P).">
+            <TextBlock Text="Dropped frames" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}" />
+          </Border>
+          <Border Padding="6,2" CornerRadius="3"
+                  Background="{DynamicResource AccentBrush}" IsVisible="{Binding IsAudioUnavailable}"
+                  ToolTip.Tip="The audio device is unavailable. Playback uses a silent clock until a play start reopens it.">
+            <TextBlock Text="Audio unavailable" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}" />
+          </Border>
+        </StackPanel>
+        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16" Padding="6,2" CornerRadius="3"
+                Background="#99141518" IsVisible="{Binding IsWaiting}" ToolTip.Tip="Rendering the exact frame">
+          <TextBlock Text="rendering" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+        </Border>
+      </Panel>
+    </DockPanel>
+  </Border>
+</UserControl>

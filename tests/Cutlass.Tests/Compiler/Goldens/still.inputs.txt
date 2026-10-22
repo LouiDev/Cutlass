@@ -1,0 +1,1 @@
+-loop 1 -framerate 30 -t 2.600000 -i D:/Images/logo.png

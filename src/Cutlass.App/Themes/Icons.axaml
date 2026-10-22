@@ -1,0 +1,58 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    Monochrome icon geometries for PathIcon (DESIGN 8: no icon packages). All are drawn as filled shapes on a
+    24x24 grid. "F0" selects the even-odd fill rule for shapes with holes.
+  -->
+
+  <!-- Transport -->
+  <StreamGeometry x:Key="IconPlay">M7,4 L20,12 L7,20 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconPause">M6,4 H10 V20 H6 Z M14,4 H18 V20 H14 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconStop">M6,6 H18 V18 H6 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconStepBack">M6,5 H8 V19 H6 Z M19,5 L9,12 L19,19 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconStepForward">M16,5 H18 V19 H16 Z M5,5 L15,12 L5,19 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconGoToIn">M4,4 H9 V6 H6 V18 H9 V20 H4 Z M20,6 L11,12 L20,18 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconGoToOut">M20,4 H15 V6 H18 V18 H15 V20 H20 Z M4,6 L13,12 L4,18 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconLoop">M4,11 A6,6 0 0 1 10,5 H16 V2 L21,6.5 L16,11 V8 H10 A3,3 0 0 0 7,11 Z M20,13 A6,6 0 0 1 14,19 H8 V22 L3,17.5 L8,13 V16 H14 A3,3 0 0 0 17,13 Z</StreamGeometry>
+
+  <!-- Tools (V B N Y C) -->
+  <StreamGeometry x:Key="IconSelect">M5,3 L19,13 L12.5,13.8 L16,21 L13,22.3 L9.6,15 L5,19 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconRipple">M5,4 H8 V20 H5 Z M10,10.5 H16 V7 L21,12 L16,17 V13.5 H10 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconRoll">M11,4 H13 V20 H11 Z M2,12 L7,8 V11 H9.5 V13 H7 V16 Z M22,12 L17,8 V11 H14.5 V13 H17 V16 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconSlip">M2,6 H4 V18 H2 Z M20,6 H22 V18 H20 Z M6,12 L10,8 V11 H14 V8 L18,12 L14,16 V13 H10 V16 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconRazor">F0 M3,7 H21 V17 H3 Z M7,11 H17 V13 H7 Z M10,3 H14 V7 H10 Z M10,17 H14 V21 H10 Z</StreamGeometry>
+
+  <!-- Timeline toolbar -->
+  <StreamGeometry x:Key="IconZoomIn">F0 M3,10 A7,7 0 1 1 17,10 A7,7 0 1 1 3,10 Z M5,10 A5,5 0 1 0 15,10 A5,5 0 1 0 5,10 Z M9,7 H11 V9 H13 V11 H11 V13 H9 V11 H7 V9 H9 Z M15.2,16.6 L16.6,15.2 L21.5,20.1 L20.1,21.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconZoomOut">F0 M3,10 A7,7 0 1 1 17,10 A7,7 0 1 1 3,10 Z M5,10 A5,5 0 1 0 15,10 A5,5 0 1 0 5,10 Z M7,9 H13 V11 H7 Z M15.2,16.6 L16.6,15.2 L21.5,20.1 L20.1,21.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconSearch">F0 M3,10 A7,7 0 1 1 17,10 A7,7 0 1 1 3,10 Z M5,10 A5,5 0 1 0 15,10 A5,5 0 1 0 5,10 Z M15.2,16.6 L16.6,15.2 L21.5,20.1 L20.1,21.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconSnap">M4,3 H9 V6 H4 Z M15,3 H20 V6 H15 Z M4,7 H9 V12 A3,3 0 0 0 15,12 V7 H20 V12 A8,8 0 0 1 4,12 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconLink">M2,12 A5,5 0 0 1 7,7 H11 V9 H7 A3,3 0 0 0 7,15 H11 V17 H7 A5,5 0 0 1 2,12 Z M22,12 A5,5 0 0 1 17,17 H13 V15 H17 A3,3 0 0 0 17,9 H13 V7 H17 A5,5 0 0 1 22,12 Z M8,11 H16 V13 H8 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconMarker">M6,3 H18 V15 L12,21 L6,15 Z</StreamGeometry>
+
+  <!-- Track headers -->
+  <StreamGeometry x:Key="IconEye">F0 M1,12 C4,6 8,4 12,4 C16,4 20,6 23,12 C20,18 16,20 12,20 C8,20 4,18 1,12 Z M12,8 A4,4 0 1 0 12,16 A4,4 0 1 0 12,8 Z M12,10 A2,2 0 1 1 12,14 A2,2 0 1 1 12,10 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconLock">M6,11 H18 V21 H6 Z M8,11 V8 A4,4 0 0 1 16,8 V11 H14 V8 A2,2 0 0 0 10,8 V11 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconMute">M3,9 H7 L12,4 V20 L7,15 H3 Z M15,9.4 L16.4,8 L18.5,10.1 L20.6,8 L22,9.4 L19.9,11.5 L22,13.6 L20.6,15 L18.5,12.9 L16.4,15 L15,13.6 L17.1,11.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconSolo">M4,13 A8,8 0 0 1 20,13 V19 H16 V13 H18 A6,6 0 0 0 6,13 H8 V19 H4 Z</StreamGeometry>
+
+  <!-- Viewer -->
+  <StreamGeometry x:Key="IconGuides">F0 M2,4 H22 V20 H2 Z M3.5,5.5 H20.5 V18.5 H3.5 Z M5,7 H19 V17 H5 Z M6.5,8.5 H17.5 V15.5 H6.5 Z</StreamGeometry>
+
+  <!-- Media panel -->
+  <StreamGeometry x:Key="IconGrid">M3,3 H10 V10 H3 Z M14,3 H21 V10 H14 Z M3,14 H10 V21 H3 Z M14,14 H21 V21 H14 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconList">M3,5 H21 V7 H3 Z M3,11 H21 V13 H3 Z M3,17 H21 V19 H3 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconFolder">M2,5 A1,1 0 0 1 3,4 H9 L11,6 H21 A1,1 0 0 1 22,7 V19 A1,1 0 0 1 21,20 H3 A1,1 0 0 1 2,19 Z</StreamGeometry>
+
+  <!-- General -->
+  <StreamGeometry x:Key="IconExport">M12,2 L17,7 H13.5 V14 H10.5 V7 H7 Z M4,12 H6 V19 H18 V12 H20 V21 H4 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconSettings">F0 M9.00,4.58 L9.82,1.73 L14.18,1.73 L15.00,4.58 L15.13,4.64 L17.72,3.19 L20.81,6.28 L19.36,8.87 L19.42,9.00 L22.27,9.82 L22.27,14.18 L19.42,15.00 L19.36,15.13 L20.81,17.72 L17.72,20.81 L15.13,19.36 L15.00,19.42 L14.18,22.27 L9.82,22.27 L9.00,19.42 L8.87,19.36 L6.28,20.81 L3.19,17.72 L4.64,15.13 L4.58,15.00 L1.73,14.18 L1.73,9.82 L4.58,9.00 L4.64,8.87 L3.19,6.28 L6.28,3.19 L8.87,4.64 Z M12,8.5 A3.5,3.5 0 1 0 12,15.5 A3.5,3.5 0 1 0 12,8.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconUndo">M4,9 L9,4 V7.5 H14 A6,6 0 0 1 14,19.5 H8 V16.5 H14 A3,3 0 0 0 14,10.5 H9 V14 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconRedo">M20,9 L15,4 V7.5 H10 A6,6 0 0 0 10,19.5 H16 V16.5 H10 A3,3 0 0 1 10,10.5 H15 V14 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconPlus">M11,4 H13 V11 H20 V13 H13 V20 H11 V13 H4 V11 H11 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconMinus">M4,11 H20 V13 H4 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconGrip">M8,4 H11 V7 H8 Z M13,4 H16 V7 H13 Z M8,10.5 H11 V13.5 H8 Z M13,10.5 H16 V13.5 H13 Z M8,17 H11 V20 H8 Z M13,17 H16 V20 H13 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconClose">M5.4,4 L12,10.6 L18.6,4 L20,5.4 L13.4,12 L20,18.6 L18.6,20 L12,13.4 L5.4,20 L4,18.6 L10.6,12 L4,5.4 Z</StreamGeometry>
+
+</ResourceDictionary>

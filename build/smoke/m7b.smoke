@@ -1,0 +1,40 @@
+# Cutlass M7 dialog and offline smoke test (TECH_BRIEF 10.4 and 12, M7). Run it with build/smoke.ps1 -Script m7b,
+# which generates clipA.mp4, clipB.mp4 and gone.mp4 (4 s, 640x360, 30 fps, 120 frames each) next to a copy of this
+# file. Paths are relative to the script. Commands: SmokeScript.Commands.
+import clipA.mp4 clipB.mp4 gone.mp4
+wait 500
+playhead start
+insert clipA.mp4
+insert gone.mp4
+insert clipB.mp4
+expect-length 360
+expect-clips V1 3
+wait-jobs
+save out/m7b.cutlass
+
+# Take gone.mp4 offline (DESIGN 11): with the project closed its file is deleted, and reopening keeps its clips,
+# hatched on the timeline with the OFFLINE badge and striped in the bin.
+new
+remove-file gone.mp4
+open out/m7b.cutlass
+expect-clips V1 3
+expect-offline gone.mp4
+expect-offline clipA.mp4 online
+zoom-fit
+playhead 60
+frame
+wait 500
+screenshot shots/01-offline-timeline.png
+
+# The M7 dialogs in their real windows (DESIGN 8 visual check): File > Relink media..., the four Settings pages,
+# the export dialog, the speed dialog (Ctrl+R on a selected clip) and the sequence settings dialog.
+show-dialog relink screenshot=shots/02-relink.png
+show-dialog relink media=clipA.mp4 screenshot=shots/03-relink-online.png
+show-dialog settings page=general screenshot=shots/04-settings-general.png
+show-dialog settings page=media screenshot=shots/05-settings-media.png
+show-dialog settings page=playback screenshot=shots/06-settings-playback.png
+show-dialog settings page=about screenshot=shots/07-settings-about.png
+show-dialog export screenshot=shots/08-export.png
+select-at 60
+show-dialog speed screenshot=shots/09-speed.png
+show-dialog sequence screenshot=shots/10-sequence.png

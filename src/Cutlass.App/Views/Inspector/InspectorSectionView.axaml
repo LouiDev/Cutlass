@@ -1,0 +1,131 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:ctl="using:Cutlass.App.Controls"
+             x:Class="Cutlass.App.Views.Inspector.InspectorSectionView"
+             x:DataType="vm:InspectorSection">
+
+  <!-- DESIGN 4.4: collapsible groups of dense 24 px rows, labels left and fields right. One template per row type. -->
+  <UserControl.Resources>
+    <StreamGeometry x:Key="InspectorChevron">M9,6 L15,12 L9,18 Z</StreamGeometry>
+  </UserControl.Resources>
+
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:InspectorGroup">
+      <StackPanel IsVisible="{Binding IsVisible}" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="*,Auto" Height="26">
+          <ToggleButton Classes="inspectorGroup" IsChecked="{Binding IsExpanded}">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <PathIcon Classes="chevron" Data="{StaticResource InspectorChevron}" />
+              <TextBlock Classes="panelTitle" Text="{Binding Title}" />
+            </StackPanel>
+          </ToggleButton>
+          <Button Grid.Column="1" Classes="link" Content="Reset" Command="{Binding ResetCommand}"
+                  IsVisible="{Binding CanReset}" ToolTip.Tip="Restore the defaults of this group" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding IsExpanded}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorNumberField">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <ctl:ScrubbyNumberBox Grid.Column="1" Value="{Binding Value}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+                              Step="{Binding Step}" Decimals="{Binding Decimals}" Unit="{Binding Unit}"
+                              DefaultValue="{Binding DefaultValue}" IsMixed="{Binding IsMixed}"
+                              DragStartedCommand="{Binding BeginDragCommand}" DragCompletedCommand="{Binding EndDragCommand}"
+                              ToolTip.Tip="Drag to change (Shift 10x, Ctrl 0.1x), double-click to type, right-click to reset" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorTimecodeField">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <TextBox Grid.Column="1" Classes="inspectorField timecodeField commitOnEnter"
+                 Text="{Binding Text, UpdateSourceTrigger=LostFocus}" IsReadOnly="{Binding IsReadOnly}"
+                 Watermark="{Binding Watermark}" ToolTip.Tip="HH:MM:SS:FF, Enter to apply" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorInfoRow">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <TextBlock Grid.Column="1" Classes="inspectorValue" Text="{Binding Text}" ToolTip.Tip="{Binding ToolTip}" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorTextRow">
+      <Grid ColumnDefinitions="92,*" Margin="0,2" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" VerticalAlignment="Top" Margin="0,4,8,0" Text="{Binding Label}" />
+        <TextBox Grid.Column="1" Classes="inspectorField" Text="{Binding Text}" AcceptsReturn="True"
+                 TextWrapping="Wrap" MinHeight="52" MaxHeight="140" VerticalContentAlignment="Top" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorToggleRow">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <CheckBox Grid.Column="1" Classes="inspectorCheck" IsChecked="{Binding IsChecked}" ToolTip.Tip="{Binding ToolTip}" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorChoiceRow">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <ComboBox Grid.Column="1" Classes="inspectorCombo" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                  IsEnabled="{Binding IsEnabled}" PlaceholderText="Mixed">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:InspectorChoice">
+              <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorColorField">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,Auto,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <Border Grid.Column="1" Classes="swatch">
+          <Border.Background>
+            <SolidColorBrush Color="{Binding Swatch}" />
+          </Border.Background>
+        </Border>
+        <TextBox Grid.Column="2" Classes="inspectorField timecodeField commitOnEnter"
+                 Text="{Binding Text, UpdateSourceTrigger=LostFocus}" Watermark="Mixed"
+                 ToolTip.Tip="#RRGGBBAA, #RRGGBB or #RGB" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorButtonRow">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="inspectorLabel" Text="{Binding Label}" />
+        <Button Grid.Column="1" Classes="inspectorButton" Content="{Binding ButtonText}" Command="{Binding Command}"
+                ToolTip.Tip="{Binding ToolTip}" />
+      </Grid>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorNoticeRow">
+      <TextBlock Classes="inspectorNotice" Classes.danger="{Binding IsDanger}" Text="{Binding Text}"
+                 IsVisible="{Binding IsVisible}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:InspectorKeyframeRow">
+      <Grid Classes="inspectorRow" ColumnDefinitions="92,*,Auto" IsVisible="{Binding IsVisible}">
+        <!-- A full HH:MM:SS:FF must fit the 92 px label column, so this field is a little tighter than the others. -->
+        <TextBox Classes="inspectorField timecodeField commitOnEnter" Margin="0,0,4,0" Padding="3,2" FontSize="11"
+                 Text="{Binding Time.Text, UpdateSourceTrigger=LostFocus}" ToolTip.Tip="Keyframe time from the clip start" />
+        <ctl:ScrubbyNumberBox Grid.Column="1" Value="{Binding Level.Value}" Minimum="{Binding Level.Minimum}"
+                              Maximum="{Binding Level.Maximum}" Step="{Binding Level.Step}" Decimals="{Binding Level.Decimals}"
+                              Unit="{Binding Level.Unit}" DefaultValue="{Binding Level.DefaultValue}"
+                              DragStartedCommand="{Binding Level.BeginDragCommand}"
+                              DragCompletedCommand="{Binding Level.EndDragCommand}" />
+        <Button Grid.Column="2" Classes="icon small" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove keyframe">
+          <PathIcon Data="{StaticResource IconClose}" />
+        </Button>
+      </Grid>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <ItemsControl ItemsSource="{Binding Groups}" />
+</UserControl>
