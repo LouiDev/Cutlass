@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:ctl="using:Cutlass.App.Controls"
+        xmlns:vmdialogs="using:Cutlass.App.ViewModels.Dialogs"
+        x:Class="Cutlass.App.Views.Dialogs.SpeedDialog"
+        x:DataType="vmdialogs:SpeedDialogViewModel"
+        Title="Speed"
+        Width="420" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+    <Style Selector="Button.preset">
+      <Setter Property="Height" Value="22" />
+      <Setter Property="MinWidth" Value="48" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <!-- DESIGN 5.5: 25 to 400 percent plus "Ripple following clips" (on by default); the source range is kept. -->
+  <StackPanel Margin="20" Spacing="12">
+    <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+      <TextBlock Grid.Row="0" Classes="label" Text="Speed" />
+      <ctl:ScrubbyNumberBox Grid.Row="0" Grid.Column="1" Value="{Binding Percent}" Minimum="{Binding Minimum}"
+                            Maximum="{Binding Maximum}" Step="1" Decimals="0" Unit="%" DefaultValue="100"
+                            ToolTip.Tip="Drag or double-click to type (25 to 400)" />
+      <TextBlock Grid.Row="1" Classes="label" Text="Presets" />
+      <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Presets}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="4" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:Int32">
+            <Button Classes="preset" CommandParameter="{Binding}"
+                    Command="{Binding $parent[Window].((vmdialogs:SpeedDialogViewModel)DataContext).SetPresetCommand}">
+              <TextBlock Text="{Binding StringFormat={}{0}%}" />
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <CheckBox Grid.Row="2" Grid.Column="1" Content="Ripple following clips" IsChecked="{Binding RippleFollowing}" />
+    </Grid>
+    <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{Binding PreviewText}" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+      <Button Classes="accent" Content="Apply" IsDefault="True" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanApply}" />
+    </StackPanel>
+  </StackPanel>
+</Window>

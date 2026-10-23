@@ -1,5 +1,6 @@
 using System.Globalization;
 using Cutlass.App.Services;
+using Cutlass.App.Services.Ffmpeg;
 using Cutlass.Compiler.Capabilities;
 using Cutlass.Media.Audio;
 using Cutlass.Media.Cache;

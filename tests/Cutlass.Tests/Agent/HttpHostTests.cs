@@ -166,7 +166,7 @@ public sealed class HttpHostTests : IAsyncLifetime
         Assert.Equal("lock_required", (await ErrorOf(none)).GetProperty("code").GetString());
 
         await _client.AcquireLockAsync("Claude Code", "Test");
-        var split = await _client.SplitAsync(new Cutlass.Agent.Api.Requests.SplitRequest { Frame = 50 });
+        var split = await _client.SplitAsync(new Cutlass.Agent.Api.Requests.Clips.SplitRequest { Frame = 50 });
         Assert.True(split.Changed);
         Assert.Equal("Agent: Split", split.UndoLabel);
         var lockState = await _client.GetLockAsync();

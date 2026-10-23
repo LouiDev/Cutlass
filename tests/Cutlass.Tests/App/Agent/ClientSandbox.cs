@@ -1,5 +1,6 @@
 using Cutlass.App.Services;
 using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Agent.Clients.Profiles;
 using Cutlass.Tests.Compiler;
 
 namespace Cutlass.Tests.App.Agent;

@@ -1,4 +1,4 @@
-using Cutlass.App.Controls;
+using Cutlass.App.Controls.Timeline;
 
 namespace Cutlass.Tests.App;
 

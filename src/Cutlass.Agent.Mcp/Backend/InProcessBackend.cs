@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Hosting;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Audit;
+using Cutlass.Agent.Tools.Dispatch;
 using Microsoft.Extensions.Logging;
 
 namespace Cutlass.Agent.Mcp.Backend;

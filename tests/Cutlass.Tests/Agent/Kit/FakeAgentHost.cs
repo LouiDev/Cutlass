@@ -1,7 +1,8 @@
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Hosting;
 using Cutlass.Agent.Lock;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Audit;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Session;

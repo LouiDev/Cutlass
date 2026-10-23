@@ -1,5 +1,5 @@
 using Avalonia.Input;
-using Cutlass.App.Services;
+using Cutlass.App.Services.Commands;
 
 namespace Cutlass.Tests.App.Shell;
 

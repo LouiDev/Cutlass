@@ -1,7 +1,9 @@
 using Avalonia.Input;
 using Cutlass.App;
 using Cutlass.App.Services;
+using Cutlass.App.Services.Commands;
 using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Media.Ffmpeg;
 using Cutlass.Media.Platform;
 using Cutlass.Media.Settings;

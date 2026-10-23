@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:ctl="using:Cutlass.App.Controls"
+        xmlns:vmdialogs="using:Cutlass.App.ViewModels.Dialogs"
+        xmlns:vminspector="using:Cutlass.App.ViewModels.Inspector"
+        x:Class="Cutlass.App.Views.Dialogs.SequenceSettingsDialog"
+        x:DataType="vmdialogs:SequenceSettingsDialogViewModel"
+        Title="Sequence Settings"
+        Width="440" SizeToContent="Height"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+  </Window.Styles>
+
+  <!-- DESIGN 4.4 "Change...": size presets, frame rate, and a warning about rate conversion and re-fitting. -->
+  <StackPanel Margin="20" Spacing="12">
+    <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+      <TextBlock Grid.Row="0" Classes="label" Text="Preset" />
+      <ComboBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Presets}"
+                SelectedItem="{Binding SelectedPreset}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vmdialogs:SequenceSizePreset">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBlock Grid.Row="1" Classes="label" Text="Width" />
+      <ctl:ScrubbyNumberBox Grid.Row="1" Grid.Column="1" Value="{Binding Width}" Minimum="16" Maximum="16384" Step="2"
+                            Decimals="0" Unit="px" />
+      <TextBlock Grid.Row="2" Classes="label" Text="Height" />
+      <ctl:ScrubbyNumberBox Grid.Row="2" Grid.Column="1" Value="{Binding Height}" Minimum="16" Maximum="16384" Step="2"
+                            Decimals="0" Unit="px" />
+      <TextBlock Grid.Row="3" Classes="label" Text="Frame rate" />
+      <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Rates}"
+                SelectedItem="{Binding SelectedRate}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vminspector:InspectorChoice">
+            <TextBlock Text="{Binding Label}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBlock Grid.Row="4" Classes="label" Text="Audio" />
+      <TextBlock Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Text="48 kHz stereo" />
+    </Grid>
+    <TextBlock Classes="danger" TextWrapping="Wrap" Text="{Binding WarningText}" IsVisible="{Binding HasWarning}" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+      <Button Classes="accent" Content="Apply" IsDefault="True" Command="{Binding ApplyCommand}" />
+    </StackPanel>
+  </StackPanel>
+</Window>

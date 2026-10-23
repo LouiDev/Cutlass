@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cutlass.Compiler;
 using Cutlass.Compiler.Export;
+using Cutlass.Media.Preview.Playback;
 
 namespace Cutlass.Media.Preview;
 

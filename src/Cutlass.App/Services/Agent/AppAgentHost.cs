@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Hosting;
 using Cutlass.Agent.Lock;
+using Cutlass.App.Services.Dialogs;
 using Cutlass.App.ViewModels;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;

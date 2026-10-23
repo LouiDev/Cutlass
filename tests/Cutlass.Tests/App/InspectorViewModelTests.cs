@@ -1,5 +1,7 @@
 using System.Globalization;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
+using Cutlass.App.ViewModels.Inspector;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Session;

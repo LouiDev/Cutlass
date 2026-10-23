@@ -1,0 +1,302 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Cutlass.App.ViewModels"
+        xmlns:views="using:Cutlass.App.Views"
+        xmlns:export="using:Cutlass.Compiler.Export"
+        xmlns:viewsagent="using:Cutlass.App.Views.Agent"
+        xmlns:vmagent="using:Cutlass.App.ViewModels.Agent"
+        xmlns:vmdialogs="using:Cutlass.App.ViewModels.Dialogs"
+        x:Class="Cutlass.App.Views.Dialogs.SettingsDialog"
+        x:DataType="vmdialogs:SettingsViewModel"
+        Title="Settings"
+        Width="640" Height="560" MinWidth="560" MinHeight="480"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+    <Style Selector="TextBlock.group">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,8,0,2" />
+    </Style>
+    <Style Selector="TextBlock.ok">
+      <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+    </Style>
+    <!-- DESIGN 8 density: Fluent's 24 px tab headers would dwarf the 12 px body text. -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+    <!-- Notes under a group: left aligned in the secondary text color (the global hint style centers and dims). -->
+    <Style Selector="TextBlock.note">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBox.number">
+      <Setter Property="Width" Value="90" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+  </Window.Styles>
+
+  <!-- DESIGN 10: five pages (Agents from AGENT_INTEGRATION 6.1). Fields edit a working copy; OK and Apply validate and save it atomically. -->
+  <DockPanel Margin="16">
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+        <Button Content="Apply" Command="{Binding ApplyCommand}" />
+        <Button Classes="accent" Content="OK" IsDefault="True" Command="{Binding OkCommand}" />
+      </StackPanel>
+      <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+        <TextBlock Classes="danger" TextWrapping="Wrap" Text="{Binding ProblemText}" />
+        <TextBlock Classes="danger" TextWrapping="Wrap" Text="{Binding ApplyErrorText}" />
+      </StackPanel>
+    </DockPanel>
+
+    <TabControl SelectedIndex="{Binding SelectedPageIndex}">
+      <TabItem Header="General">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,8,0">
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Grid.Row="0" Classes="label" Text="Autosave interval (minutes)" />
+              <TextBox Grid.Row="0" Grid.Column="1" Classes="number" Text="{Binding AutosaveMinutesText}" />
+              <TextBlock Grid.Row="1" Classes="label" Text="Default transition (s)" />
+              <TextBox Grid.Row="1" Grid.Column="1" Classes="number" Text="{Binding TransitionSecondsText}" />
+              <TextBlock Grid.Row="2" Classes="label" Text="Default still duration (s)" />
+              <TextBox Grid.Row="2" Grid.Column="1" Classes="number" Text="{Binding StillSecondsText}" />
+              <TextBlock Grid.Row="3" Classes="label" Text="Default title duration (s)" />
+              <TextBox Grid.Row="3" Grid.Column="1" Classes="number" Text="{Binding TitleSecondsText}" />
+              <TextBlock Grid.Row="4" Classes="label" Text="Tracks" />
+              <CheckBox Grid.Row="4" Grid.Column="1" Content="Confirm before deleting a track that holds clips"
+                        IsChecked="{Binding ConfirmDeleteTracks}" />
+            </Grid>
+
+            <TextBlock Classes="group" Text="Export" />
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+              <TextBlock Grid.Row="0" Classes="label" Text="Folder" />
+              <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                <TextBox Grid.Column="0" Text="{Binding ExportFolder}" Watermark="The project's folder" />
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseExportFolderCommand}" />
+                <Button Grid.Column="2" Content="Project folder" Command="{Binding UseProjectFolderCommand}" />
+              </Grid>
+              <TextBlock Grid.Row="1" Classes="label" Text="Preset" />
+              <ComboBox Grid.Row="1" Grid.Column="1" MinWidth="220" ItemsSource="{Binding ExportPresetChoices}"
+                        SelectedItem="{Binding SelectedExportPreset}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="export:ExportPreset">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="{Binding DisplayName}" />
+                      <TextBlock Classes="secondary" Text="{Binding Extension}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </Grid>
+            <TextBlock Classes="note" Margin="200,0,0,0"
+                       Text="The export dialog starts with these and remembers the folder and preset of each export." />
+
+            <TextBlock Classes="group" Text="Recent projects" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="Clear recent projects" Command="{Binding ClearRecentCommand}" IsEnabled="{Binding CanClearRecent}" />
+              <TextBlock Classes="secondary" VerticalAlignment="Center" Text="{Binding RecentStatusText}" />
+            </StackPanel>
+
+            <TextBlock Classes="group" Text="Appearance" />
+            <TextBlock Classes="secondary" Text="Cutlass uses one dark theme." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Media">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,8,0">
+            <TextBlock Classes="group" Text="ffmpeg" />
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+              <TextBox Grid.Column="0" Text="{Binding FfmpegPathText}" Watermark="Search PATH and the usual folders" />
+              <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseFfmpegCommand}" />
+              <Button Grid.Column="2" Content="Re-detect" Command="{Binding ValidateFfmpegCommand}"
+                      ToolTip.Tip="Run ffmpeg -version and the capability probe again" />
+              <Button Grid.Column="3" Content="Use PATH" Command="{Binding UsePathCommand}" />
+            </Grid>
+            <!-- A Grid, not a horizontal StackPanel, so a long status (version and path) wraps instead of clipping. -->
+            <Grid ColumnDefinitions="Auto,*">
+              <ProgressBar IsIndeterminate="True" Width="40" Margin="0,0,8,0" IsVisible="{Binding IsCheckingFfmpeg}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Classes="ok" TextWrapping="Wrap" Text="{Binding FfmpegStatusText}" IsVisible="{Binding IsFfmpegOk}" />
+              <TextBlock Grid.Column="1" Classes="danger" TextWrapping="Wrap" Text="{Binding FfmpegStatusText}" IsVisible="{Binding !IsFfmpegOk}" />
+            </Grid>
+            <TextBlock Classes="note" Text="{Binding FfmpegRestartNote}" />
+
+            <TextBlock Classes="group" Text="Proxies" />
+            <Grid ColumnDefinitions="200,*">
+              <TextBlock Classes="label" Text="Proxy policy" />
+              <ComboBox Grid.Column="1" MinWidth="140" ItemsSource="{Binding ProxyPolicies}" SelectedItem="{Binding SelectedProxyPolicy}"
+                        ToolTip.Tip="Auto: above 1080 lines, HEVC, AV1 or VP9, variable frame rate, or above 50 Mb/s" />
+            </Grid>
+
+            <TextBlock Classes="group" Text="Cache" />
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Grid.Row="0" Classes="label" Text="Folder" />
+              <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <TextBox Grid.Column="0" Text="{Binding CacheFolder, Mode=OneWay}" IsReadOnly="True"
+                         ToolTip.Tip="{Binding CacheFolder}" />
+                <Button Grid.Column="1" Content="Open folder" Command="{Binding OpenCacheFolderCommand}" />
+              </Grid>
+              <TextBlock Grid.Row="1" Classes="label" Text="Size limit (GB)" />
+              <TextBox Grid.Row="1" Grid.Column="1" Classes="number" Text="{Binding CacheLimitText}" />
+              <TextBlock Grid.Row="2" Classes="label" Text="In use" />
+              <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <TextBlock VerticalAlignment="Center" Text="{Binding CacheUsageText}" />
+                <Button Content="Clear cache..." Command="{Binding ClearCacheCommand}" />
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Playback">
+        <StackPanel Spacing="8" Margin="0,8,8,0">
+          <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+            <TextBlock Grid.Row="0" Classes="label" Text="Default preview quality" />
+            <ComboBox Grid.Row="0" Grid.Column="1" MinWidth="140" ItemsSource="{Binding Qualities}" SelectedItem="{Binding SelectedQuality}" />
+            <TextBlock Grid.Row="1" Classes="label" Text="Audio output device" />
+            <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding AudioDevices}"
+                      SelectedItem="{Binding SelectedAudioDevice}" />
+            <TextBlock Grid.Row="2" Classes="label" Text="Proxies" />
+            <CheckBox Grid.Row="2" Grid.Column="1" Content="Use proxies for preview when they exist" IsChecked="{Binding UseProxies}" />
+          </Grid>
+          <TextBlock Classes="note" Margin="200,0,0,0" Text="{x:Static vmdialogs:SettingsViewModel.AudioDeviceNote}" />
+        </StackPanel>
+      </TabItem>
+
+      <TabItem Header="Agents">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,8,0">
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Classes="label" Text="Agent connections" />
+              <Panel Grid.Row="0" Grid.Column="1">
+                <ToggleSwitch OnContent="Allow agent connections" OffContent="Allow agent connections"
+                              IsChecked="{Binding AllowAgentConnections}" IsVisible="{Binding !IsAgentForcedOn}"
+                              ToolTip.Tip="Serve the local agent API (HTTP on loopback with a bearer token) for MCP clients and scripts" />
+                <!-- Under the agent-server switch the switch shows on; the saved value is unchanged. -->
+                <ToggleSwitch OnContent="On for this session (--agent-server)" IsChecked="True" IsHitTestVisible="False" Focusable="False"
+                              IsVisible="{Binding IsAgentForcedOn}" />
+              </Panel>
+              <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
+                         Classes.ok="{Binding IsAgentListening}" Classes.error="{Binding IsAgentError}" />
+                <SelectableTextBlock TextWrapping="Wrap" Text="{Binding AgentStatusText}" />
+              </StackPanel>
+              <TextBlock Grid.Row="2" Grid.Column="1" Classes="note" Text="{Binding AgentForcedNote}"
+                         IsVisible="{Binding IsAgentForcedOn}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Grid.Row="0" Classes="label" Text="Port" />
+              <TextBox Grid.Row="0" Grid.Column="1" Classes="number" Text="{Binding AgentPortText}"
+                       ToolTip.Tip="1024 to 65535; when 47390 is busy the next nine ports are tried" />
+              <TextBlock Grid.Row="1" Classes="label" Text="Lease timeout (s)" />
+              <TextBox Grid.Row="1" Grid.Column="1" Classes="number" Text="{Binding AgentLeaseText}"
+                       ToolTip.Tip="An agent that makes no call for this long loses the project (15 to 600)" />
+              <TextBlock Grid.Row="2" Classes="label" Text="Longest lease an agent may ask (s)" TextWrapping="Wrap" />
+              <TextBox Grid.Row="2" Grid.Column="1" Classes="number" Text="{Binding AgentMaxLeaseText}" />
+              <TextBlock Grid.Row="3" Classes="label" Text="Before an agent edits" />
+              <CheckBox Grid.Row="3" Grid.Column="1" Content="Ask me before an agent takes the project"
+                        IsChecked="{Binding AgentAskFirst}" />
+            </Grid>
+
+            <TextBlock Classes="group" Text="Token" />
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+              <TextBox Grid.Column="0" Text="{Binding AgentTokenText, Mode=OneWay}" IsReadOnly="True" FontFamily="monospace" />
+              <Button Grid.Column="1" Content="Copy" Command="{Binding CopyTokenCommand}" />
+              <Button Grid.Column="2" Content="Regenerate token..." Command="{Binding RegenerateTokenCommand}" />
+            </Grid>
+            <TextBlock Classes="note" Text="{Binding AgentTokenNote}"
+                       IsVisible="{Binding AgentTokenNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Classes="group" Text="Folders" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+              <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Classes="label" Text="Agent may read from" Margin="0,0,0,4" />
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                  <Button Content="Add..." Command="{Binding AddReadFolderCommand}" />
+                  <Button Content="Remove" Command="{Binding RemoveReadFolderCommand}" />
+                </StackPanel>
+                <ListBox Height="72" ItemsSource="{Binding AgentReadFolders}" SelectedItem="{Binding SelectedReadFolder}"
+                         Background="{DynamicResource Bg0Brush}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}">
+                  <ListBox.ItemTemplate>
+                    <!-- Long paths end in an ellipsis; the tooltip shows the whole path. -->
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+              <DockPanel Grid.Column="1">
+                <TextBlock DockPanel.Dock="Top" Classes="label" Text="Agent may write to" Margin="0,0,0,4" />
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                  <Button Content="Add..." Command="{Binding AddWriteFolderCommand}" />
+                  <Button Content="Remove" Command="{Binding RemoveWriteFolderCommand}" />
+                </StackPanel>
+                <ListBox Height="72" ItemsSource="{Binding AgentWriteFolders}" SelectedItem="{Binding SelectedWriteFolder}"
+                         Background="{DynamicResource Bg0Brush}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}">
+                  <ListBox.ItemTemplate>
+                    <!-- Long paths end in an ellipsis; the tooltip shows the whole path. -->
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+            </Grid>
+            <TextBlock Classes="note" Text="{x:Static vmdialogs:SettingsViewModel.AgentFoldersNote}" />
+
+            <!-- AGENT_INTEGRATION 9.4: the shared client list with its actions, the discovery URLs with Copy, the docs. -->
+            <TextBlock Classes="group" Text="Connect clients" />
+            <TextBlock Classes="note" Text="{Binding McpPathText, StringFormat='MCP clients start {0}. Register writes the configuration of the client; Copy puts the same setup on the clipboard.'}" />
+            <Panel IsVisible="{Binding HasClients}">
+              <viewsagent:ClientListView DataContext="{Binding Clients}" />
+            </Panel>
+            <TextBlock Classes="note" Text="{x:Static vmagent:ConnectClientsViewModel.TokenNoteText}" />
+            <TextBlock Classes="label" Text="Discovery URLs (for harnesses without MCP)" Margin="0,4,0,0" />
+            <ItemsControl ItemsSource="{Binding Clients.DiscoveryUrls}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vmagent:AgentDiscoveryUrlItem">
+                  <Grid ColumnDefinitions="150,*,Auto" ColumnSpacing="6" Margin="0,0,0,4">
+                    <TextBlock Grid.Column="0" Classes="label" Text="{Binding Label}" />
+                    <TextBox Grid.Column="1" Text="{Binding Url, Mode=OneWay}" IsReadOnly="True" FontFamily="monospace" />
+                    <Button Grid.Column="2" Content="Copy" Command="{Binding CopyCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
+              <Button Content="Open agent docs" Command="{Binding OpenAgentDocsCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="About">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,8,8,0">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{x:Static vmdialogs:SettingsViewModel.VersionText}" />
+            <SelectableTextBlock Classes="secondary" TextWrapping="Wrap" Text="{x:Static vmdialogs:SettingsViewModel.RuntimeText}" />
+            <SelectableTextBlock TextWrapping="Wrap" Text="{Binding AboutFfmpegText}" />
+            <TextBlock Classes="group" Text="Licenses" />
+            <SelectableTextBlock TextWrapping="Wrap" Text="{x:Static vmdialogs:SettingsViewModel.LicenseText}" />
+            <TextBlock Classes="group" Text="Links" />
+            <SelectableTextBlock TextWrapping="Wrap" Text="{x:Static vmdialogs:SettingsViewModel.LinksText}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

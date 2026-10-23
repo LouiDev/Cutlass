@@ -1,5 +1,6 @@
 using System.Globalization;
 using Cutlass.App.Services;
+using Cutlass.App.Services.Ffmpeg;
 using Cutlass.Compiler.Capabilities;
 using Cutlass.Core.Editing;
 using Cutlass.Media.Audio;
@@ -9,6 +10,8 @@ using Cutlass.Media.Ffmpeg;
 using Cutlass.Media.Jobs;
 using Cutlass.Media.Platform;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
+using Cutlass.Media.Preview.Playback;
 using Cutlass.Media.Projects;
 using Cutlass.Media.Services;
 using Cutlass.Media.Settings;

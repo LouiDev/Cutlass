@@ -2,15 +2,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cutlass.App.ViewModels"
              xmlns:controls="using:Cutlass.App.Controls"
+             xmlns:ctltimeline="using:Cutlass.App.Controls.Timeline"
+             xmlns:vmtimeline="using:Cutlass.App.ViewModels.Timeline"
              x:Class="Cutlass.App.Views.TimelineView"
-             x:DataType="vm:TimelineViewModel"
+             x:DataType="vmtimeline:TimelineViewModel"
              Background="{DynamicResource Bg0Brush}">
 
   <!-- DESIGN 4.5 and 5.1: the TimelineControl draws the 150 px track headers, the 28 px ruler and the lanes itself,
        so headers always line up with their rows. The scroll bars sit beside the lanes. The overlay canvas holds the
        inline track rename box and the marker editor (DESIGN 4.5, 5.5). -->
   <Grid RowDefinitions="*,Auto" ColumnDefinitions="*,Auto">
-    <controls:TimelineControl x:Name="Timeline" Grid.Row="0" Grid.Column="0" ViewModel="{Binding}" />
+    <ctltimeline:TimelineControl x:Name="Timeline" Grid.Row="0" Grid.Column="0" ViewModel="{Binding}" />
 
     <!-- Tracks are added through the toolbar's "+ Track" menu (DESIGN 4.5) and the header context menu. -->
     <Canvas x:Name="Overlay" Grid.Row="0" Grid.Column="0" ClipToBounds="True">

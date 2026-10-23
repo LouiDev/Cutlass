@@ -2,8 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cutlass.App.ViewModels"
              xmlns:views="using:Cutlass.App.Views"
+             xmlns:viewsagent="using:Cutlass.App.Views.Agent"
+             xmlns:vmagent="using:Cutlass.App.ViewModels.Agent"
+             xmlns:vmmediabin="using:Cutlass.App.ViewModels.MediaBin"
              x:Class="Cutlass.App.Views.MediaBinView"
-             x:DataType="vm:MediaBinViewModel"
+             x:DataType="vmmediabin:MediaBinViewModel"
              DragDrop.AllowDrop="True">
 
   <UserControl.Styles>
@@ -101,8 +104,8 @@
       <ContentControl Content="{Binding Agent}" IsVisible="{Binding IsAgentTab}"
                       HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
         <ContentControl.DataTemplates>
-          <DataTemplate DataType="vm:AgentViewModel">
-            <views:AgentPanelView />
+          <DataTemplate DataType="vmagent:AgentViewModel">
+            <viewsagent:AgentPanelView />
           </DataTemplate>
         </ContentControl.DataTemplates>
       </ContentControl>
@@ -123,7 +126,7 @@
                     IsVisible="{Binding IsEmpty}">
           <PathIcon Data="{StaticResource IconFolder}" Width="28" Height="28"
                     Foreground="{DynamicResource TextDisabledBrush}" />
-          <TextBlock Classes="hint" Text="{x:Static vm:MediaBinViewModel.EmptyHint}" />
+          <TextBlock Classes="hint" Text="{x:Static vmmediabin:MediaBinViewModel.EmptyHint}" />
           <TextBlock Classes="hint" Text="{Binding ImportUnavailableReason}" Foreground="{DynamicResource DangerBrush}"
                      IsVisible="{Binding !CanImport}" />
         </StackPanel>
@@ -137,7 +140,7 @@
             </ItemsPanelTemplate>
           </ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="vm:MediaItemViewModel">
+            <DataTemplate x:DataType="vmmediabin:MediaItemViewModel">
               <StackPanel Width="160" Spacing="2" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
                 <Panel Width="160" Height="90">
                   <Border Background="{DynamicResource Bg0Brush}" CornerRadius="3" ClipToBounds="True">
@@ -225,7 +228,7 @@
           <ListBox x:Name="RowList" Classes="bin list" ItemsSource="{Binding VisibleItems}"
                    SelectedItem="{Binding SelectedItem}">
             <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="vm:MediaItemViewModel">
+              <DataTemplate x:DataType="vmmediabin:MediaItemViewModel">
                 <Grid ColumnDefinitions="*,58,78,44,84,40" ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
                   <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
                     <Ellipse Width="6" Height="6" Fill="{DynamicResource DangerBrush}" IsVisible="{Binding IsOffline}" />

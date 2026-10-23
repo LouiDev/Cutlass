@@ -1,4 +1,4 @@
-using Cutlass.App.Services;
+using Cutlass.App.Services.Smoke;
 
 namespace Cutlass.Tests.App.Agent;
 

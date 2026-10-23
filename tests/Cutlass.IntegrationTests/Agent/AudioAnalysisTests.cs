@@ -1,5 +1,8 @@
 using Cutlass.Agent.Api.Requests;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Api.Requests.Clips;
+using Cutlass.Agent.Api.Requests.Media;
+using Cutlass.Agent.Api.Requests.Project;
+using Cutlass.Agent.Tools.Analysis;
 using Cutlass.IntegrationTests.Infrastructure;
 
 namespace Cutlass.IntegrationTests.Agent;

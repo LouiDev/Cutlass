@@ -1,6 +1,7 @@
 using Cutlass.App.Services;
 using Cutlass.App.Services.Agent;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Services.Ffmpeg;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Media.Settings;
 using Cutlass.Tests.App.Shell;
 using Cutlass.Tests.TestSupport;

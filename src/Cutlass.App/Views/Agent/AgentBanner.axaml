@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:vmagent="using:Cutlass.App.ViewModels.Agent"
+             x:Class="Cutlass.App.Views.Agent.AgentBanner"
+             x:DataType="vmagent:AgentViewModel">
+
+  <!--
+    AGENT_INTEGRATION 6.2: a 32 px bar under the menu row while an agent holds, pauses or waits for the project (and for
+    3 s after the lock ended, with the outcome). Bg2 background, a 3 px Accent left edge (amber while paused), a 1 px
+    Border bottom line. Left: the agent in bold and its reason, then the last call, the elapsed time and the open
+    batch in TextSecondary. Right: Follow, Pause/Resume (secondary) and Take over (primary Accent), or Deny and Allow
+    for the "ask first" prompt.
+  -->
+  <Border Classes="agentBanner" Height="32">
+    <DockPanel>
+      <Border DockPanel.Dock="Left" Width="3" Classes="agentEdge" Classes.paused="{Binding IsPaused}" Classes.idle="{Binding !IsLocked}" />
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" Margin="8,0,10,0" VerticalAlignment="Center">
+        <ToggleButton Classes="agentFollow" Content="Follow" IsChecked="{Binding Follow}" IsVisible="{Binding ShowBannerControls}"
+                      ToolTip.Tip="Keep the timeline and viewer on what the agent changes and looks at (not while you play back)" />
+        <Button Classes="agentSecondary" Content="{Binding PauseResumeText}" Command="{Binding PauseResumeCommand}"
+                IsVisible="{Binding ShowBannerControls}"
+                ToolTip.Tip="Pause: the agent's next change waits while you review; its reads keep working" />
+        <Button Classes="accent" Content="Take over" Command="{Binding TakeOverCommand}" IsVisible="{Binding ShowBannerControls}"
+                ToolTip.Tip="Commit the agent's open batch as one undo step and edit yourself" />
+        <Button Classes="agentSecondary" Content="Deny" Command="{Binding DenyCommand}" IsVisible="{Binding IsAsking}" />
+        <Button Classes="accent" Content="Allow" Command="{Binding AllowCommand}" IsVisible="{Binding IsAsking}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="10,0" VerticalAlignment="Center" ClipToBounds="True">
+        <!-- Name and headline read as one sentence ("&lt;agent&gt; is editing: ..."): a word space, not the 6 px gap. -->
+        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <TextBlock FontWeight="SemiBold" Text="{Binding AgentNameText}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding HeadlineText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+        </StackPanel>
+        <TextBlock Classes="secondary agentDetail" Text="{Binding LastCallText}" Margin="12,0,0,0"
+                   IsVisible="{Binding LastCallText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="secondary agentDetail agentClock" Text="{Binding ElapsedText}"
+                   IsVisible="{Binding ElapsedText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   ToolTip.Tip="Time since the agent took the project" />
+        <TextBlock Classes="secondary agentDetail" Text="{Binding BatchText}"
+                   IsVisible="{Binding BatchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>

@@ -1,4 +1,4 @@
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Model;
 
 namespace Cutlass.App.Controls.Drag;

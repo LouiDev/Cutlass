@@ -2,7 +2,7 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Net;
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Dispatch;
 
 namespace Cutlass.Agent.Http;
 

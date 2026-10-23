@@ -4,6 +4,7 @@ using Cutlass.Core.Time;
 using Cutlass.IntegrationTests.PreviewTests;
 using Cutlass.Media.Audio;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Playback;
 using static Cutlass.IntegrationTests.Export.TimelineKit;
 
 namespace Cutlass.IntegrationTests.Playback;

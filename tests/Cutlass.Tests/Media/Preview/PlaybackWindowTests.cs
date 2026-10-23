@@ -1,6 +1,7 @@
 using Cutlass.Core.Time;
 using Cutlass.Media.Audio;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Playback;
 using Cutlass.Tests.TestSupport;
 
 namespace Cutlass.Tests.Media.Preview;

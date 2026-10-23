@@ -7,6 +7,11 @@
         xmlns:conv="using:Cutlass.App.Converters"
         xmlns:controls="using:Cutlass.App.Controls"
         xmlns:services="using:Cutlass.App.Services"
+        xmlns:servicescommands="using:Cutlass.App.Services.Commands"
+        xmlns:viewsagent="using:Cutlass.App.Views.Agent"
+        xmlns:viewsinspector="using:Cutlass.App.Views.Inspector"
+        xmlns:vmagent="using:Cutlass.App.ViewModels.Agent"
+        xmlns:vmtimeline="using:Cutlass.App.ViewModels.Timeline"
         mc:Ignorable="d" d:DesignWidth="1600" d:DesignHeight="900"
         x:Class="Cutlass.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -23,7 +28,7 @@
       <!-- Menu row: menus, project name with * when dirty, Export as the primary button; under it the agent banner. -->
       <DockPanel Grid.Row="0">
       <!-- AGENT_INTEGRATION 6.2: the lock banner across the window under the menu row. -->
-      <views:AgentBanner DockPanel.Dock="Bottom" DataContext="{Binding Agent}" IsVisible="{Binding IsBannerVisible}" />
+      <viewsagent:AgentBanner DockPanel.Dock="Bottom" DataContext="{Binding Agent}" IsVisible="{Binding IsBannerVisible}" />
       <Grid ColumnDefinitions="Auto,*,Auto" Height="{DynamicResource ToolbarHeight}"
             Background="{DynamicResource Bg0Brush}">
         <Menu Grid.Column="0">
@@ -34,7 +39,7 @@
             <MenuItem Header="Save _As..." InputGesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
             <Separator />
             <MenuItem Header="_Import..." InputGesture="Ctrl+I" Command="{Binding ImportCommand}" />
-            <MenuItem Header="_Relink media..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RelinkMedia}" />
+            <MenuItem Header="_Relink media..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RelinkMedia}" />
             <MenuItem Header="_Export..." InputGesture="Ctrl+E" Command="{Binding ExportCommand}" />
             <Separator />
             <MenuItem Header="E_xit" InputGesture="Ctrl+Q" Command="{Binding QuitCommand}" />
@@ -43,70 +48,70 @@
             <MenuItem Header="{Binding UndoMenuText}" InputGesture="Ctrl+Z" Command="{Binding Timeline.UndoCommand}" />
             <MenuItem Header="{Binding RedoMenuText}" InputGesture="Ctrl+Shift+Z" Command="{Binding Timeline.RedoCommand}" />
             <Separator />
-            <MenuItem Header="Cu_t" InputGesture="Ctrl+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Cut}" />
-            <MenuItem Header="_Copy" InputGesture="Ctrl+C" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Copy}" />
-            <MenuItem Header="_Paste" InputGesture="Ctrl+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Paste}" />
-            <MenuItem Header="Paste _Insert" InputGesture="Ctrl+Shift+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PasteInsert}" />
+            <MenuItem Header="Cu_t" InputGesture="Ctrl+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Cut}" />
+            <MenuItem Header="_Copy" InputGesture="Ctrl+C" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Copy}" />
+            <MenuItem Header="_Paste" InputGesture="Ctrl+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Paste}" />
+            <MenuItem Header="Paste _Insert" InputGesture="Ctrl+Shift+V" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.PasteInsert}" />
             <Separator />
-            <MenuItem Header="_Delete" InputGesture="Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Lift}" />
-            <MenuItem Header="Ripple D_elete" InputGesture="Shift+Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleDelete}" />
+            <MenuItem Header="_Delete" InputGesture="Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Lift}" />
+            <MenuItem Header="Ripple D_elete" InputGesture="Shift+Delete" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RippleDelete}" />
             <Separator />
             <MenuItem Header="Select _All" InputGesture="Ctrl+A" Command="{Binding Timeline.SelectAllCommand}" />
             <MenuItem Header="Deselect" InputGesture="Escape" Command="{Binding Timeline.ClearSelectionCommand}" />
             <Separator />
-            <MenuItem Header="Se_ttings..." InputGesture="Ctrl+OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Settings}" />
+            <MenuItem Header="Se_ttings..." InputGesture="Ctrl+OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Settings}" />
           </MenuItem>
           <MenuItem Header="_Clip">
-            <MenuItem Header="_Insert from Source" InputGesture="OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Insert}" />
-            <MenuItem Header="_Overwrite from Source" InputGesture="OemPeriod" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Overwrite}" />
-            <MenuItem Header="_Match Frame" InputGesture="F" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MatchFrame}" />
+            <MenuItem Header="_Insert from Source" InputGesture="OemComma" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Insert}" />
+            <MenuItem Header="_Overwrite from Source" InputGesture="OemPeriod" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Overwrite}" />
+            <MenuItem Header="_Match Frame" InputGesture="F" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.MatchFrame}" />
             <Separator />
-            <MenuItem Header="_Split at Playhead" InputGesture="Ctrl+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Split}" />
-            <MenuItem Header="Split _All Tracks" InputGesture="Ctrl+Shift+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SplitAll}" />
-            <MenuItem Header="Trim Start to Playhead" InputGesture="Q" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleTrimStart}" />
-            <MenuItem Header="Trim End to Playhead" InputGesture="W" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleTrimEnd}" />
+            <MenuItem Header="_Split at Playhead" InputGesture="Ctrl+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Split}" />
+            <MenuItem Header="Split _All Tracks" InputGesture="Ctrl+Shift+K" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.SplitAll}" />
+            <MenuItem Header="Trim Start to Playhead" InputGesture="Q" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RippleTrimStart}" />
+            <MenuItem Header="Trim End to Playhead" InputGesture="W" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RippleTrimEnd}" />
             <Separator />
-            <MenuItem Header="Add Default _Transition" InputGesture="Ctrl+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddTransition}" />
-            <MenuItem Header="Add Audio _Crossfade" InputGesture="Ctrl+Shift+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioCrossfade}" />
-            <MenuItem Header="New T_itle" InputGesture="Ctrl+T" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NewTitle}" />
+            <MenuItem Header="Add Default _Transition" InputGesture="Ctrl+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddTransition}" />
+            <MenuItem Header="Add Audio _Crossfade" InputGesture="Ctrl+Shift+D" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddAudioCrossfade}" />
+            <MenuItem Header="New T_itle" InputGesture="Ctrl+T" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.NewTitle}" />
             <Separator />
-            <MenuItem Header="Sp_eed..." InputGesture="Ctrl+R" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Speed}" />
-            <MenuItem Header="_Link / Unlink" InputGesture="Ctrl+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.LinkUnlink}" />
-            <MenuItem Header="Move into S_ync" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MoveIntoSync}" />
-            <MenuItem Header="_Enable / Disable" InputGesture="Shift+E" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ToggleEnabled}" />
-            <MenuItem Header="Nudge Left" InputGesture="Alt+Left" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NudgeLeft}" />
-            <MenuItem Header="Nudge Right" InputGesture="Alt+Right" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NudgeRight}" />
+            <MenuItem Header="Sp_eed..." InputGesture="Ctrl+R" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.Speed}" />
+            <MenuItem Header="_Link / Unlink" InputGesture="Ctrl+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.LinkUnlink}" />
+            <MenuItem Header="Move into S_ync" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.MoveIntoSync}" />
+            <MenuItem Header="_Enable / Disable" InputGesture="Shift+E" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ToggleEnabled}" />
+            <MenuItem Header="Nudge Left" InputGesture="Alt+Left" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.NudgeLeft}" />
+            <MenuItem Header="Nudge Right" InputGesture="Alt+Right" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.NudgeRight}" />
           </MenuItem>
           <MenuItem Header="_Sequence">
-            <MenuItem Header="Mark _In" InputGesture="I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkIn}" />
-            <MenuItem Header="Mark _Out" InputGesture="O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkOut}" />
-            <MenuItem Header="Mark Cli_p" InputGesture="X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MarkClip}" />
-            <MenuItem Header="_Clear In and Out" InputGesture="Ctrl+Shift+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ClearInOut}" />
-            <MenuItem Header="Go to In" InputGesture="Shift+I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.GoToIn}" />
-            <MenuItem Header="Go to Out" InputGesture="Shift+O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.GoToOut}" />
-            <MenuItem Header="Select In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SelectInOutRange}" />
-            <MenuItem Header="Ripple Delete In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RippleDeleteInOutRange}" />
+            <MenuItem Header="Mark _In" InputGesture="I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.MarkIn}" />
+            <MenuItem Header="Mark _Out" InputGesture="O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.MarkOut}" />
+            <MenuItem Header="Mark Cli_p" InputGesture="X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.MarkClip}" />
+            <MenuItem Header="_Clear In and Out" InputGesture="Ctrl+Shift+X" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ClearInOut}" />
+            <MenuItem Header="Go to In" InputGesture="Shift+I" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.GoToIn}" />
+            <MenuItem Header="Go to Out" InputGesture="Shift+O" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.GoToOut}" />
+            <MenuItem Header="Select In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.SelectInOutRange}" />
+            <MenuItem Header="Ripple Delete In to Out" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RippleDeleteInOutRange}" />
             <Separator />
-            <MenuItem Header="Add _Marker" InputGesture="M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddMarker}" />
-            <MenuItem Header="Next Marker" InputGesture="Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NextMarker}" />
-            <MenuItem Header="Previous Marker" InputGesture="Ctrl+Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PreviousMarker}" />
+            <MenuItem Header="Add _Marker" InputGesture="M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddMarker}" />
+            <MenuItem Header="Next Marker" InputGesture="Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.NextMarker}" />
+            <MenuItem Header="Previous Marker" InputGesture="Ctrl+Shift+M" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.PreviousMarker}" />
             <Separator />
-            <MenuItem Header="Add _Video Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddVideoTrack}" />
-            <MenuItem Header="Add _Audio Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioTrack}" />
-            <MenuItem Header="_Remove Selected Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RemoveSelectedTrack}" />
-            <MenuItem Header="Close _Gap" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.CloseGap}" />
+            <MenuItem Header="Add _Video Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddVideoTrack}" />
+            <MenuItem Header="Add _Audio Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddAudioTrack}" />
+            <MenuItem Header="_Remove Selected Track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RemoveSelectedTrack}" />
+            <MenuItem Header="Close _Gap" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.CloseGap}" />
             <Separator />
-            <MenuItem Header="Sequence _Settings..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.SequenceSettings}" />
+            <MenuItem Header="Sequence _Settings..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.SequenceSettings}" />
           </MenuItem>
           <!-- AGENT_INTEGRATION 6.6 and 9.4: the Agent menu between Sequence and View. "Copy briefing for" lists one item per
                client profile (the plain HTTP one last); the plain item renders for the client registered last. -->
           <MenuItem Header="_Agent">
-            <MenuItem Header="{Binding Agent.ServerMenuText}" InputGesture="F9" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentToggleServer}" />
+            <MenuItem Header="{Binding Agent.ServerMenuText}" InputGesture="F9" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AgentToggleServer}" />
             <Separator />
-            <MenuItem Header="_Copy briefing for your agent" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentCopyBriefing}" />
+            <MenuItem Header="_Copy briefing for your agent" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AgentCopyBriefing}" />
             <MenuItem Header="Copy _briefing for" ItemsSource="{Binding BriefingTargets}">
               <MenuItem.ItemContainerTheme>
-                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:BriefingTargetItem">
+                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vmagent:BriefingTargetItem">
                   <Setter Property="Header" Value="{Binding Header}" />
                   <Setter Property="Command" Value="{Binding Command}" />
                   <Setter Property="CommandParameter" Value="{Binding CommandId}" />
@@ -114,18 +119,18 @@
               </MenuItem.ItemContainerTheme>
             </MenuItem>
             <Separator />
-            <MenuItem Header="C_onnect an agent client..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentConnectClients}" />
+            <MenuItem Header="C_onnect an agent client..." Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AgentConnectClients}" />
             <Separator />
-            <MenuItem Header="Agent _panel" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowAgentPanel}" />
-            <MenuItem Header="_Take over" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentTakeOver}" />
+            <MenuItem Header="Agent _panel" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ShowAgentPanel}" />
+            <MenuItem Header="_Take over" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AgentTakeOver}" />
           </MenuItem>
           <MenuItem Header="_View">
-            <MenuItem Header="_Timeline Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowTimelineMonitor}" />
-            <MenuItem Header="_Source Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ShowSourceMonitor}" />
+            <MenuItem Header="_Timeline Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ShowTimelineMonitor}" />
+            <MenuItem Header="_Source Monitor" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ShowSourceMonitor}" />
             <Separator />
-            <MenuItem Header="Play / Pause" InputGesture="Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PlayPause}" />
-            <MenuItem Header="Play In to Out" InputGesture="Shift+Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.PlayInToOut}" />
-            <MenuItem Header="_Loop" InputGesture="Ctrl+Shift+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ToggleLoop}" />
+            <MenuItem Header="Play / Pause" InputGesture="Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.PlayPause}" />
+            <MenuItem Header="Play In to Out" InputGesture="Shift+Space" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.PlayInToOut}" />
+            <MenuItem Header="_Loop" InputGesture="Ctrl+Shift+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.ToggleLoop}" />
             <Separator />
             <MenuItem Header="Zoom _In" InputGesture="OemPlus" Command="{Binding Timeline.ZoomInCommand}" />
             <MenuItem Header="Zoom _Out" InputGesture="OemMinus" Command="{Binding Timeline.ZoomOutCommand}" />
@@ -136,14 +141,14 @@
             <Separator />
             <MenuItem Header="_Jobs" Command="{Binding Jobs.ToggleCommand}" />
             <Separator />
-            <MenuItem Header="Agent: _Pause / Resume" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AgentPauseResume}" />
+            <MenuItem Header="Agent: _Pause / Resume" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AgentPauseResume}" />
             <MenuItem Header="Agent: _Follow" ToggleType="CheckBox" IsChecked="{Binding Agent.Follow}" />
           </MenuItem>
           <MenuItem Header="_Help">
             <MenuItem Header="_Locate ffmpeg..." Command="{Binding LocateFfmpegCommand}" />
-            <MenuItem Header="Open _Log Folder" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.OpenLogFolder}" />
+            <MenuItem Header="Open _Log Folder" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.OpenLogFolder}" />
             <Separator />
-            <MenuItem Header="_About Cutlass" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.About}" />
+            <MenuItem Header="_About Cutlass" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.About}" />
           </MenuItem>
         </Menu>
         <TextBlock Grid.Column="1" Text="{Binding TitleText}" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -163,7 +168,7 @@
         <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
         <views:ViewerView Grid.Column="2" MinWidth="360" DataContext="{Binding Viewer}" />
         <GridSplitter Grid.Column="3" ResizeDirection="Columns" />
-        <views:InspectorView Grid.Column="4" MinWidth="220" DataContext="{Binding Inspector}" />
+        <viewsinspector:InspectorView Grid.Column="4" MinWidth="220" DataContext="{Binding Inspector}" />
       </Grid>
 
       <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
@@ -176,32 +181,32 @@
             <DockPanel>
               <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                 <Button Classes="icon"
-                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Select}}"
-                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Select}"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vmtimeline:EditTool.Select}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vmtimeline:EditTool.Select}"
                         ToolTip.Tip="Select (V)">
                   <PathIcon Data="{StaticResource IconSelect}" />
                 </Button>
                 <Button Classes="icon"
-                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Ripple}}"
-                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Ripple}"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vmtimeline:EditTool.Ripple}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vmtimeline:EditTool.Ripple}"
                         ToolTip.Tip="Ripple (B)">
                   <PathIcon Data="{StaticResource IconRipple}" />
                 </Button>
                 <Button Classes="icon"
-                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Roll}}"
-                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Roll}"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vmtimeline:EditTool.Roll}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vmtimeline:EditTool.Roll}"
                         ToolTip.Tip="Roll (N)">
                   <PathIcon Data="{StaticResource IconRoll}" />
                 </Button>
                 <Button Classes="icon"
-                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Slip}}"
-                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Slip}"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vmtimeline:EditTool.Slip}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vmtimeline:EditTool.Slip}"
                         ToolTip.Tip="Slip (Y)">
                   <PathIcon Data="{StaticResource IconSlip}" />
                 </Button>
                 <Button Classes="icon"
-                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vm:EditTool.Razor}}"
-                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vm:EditTool.Razor}"
+                        Classes.active="{Binding Timeline.Tool, Converter={x:Static conv:EqualsConverter.Instance}, ConverterParameter={x:Static vmtimeline:EditTool.Razor}}"
+                        Command="{Binding Timeline.SelectToolCommand}" CommandParameter="{x:Static vmtimeline:EditTool.Razor}"
                         ToolTip.Tip="Razor (C)">
                   <PathIcon Data="{StaticResource IconRazor}" />
                 </Button>
@@ -230,10 +235,10 @@
                 </StackPanel>
                 <Button.Flyout>
                   <MenuFlyout Placement="BottomEdgeAlignedRight">
-                    <MenuItem Header="Add video track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddVideoTrack}" />
-                    <MenuItem Header="Add audio track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.AddAudioTrack}" />
+                    <MenuItem Header="Add video track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddVideoTrack}" />
+                    <MenuItem Header="Add audio track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.AddAudioTrack}" />
                     <Separator />
-                    <MenuItem Header="Delete selected track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.RemoveSelectedTrack}" />
+                    <MenuItem Header="Delete selected track" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static servicescommands:CommandIds.RemoveSelectedTrack}" />
                   </MenuFlyout>
                 </Button.Flyout>
               </Button>

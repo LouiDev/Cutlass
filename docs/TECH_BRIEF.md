@@ -108,7 +108,9 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
   - `Cache/`: MediaCache, Fingerprinter, CacheManifest, CacheArtifacts, CacheEntryUsage, ProxyMapping (plus the internal CacheJsonContext and ThumbnailIndexFile).
   - `Jobs/`: JobScheduler, MediaJob, JobKind, JobInfo, JobPriority, JobState, MediaPipeline (queues a media item's jobs and runs the LRU after each), plus the internal JobProcess.
   - `Services/`: ThumbnailService, ThumbnailSheet, WaveformService, PeakPyramid, ProxyService (FrameIndexService gains its disk cache).
-  - `Preview/`: FrameCache, PlaybackSession, PlaybackOptions, PlaybackClock, VideoWindowReader, AudioFeeder, AudioMixer, MixerState, plus MixerTrack, MixerPeaks, PlaybackStats, PlaybackWindow (window planning) and the internal PlaybackRun, PlaybackPipeline, PlaybackServices, PcmBlock, PreviewRender and PreviewFontResolver.
+  - `Preview/`: FrameCache, plus the internal PreviewRender and PreviewFontResolver.
+  - `Preview/Playback/`: PlaybackSession, PlaybackOptions, PlaybackClock, VideoWindowReader, PlaybackStats, PlaybackWindow (window planning) and the internal PlaybackRun, PlaybackPipeline and PlaybackServices.
+  - `Preview/Audio/`: AudioFeeder, AudioMixer, AudioClockSource, MixerState, MixerTrack, MixerPeaks and the internal PcmBlock.
   - `Audio/`: IAudioOutput, OpenAlAudioOutput, NullAudioOutput.
 - M7: `Projects/`: MediaRelinker, RelinkScan, MediaLinkState, MediaFileFacts, AutosaveRecovery, RecoverableProject. `Platform/`: AppLog, ProcStat.
 - M8: ReverseSession, SegmentedExport, HardwareEncoderProbe.
@@ -116,43 +118,46 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
 **Cutlass.App**
 - M0: Program, App.axaml(+cs), AppServices, `Themes/CutlassTheme.axaml`, `Themes/Icons.axaml`, `Views/MainWindow.axaml`, MainWindowViewModel.
 - M4:
-  - `ViewModels/`: Welcome, MediaBin, MediaItem, Viewer, Timeline, Inspector, ExportDialog, Jobs.
-  - `Views/`: WelcomeOverlay, MediaBinView, ViewerView, InspectorView, TimelineView, ExportDialog, JobsPopover, ErrorDialog.
-  - `Controls/`: TimelineControl (`.Render`, `.Input`), TimelineViewState, HitTester, VideoSurface.
+  - `ViewModels/`: Welcome, Jobs, `MediaBin/` (MediaBin, MediaItem), `Viewer/Viewer`, `Timeline/Timeline`, `Inspector/Inspector`, `Dialogs/ExportDialog`.
+  - `Views/`: WelcomeOverlay, MediaBinView, ViewerView, TimelineView, JobsPopover, `Inspector/InspectorView`, `Dialogs/` (ExportDialog, ErrorDialog).
+  - `Controls/`: VideoSurface. `Controls/Timeline/`: TimelineControl (`.Render`, `.Input`), TimelineViewState, HitTester.
   - `Controls/Drag/`: IDragOperation, MoveClipsDrag, TrimDrag, MarqueeDrag, ScrubDrag.
-  - `Services/`: IDialogService, AvaloniaDialogService, KeyBindingService, CommandRegistry, DefaultKeymap, FramePresenter.
-  - Command line and smoke mode (section 10.4): `Services/` CommandLineOptions, SmokeScript, SmokeStep, SmokeRunner, SmokeLog, SmokeDialogService, plus `build/smoke.ps1` and `build/smoke/m4.smoke`.
+  - `Services/Dialogs/`: IDialogService, AvaloniaDialogService. `Services/Commands/`: KeyBindingService, CommandRegistry, DefaultKeymap. `Services/Playback/`: FramePresenter.
+  - Command line and smoke mode (section 10.4): `Services/` CommandLineOptions, `Services/Smoke/` SmokeScript, SmokeStep, SmokeRunner, SmokeLog, SmokeDialogService, plus `build/smoke.ps1` and `build/smoke/m4.smoke`.
 - M5:
-  - `Controls/`: AudioMeter, FilmstripCache, TrackGain (the header dB field), `TimelineControl.Media` (filmstrips and waveforms), `Drag/TrackGainDrag`.
-  - `ViewModels/`: PlaybackController (the transport over `IPlaybackEngine`, unit tested with a fake engine).
-  - `Services/`: IPlaybackEngine and PlaybackEngine (forwards to `PlaybackSession`), PlaybackPlanner and PlayRange (Space and Shift+Space ranges, shuttle speeds, which changes restart playback), MeterBallistics, IMediaArtifactSource and MediaArtifactSource, ThumbnailTile, `SmokeRunner.Playback`.
+  - `Controls/`: AudioMeter. `Controls/Timeline/`: FilmstripCache, TrackGain (the header dB field), `TimelineControl.Media` (filmstrips and waveforms). `Controls/Drag/TrackGainDrag`.
+  - `ViewModels/Viewer/`: PlaybackController (the transport over `IPlaybackEngine`, unit tested with a fake engine).
+  - `Services/Playback/`: IPlaybackEngine and PlaybackEngine (forwards to `PlaybackSession`), PlaybackPlanner and PlayRange (Space and Shift+Space ranges, shuttle speeds, which changes restart playback), MeterBallistics.
+  - `Services/`: IMediaArtifactSource and MediaArtifactSource, ThumbnailTile, `Smoke/SmokeRunner.Playback`.
   - `build/smoke/m5.smoke`, run by `build/smoke.ps1 -Script m5` (section 10.4).
 - M6:
   - Drags: RollDrag, SlipDrag, FadeHandleDrag, KeyframeDrag, VolumeLineDrag, MarkerDrag.
   - ScrubbyNumberBox.
   - Inspector sections: Clip, Title, Transition, Gap, Sequence.
   - EffectsViewModel and EffectsView, SpeedDialog, SequenceSettingsDialog.
-  - Viewer: `ViewModels/SourceViewerViewModel` (Source mode), `Services/TimecodeEntry` (click-to-type timecode), `Services/SmokeRunner.Editing`, `Services/SmokeRunner.Inspect` and `build/smoke/m6.smoke`, run by `build/smoke.ps1 -Script m6` (section 10.4).
-  - Drops: `Services/SourceDrag` and `SourceStreams` (the Source monitor drag payload), `ViewModels/TimelineViewModel.Drops` (Source and effect drops), `ViewModels/EffectDropPreview` (the effect drop ghost).
-- M7: SettingsViewModel and SettingsDialog, RelinkDialog (with RelinkDialogViewModel and RelinkItemViewModel), `Services/` AutosaveService and RecoveryChoice, `ViewModels/MainWindowViewModel.Data` (autosave, recovery, relink on open, Clear cache), `App.Crash` (crash log and last autosave), `Views/WindowCapture` (window and dialog screenshots), `Services/SmokeRunner.Settings` and `Services/SmokeRunner.Dialogs` with `build/smoke/m7.smoke` and `build/smoke/m7b.smoke` (section 10.4), the root `README.md`. After the M7 review: `Services/PlatformFeatures` (where OS file drops work, section 10.1).
+  - Viewer: `ViewModels/Viewer/SourceViewerViewModel` (Source mode), `Services/TimecodeEntry` (click-to-type timecode), `Services/Smoke/SmokeRunner.Editing`, `Services/Smoke/SmokeRunner.Inspect` and `build/smoke/m6.smoke`, run by `build/smoke.ps1 -Script m6` (section 10.4).
+  - Drops: `Services/SourceDrag` and `SourceStreams` (the Source monitor drag payload), `ViewModels/Timeline/TimelineViewModel.Drops` (Source and effect drops), `ViewModels/Timeline/EffectDropPreview` (the effect drop ghost).
+- M7: SettingsViewModel and SettingsDialog, RelinkDialog (with RelinkDialogViewModel and RelinkItemViewModel), `Services/AutosaveService`, `Services/Dialogs/RecoveryChoice`, `ViewModels/MainWindowViewModel.Data` (autosave, recovery, relink on open, Clear cache), `App.Crash` (crash log and last autosave), `Views/WindowCapture` (window and dialog screenshots), `Services/Smoke/SmokeRunner.Settings` and `Services/Smoke/SmokeRunner.Dialogs` with `build/smoke/m7.smoke` and `build/smoke/m7b.smoke` (section 10.4), the root `README.md`. After the M7 review: `Services/PlatformFeatures` (where OS file drops work, section 10.1).
 
 **Agent integration** (milestones A1 to A4; the full map and rules are in `docs/AGENT_INTEGRATION.md` section 2.1):
 - **Core (A1):** `Session/ProjectSession.Group.cs` (groups and the write gate; ProjectSession becomes partial), `Session/SessionWriter`, `ChangeKind.GroupCommit` and `GroupCancel`, `Editing/TimelineEdits.Ranges.cs` (`RemoveRanges`).
-- **Media (A2):** `Preview/StillRenderer`, `Preview/RangeAudioReader`, `Settings/AppSettings.Agent`, `AppPaths.AgentDirectory`.
+- **Media (A2):** `Preview/StillRenderer`, `Preview/Audio/RangeAudioReader`, `Settings/AppSettings.Agent`, `AppPaths.AgentDirectory`.
 - **Cutlass.Agent (A1, A2):**
-  - `Api/`: DTOs, requests, `AgentJsonContext`, `ToolCatalog`, summary mapper and describer.
+  - `Api/`: DTOs (`Dto/`, split into `Status/ Project/ Media/ Preview/`), requests (`Requests/`, split into `Clips/ Markers/ Titles/ Tracks/ Transitions/ Media/ Project/ Preview/`), `AgentJsonContext`, `ToolCatalog`, summary mapper and describer.
   - `Lock/`: `AgentLock` and its states.
-  - `Tools/`: the tool groups, `EditRunner`, `PathPolicy`, `LevelAnalyzer`, `SilenceFinder`, the audit log and the event queue.
+  - `Tools/`: the tool groups, `PathPolicy` and the event queue; `Dispatch/` (`ToolDispatcher`, `AgentCall`, argument helpers), `Edit/` (`EditTools`, `EditRunner`), `Analysis/` (`LevelAnalyzer`, `SilenceFinder`) and `Audit/` (the audit log).
   - `Imaging/`: `PngEncoder`, `ContactSheetComposer`.
   - `Http/`: `AgentHttpServer`, auth, limits, token, endpoint file, `AgentClient`.
   - `Hosting/`: `IAgentHost`, `IAgentUiInvoker`, `IAgentServices`, and `HeadlessHost` with its dispatcher and engine.
 - **Cutlass.App (A3):**
   - `Services/Agent/` (`AppAgentHost`, `AvaloniaUiInvoker`, `AgentServerController`).
-  - `AgentViewModel`, `AgentCallItemViewModel`, and the partials `SettingsViewModel.Agents` and `MainWindowViewModel.Agent`.
-  - `AgentBanner` and `AgentPanelView`, and the Agents page in `SettingsDialog`.
+  - `ViewModels/Agent/` (`AgentViewModel`, `AgentCallItemViewModel`), and the partials `SettingsViewModel.Agents` and `MainWindowViewModel.Agent`.
+  - `Views/Agent/` (`AgentBanner`, `AgentPanelView`), and the Agents page in `SettingsDialog`.
   - `CommandIds.AllowedWhileAgentHolds`, `SmokeRunner.Agent`, `build/smoke/m9.smoke`.
 - **Cutlass.Agent.Mcp (A4):** `Program`, `McpOptions`, `ServerInstructions`, `Backend/` (HTTP and in-process backends, `EndpointLocator`), `Tools/CutlassTools`, `Resources/`, `Prompts/`.
 - **Tests:** `tests/Cutlass.Tests/Agent/` (A1 to A3) and `tests/Cutlass.IntegrationTests/Agent/` (A2, A4).
+
+**Subfolders.** A folder that grows past about 20 types is split by area, and the namespace follows the subfolder (split on 2026-10-23; the lists above name the current folders). In Cutlass.App: `ViewModels/` (`Agent/ Dialogs/ Inspector/ MediaBin/ Timeline/ Viewer/`, with MainWindowViewModel, Welcome, Effects and Jobs in the root), `Views/` (`Agent/ Dialogs/ Inspector/`), `Services/` (`Commands/ Dialogs/ Ffmpeg/ Playback/ Smoke/`, plus `Agent/` and `Agent/Clients/Profiles/` for the client profile records), `Controls/Timeline/` (the timeline control and its layout, hit testing and drawing helpers). In Cutlass.Agent: `Api/Dto/`, `Api/Requests/` and `Tools/` as listed above. In Cutlass.Media: `Preview/Playback/` and `Preview/Audio/`. Cohesive folders stay flat even when large: `Core/Model`, `Core/Editing` (mostly the `TimelineEdits` partials), `Core/Serialization/Dto` and `App/Controls/Drag`.
 
 ---
 

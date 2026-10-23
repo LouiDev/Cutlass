@@ -1,9 +1,11 @@
 using Cutlass.Agent.Hosting;
+using Cutlass.App.Services.Ffmpeg;
 using Cutlass.Compiler.Capabilities;
 using Cutlass.Core.Editing;
 using Cutlass.Media.Export;
 using Cutlass.Media.Platform;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
 using Cutlass.Media.Projects;
 using Cutlass.Media.Services;
 using Cutlass.Media.Settings;

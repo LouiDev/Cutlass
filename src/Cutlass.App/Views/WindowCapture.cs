@@ -4,7 +4,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Agent;
+using Cutlass.App.ViewModels.Dialogs;
+using Cutlass.App.Views.Agent;
+using Cutlass.App.Views.Dialogs;
 
 namespace Cutlass.App.Views;
 

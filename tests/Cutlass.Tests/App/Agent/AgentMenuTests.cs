@@ -1,8 +1,10 @@
 using Avalonia.Input;
-using Cutlass.App.Services;
 using Cutlass.App.Services.Agent;
 using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Commands;
 using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Agent;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Tests.Compiler;
 
 namespace Cutlass.Tests.App.Agent;

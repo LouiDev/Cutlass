@@ -1,7 +1,9 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Api.Dto;
+using Cutlass.Agent.Api.Dto.Media;
+using Cutlass.Agent.Tools.Analysis;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Time;

@@ -1,4 +1,4 @@
-using Cutlass.App.Services;
+using Cutlass.App.Services.Ffmpeg;
 
 namespace Cutlass.Tests.App.Shell;
 

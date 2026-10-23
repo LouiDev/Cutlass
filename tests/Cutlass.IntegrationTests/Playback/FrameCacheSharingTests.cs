@@ -3,6 +3,7 @@ using Cutlass.Core.Time;
 using Cutlass.IntegrationTests.Infrastructure;
 using Cutlass.IntegrationTests.PreviewTests;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Playback;
 using static Cutlass.IntegrationTests.Export.TimelineKit;
 
 namespace Cutlass.IntegrationTests.Playback;

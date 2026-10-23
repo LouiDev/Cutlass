@@ -57,7 +57,7 @@ powershell -File build/smoke.ps1 -Script m7
 
 CI runs `m4` on Windows and Linux (under `xvfb-run`), `m7` on Windows, and `build/examples/agent-http.ps1` against `Cutlass.Agent.Mcp serve` on Windows.
 
-A run exits with 0 when every step passed, writes its log next to the script copy in `<OutDir>` and restores the settings it started with. The script commands are listed in `src/Cutlass.App/Services/SmokeScript.cs`.
+A run exits with 0 when every step passed, writes its log next to the script copy in `<OutDir>` and restores the settings it started with. The script commands are listed in `src/Cutlass.App/Services/Smoke/SmokeScript.cs`.
 
 ## Publish
 

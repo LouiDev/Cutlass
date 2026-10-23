@@ -94,12 +94,12 @@ tests/Cutlass.IntegrationTests/Agent/ real ffmpeg, headless host, MCP end to end
   - `AgentJsonContext` (source-generated, camelCase; every write goes through `Relaxed` or `Indented`, which use the relaxed encoder of 4.2).
   - `ToolCatalog` (with `ToolInfo`, `ToolResultKind` and `SchemaBuilder`): route, tool name, description and argument schema per tool, shared by HTTP and MCP.
   - `ProjectSummaryMapper`, `ProjectDescriber`.
-  - `Api/Dto/*` (status, capabilities, lock state, project summary and its parts, media, export, levels, silences, events) and `Api/Requests/*` (one record per request body).
+  - `Api/Dto/*` (envelope, errors, edit outcome, events and export in the root; `Status/` for status, capabilities, limits and lock state; `Project/` for the project summary and its parts; `Media/` for media, import, levels, peaks and silences; `Preview/` for frames, contact sheets and the playhead) and `Api/Requests/*` (one record per request body; edit requests in `Clips/ Markers/ Titles/ Tracks/ Transitions/`, the others in `Media/ Project/ Preview/`, and lock, batch, call, events, export and the `MutationRequest` base in the root).
 - **`Lock/`:** AgentLock, AgentLockState, LockPhase, AcquireRequest, AcquireOutcome, AcquireStatus, LockCheck, LockCheckStatus, LeaseOptions, LockLostReason, and AgentLockDriver (the 1 s tick through the invoker).
 - **`Tools/`:**
-  - Plumbing: AgentCall (the per-call context), ToolDispatcher, and EditRunner (lock check, "Agent:" label, revision, warnings, follow).
-  - Tool groups: Status, Lock, Project, Media, Preview, Audio, Export, Event and Batch tools, plus EditTools (partials `.Clips .Transitions .Titles .Markers .Tracks .Sequence`).
-  - Support: PathPolicy, LevelAnalyzer, SilenceFinder, AgentRevision, AgentEventQueue, AuditLog.
+  - Plumbing: `Dispatch/` AgentCall (the per-call context), ToolDispatcher, ToolCallContext, Args and EnumWire; `Edit/EditRunner` (lock check, "Agent:" label, revision, warnings, follow).
+  - Tool groups: Status, Lock, Project, Media, Preview, Audio, Export, Event and Batch tools, plus `Edit/EditTools` (partials `.Clips .Transitions .Titles .Markers .Tracks .Sequence`).
+  - Support: PathPolicy, AgentRevision, AgentEventQueue, `Analysis/` LevelAnalyzer and SilenceFinder, `Audit/` AuditLog.
 - **`Imaging/`:** PngEncoder, ContactSheetComposer.
 - **`Http/`:**
   - AgentHttpServer, Router, AuthGuard, RateLimiter, BodyReader, ResponseWriter, TokenStore, EndpointFile, EndpointInfo.
@@ -115,19 +115,19 @@ tests/Cutlass.IntegrationTests/Agent/ real ffmpeg, headless host, MCP end to end
   - `ChangeKind.GroupCommit` and `GroupCancel`.
   - `Editing/TimelineEdits.Ranges.cs` (`RemoveRanges`), moved out of `TimelineViewModel.RippleDeleteRange` and generalised.
 - **Media:**
-  - `Preview/StillRenderer.cs` and `Preview/RangeAudioReader.cs`, public wrappers over the internal `PreviewRender`.
+  - `Preview/StillRenderer.cs` and `Preview/Audio/RangeAudioReader.cs`, public wrappers over the internal `PreviewRender`.
   - `Settings/AppSettings.Agent.cs`: `AgentConnectionsEnabled` (alias `AllowAgentConnections`, not stored), `AgentPort`, `AgentLeaseSeconds`, `AgentMaxLeaseSeconds`, `AgentAskFirst`, `AgentReadableFolders`, `AgentWritableFolders`.
   - `AppPaths.AgentDirectory` (`<data>/agent`).
 - **App:**
   - `Services/Agent/`: AppAgentHost, AppAgentServices, AvaloniaUiInvoker, AgentServerController (partial `.Http`), AgentServerStatus, IAgentLockControls, IAgentSettingsHost.
-  - `Services/TrackedDialogService` (the modal count of 2.4), `SmokeAgentConnection` and `SmokeAgentResponse`.
-  - View models: AgentViewModel, AgentCallItemViewModel, and the partials `SettingsViewModel.Agents` and `MainWindowViewModel.Agent`.
-  - `SettingsPage` (Agents = 3, 6.1).
-  - Views: AgentBanner, AgentPanelView, and the Agents page in SettingsDialog.
+  - `Services/Dialogs/TrackedDialogService` (the modal count of 2.4), `Services/Smoke/` SmokeAgentConnection and SmokeAgentResponse.
+  - View models: `ViewModels/Agent/` AgentViewModel and AgentCallItemViewModel, and the partials `SettingsViewModel.Agents` and `MainWindowViewModel.Agent`.
+  - `ViewModels/Dialogs/SettingsPage` (Agents = 3, 6.1).
+  - Views: `Views/Agent/` AgentBanner and AgentPanelView, and the Agents page in `Views/Dialogs/SettingsDialog`.
   - Commands and smoke: `CommandIds.AllowedWhileAgentHolds`, `SmokeRunner.Agent`, `build/smoke/m9.smoke`.
   - `CommandLineOptions` gains `--agent-server` and `--port`.
-  - The Agent menu (6.6, 9.4): `Services/Agent/` AgentBriefing and AgentBriefingTemplate (the embedded neutral body `Briefing/briefing.md` and the per-target tails `briefing-tail-mcp.md`, `-harness.md`, `-http.md` and `-generic.md`) and IAgentServerSwitch; `Services/` CliProcess, ICliRunner and CliResult; `ViewModels/` McpStartDialogViewModel, IAgentMenuActions, BriefingTargetItem and the partial `MainWindowViewModel.Mcp`; `Views/McpStartDialog`; `SmokeRunner.Mcp`. `Cutlass.Agent` gains `ProjectDescriber.Summary(project, maxLines)`; Media gains `AgentBriefingTemplatePath` and `McpStartDialogSeen`.
-  - Agent clients (9.3): `Assets/agent-clients.json` (the profiles, copied beside the exe and embedded); `Services/Agent/Clients/` AgentClientProfile, AgentClientRegistry (partial `.Operations`), AgentClientProbe, AgentClientRegisterResult, AgentClientState, AgentClientEnvironment (the sandbox), JsoncEditor and TomlTableEditor with their helpers; `ViewModels/` ConnectClientsViewModel, AgentClientItemViewModel and McpClientChoice; `Views/` ClientListView and ConnectClientsDialog; `Services/SmokeCliRunner` and `SmokeRunner.Clients`.
+  - The Agent menu (6.6, 9.4): `Services/Agent/` AgentBriefing and AgentBriefingTemplate (the embedded neutral body `Briefing/briefing.md` and the per-target tails `briefing-tail-mcp.md`, `-harness.md`, `-http.md` and `-generic.md`) and IAgentServerSwitch; `Services/` CliProcess, ICliRunner and CliResult; `ViewModels/Agent/` McpStartDialogViewModel, IAgentMenuActions and BriefingTargetItem, and the partial `ViewModels/MainWindowViewModel.Mcp`; `Views/Agent/McpStartDialog`; `Services/Smoke/SmokeRunner.Mcp`. `Cutlass.Agent` gains `ProjectDescriber.Summary(project, maxLines)`; Media gains `AgentBriefingTemplatePath` and `McpStartDialogSeen`.
+  - Agent clients (9.3): `Assets/agent-clients.json` (the profiles, copied beside the exe and embedded); `Services/Agent/Clients/` AgentClientRegistry (partial `.Operations`), AgentClientProbe, AgentClientRegisterResult, AgentClientState, AgentClientEnvironment (the sandbox), JsoncEditor and TomlTableEditor with their helpers, and `Clients/Profiles/` AgentClientProfile with the records, enums and JSON context it is read with; `ViewModels/Agent/` ConnectClientsViewModel, AgentClientItemViewModel and McpClientChoice; `Views/Agent/` ClientListView and ConnectClientsDialog; `Services/Smoke/` SmokeCliRunner and SmokeRunner.Clients.
 - **Agent discovery (9.2):** `Cutlass.Agent/Api/AgentInstructions.cs` (the one source of the workflow text for the MCP server instructions, `/v1/instructions` and the briefing) and `Api/Export/` (OpenAiToolExporter, AnthropicToolExporter, GeminiToolExporter, MarkdownToolExporter, OpenApiDocument, ToolExport).
 
 ### 2.2 The host abstraction

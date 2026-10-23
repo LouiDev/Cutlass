@@ -3,6 +3,7 @@ using Cutlass.Agent.Api;
 using Cutlass.Agent.Lock;
 using Cutlass.App.Services.Agent;
 using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Agent.Clients.Profiles;
 using Cutlass.Core.Model;
 using Cutlass.Tests.Compiler;
 using Cutlass.Tests.TestSupport;

@@ -1,5 +1,6 @@
-using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Services.Dialogs;
+using Cutlass.App.ViewModels.Agent;
+using Cutlass.App.ViewModels.Dialogs;
 
 namespace Cutlass.Tests.App.Shell;
 

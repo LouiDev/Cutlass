@@ -1,6 +1,8 @@
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Api.Dto;
 using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Requests.Project;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 

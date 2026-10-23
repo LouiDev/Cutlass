@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Api.Dto;
-using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Dto.Status;
+using Cutlass.Agent.Api.Requests.Markers;
 using Cutlass.Agent.Lock;
 using Cutlass.IntegrationTests.Infrastructure;
 

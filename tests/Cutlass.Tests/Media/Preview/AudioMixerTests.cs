@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Cutlass.Core.Model;
-using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
 using Cutlass.Tests.TestSupport;
 
 namespace Cutlass.Tests.Media.Preview;

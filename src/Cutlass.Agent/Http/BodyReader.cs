@@ -64,7 +64,7 @@ public static class BodyReader
     {
         if (utf8.Span.Trim(" \t\r\n"u8).IsEmpty)
         {
-            return Tools.AgentCall.EmptyArgs;
+            return Tools.Dispatch.AgentCall.EmptyArgs;
         }
 
         try

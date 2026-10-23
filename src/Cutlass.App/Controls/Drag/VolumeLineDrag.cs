@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Cutlass.App.Controls.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 

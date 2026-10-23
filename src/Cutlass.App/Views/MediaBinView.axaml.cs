@@ -1,13 +1,13 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Platform.Storage;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
-using Cutlass.App.Controls;
+using Cutlass.App.Controls.Timeline;
 using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.MediaBin;
 
 namespace Cutlass.App.Views;
 

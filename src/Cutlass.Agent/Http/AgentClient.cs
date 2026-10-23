@@ -5,7 +5,19 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Api.Dto;
+using Cutlass.Agent.Api.Dto.Media;
+using Cutlass.Agent.Api.Dto.Preview;
+using Cutlass.Agent.Api.Dto.Project;
+using Cutlass.Agent.Api.Dto.Status;
 using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Requests.Clips;
+using Cutlass.Agent.Api.Requests.Markers;
+using Cutlass.Agent.Api.Requests.Media;
+using Cutlass.Agent.Api.Requests.Preview;
+using Cutlass.Agent.Api.Requests.Project;
+using Cutlass.Agent.Api.Requests.Titles;
+using Cutlass.Agent.Api.Requests.Tracks;
+using Cutlass.Agent.Api.Requests.Transitions;
 
 namespace Cutlass.Agent.Http;
 
@@ -72,7 +84,7 @@ public sealed class AgentClient : IDisposable
     public Task<ApiResult> CallAsync(string tool, JsonElement? args = null, CancellationToken ct = default)
     {
         var info = ToolCatalog.Find(tool) ?? throw new ArgumentException($"Unknown tool '{tool}'.", nameof(tool));
-        var a = args is { ValueKind: JsonValueKind.Object } o ? o : Tools.AgentCall.EmptyArgs;
+        var a = args is { ValueKind: JsonValueKind.Object } o ? o : Tools.Dispatch.AgentCall.EmptyArgs;
         var used = new HashSet<string>(StringComparer.Ordinal);
         var path = ToolCatalog.FillRoute(info, name =>
         {

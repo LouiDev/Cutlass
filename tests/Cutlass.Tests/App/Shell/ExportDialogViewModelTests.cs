@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Compiler;
 using Cutlass.Compiler.Capabilities;
 using Cutlass.Compiler.Export;

@@ -1,6 +1,6 @@
-using Cutlass.App.Controls;
 using Cutlass.App.Controls.Drag;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Controls.Timeline;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Session;

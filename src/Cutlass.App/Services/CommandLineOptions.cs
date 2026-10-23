@@ -1,3 +1,5 @@
+using Cutlass.App.Services.Smoke;
+
 namespace Cutlass.App.Services;
 
 /// <summary>

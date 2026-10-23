@@ -1,3 +1,5 @@
+using Cutlass.App.Controls.Timeline;
+
 namespace Cutlass.App.Controls;
 
 /// <summary>A button drawn in a track header, in header-local coordinates relative to the row top.</summary>
