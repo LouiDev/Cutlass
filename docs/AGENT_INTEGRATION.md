@@ -1071,7 +1071,7 @@ Rules:
 - Vendor formats are produced by pure functions in `Cutlass.Agent/Api/Export/` (`OpenAiToolExporter`, `AnthropicToolExporter`, `GeminiToolExporter`, `MarkdownToolExporter`, `OpenApiDocument`), each unit tested against a golden file and, for the JSON ones, validated by loading them into the vendor SDK in the example harnesses (9.5).
 - `GeminiToolExporter` is the only one that rewrites schemas; the others pass the catalog schema through. The rewrite is documented in the class and tested.
 
-Implementation notes (filled gaps, 2026-10-22; `capabilities.apiRevision` is 2):
+Implementation notes (filled gaps, 2026-10-22; `capabilities.apiRevision` is 3: revision 2 added the discovery routes, revision 3 the 33 extra xfade transition kinds, `wipeUp` to `zoomIn`, in `capabilities.transitionKinds` and the `kind` enums of `cutlass_add_transition` and `cutlass_update_transition`; the enum is generated from the model, so it cannot drift):
 
 - The three routes are catalog tools without an MCP name (`discovery.tools`, `discovery.openapi`, `discovery.instructions`, result kind `document`), so the auth guard, rate limit and audit log apply as to any read. They answer the document itself, not the envelope; through `/v1/call` the JSON document (or `{ "text" }` for Markdown) becomes `result`.
 - `/v1/tools` entries also carry `method` and `route`; `result` is `json`, `png`, `text` or `document`. The vendor formats and the Markdown reference list only tools with an MCP name, with the catalog (HTTP) argument names, so `cutlass_acquire_lock` takes `waitMs` there, not the MCP exe's `waitSeconds`.

@@ -40,7 +40,7 @@ Principles:
   - Overwrite and insert, trim, split, lift, ripple delete, gap close, snapping, markers, In/Out, linked A/V, copy and paste.
   - Track lock, hide, mute, solo, target and gain. Undo up to 500 steps.
 - **Effects.**
-  - `xfade` transitions: Crossfade, Dip to Black, Dip to White, Wipe Left, Wipe Right, Slide Left, Slide Right, Circle Open.
+  - `xfade` transitions (41 video kinds, every one an ffmpeg 6.0 xfade transition): Crossfade, Dip to Black, Dip to White, Wipe Left, Wipe Right, Wipe Up, Wipe Down, Wipe Top Left, Wipe Top Right, Wipe Bottom Left, Wipe Bottom Right, Slide Left, Slide Right, Slide Up, Slide Down, Smooth Left, Smooth Right, Smooth Up, Smooth Down, Circle Open, Circle Close, Circle Crop, Rect Crop, Radial Wipe, Distance Dissolve, Horizontal Open, Horizontal Close, Vertical Open, Vertical Close, Diagonal Top Left, Diagonal Top Right, Diagonal Bottom Left, Diagonal Bottom Right, Noise Dissolve, Pixelate, Fade Grays, Fade Fast, Fade Slow, Squeeze Horizontal, Squeeze Vertical, Zoom In; plus Audio Crossfade on audio tracks.
   - Audio crossfade, fade handles, text titles.
   - Constant speed 25% to 400% with pitch kept.
   - Clip gain and volume keyframes.
@@ -153,9 +153,9 @@ It covers the panels and the timeline only: the menu row with the agent banner a
   - Folders import supported files up to two levels deep.
   - Unsupported files are listed in one toast.
 - **Effects tab.**
-  - Transitions: the eight video transitions plus Audio Crossfade. Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
-  - Title templates: Centered, Lower Third and Top Caption. Drag one onto a video track to create a 5 s title.
-  - Fades: Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades. Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
+  - Transitions: the 41 video transitions under four sub-headers, FADES (Cross Dissolve, Dip to Black, Dip to White, Fade Grays, Fade Fast, Fade Slow, Noise Dissolve, Pixelate), WIPES (the eight wipes, the four smooth wipes, the four diagonals, Radial Wipe, Distance Dissolve), SLIDES (the four slides, Squeeze Horizontal, Squeeze Vertical, Zoom In) and SHAPES (Circle Open, Circle Close, Circle Crop, Rect Crop, Horizontal Open and Close, Vertical Open and Close), plus AUDIO (Audio Crossfade). Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
+  - Title templates (TITLES): Centered, Lower Third and Top Caption. Drag one onto a video track to create a 5 s title.
+  - Clip fades (CLIP FADES): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades. Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
 - **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.

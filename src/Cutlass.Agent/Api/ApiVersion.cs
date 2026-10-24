@@ -8,9 +8,10 @@ public static class ApiVersion
 
     /// <summary>
     /// The additive revision reported by <c>/v1/capabilities</c>; raised by every additive change. 2 added the discovery
-    /// routes and MCP names in <c>/v1/call</c> (AGENT_INTEGRATION 9.2).
+    /// routes and MCP names in <c>/v1/call</c> (AGENT_INTEGRATION 9.2). 3 added the extra xfade transition kinds
+    /// (<c>wipeUp</c> to <c>zoomIn</c>) to <c>capabilities.transitionKinds</c> and the <c>kind</c> enums.
     /// </summary>
-    public const int Revision = 2;
+    public const int Revision = 3;
 
     /// <summary>The route prefix of this version.</summary>
     public const string Prefix = "/v1";

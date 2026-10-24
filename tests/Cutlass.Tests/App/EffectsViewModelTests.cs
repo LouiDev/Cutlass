@@ -42,6 +42,35 @@ public sealed class EffectsViewModelTests
     }
 
     [Fact]
+    public void EveryTransitionKindHasANameABadgeAndAGroup()
+    {
+        var vm = Vm(Cuts(), out _);
+        var kinds = Enum.GetValues<TransitionKind>();
+        foreach (var kind in kinds)
+        {
+            Assert.NotEqual(kind.ToString(), EffectItem.TransitionName(kind));
+            var badge = EffectItem.TransitionBadge(kind);
+            Assert.NotEqual("?", badge);
+            Assert.InRange(badge.Length, 1, 3);
+            Assert.DoesNotContain((char)0x2014, badge);   // no em dash, as everywhere in the repo
+        }
+
+        var names = kinds.Select(EffectItem.TransitionName).ToList();
+        Assert.Equal(names.Count, names.Distinct(StringComparer.Ordinal).Count());
+
+        // The five groups partition Transitions (the union the drops and Find use).
+        var grouped = vm.TransitionFades.Concat(vm.TransitionWipes).Concat(vm.TransitionSlides).Concat(vm.TransitionShapes).Concat(vm.TransitionAudio).ToList();
+        Assert.Equal(vm.Transitions.Count, grouped.Count);
+        Assert.Equal(vm.Transitions.OrderBy(t => t.Id, StringComparer.Ordinal), grouped.OrderBy(t => t.Id, StringComparer.Ordinal));
+        Assert.Same(vm.Find("transition:AudioCrossfade"), Assert.Single(vm.TransitionAudio));
+        Assert.Contains(vm.Find("transition:Pixelize"), vm.TransitionFades);
+        Assert.Contains(vm.Find("transition:WipeUp"), vm.TransitionWipes);
+        Assert.Contains(vm.Find("transition:ZoomIn"), vm.TransitionSlides);
+        Assert.Contains(vm.Find("transition:RectCrop"), vm.TransitionShapes);
+        Assert.Equal(TransitionGroup.Shapes, EffectItem.TransitionGroup(TransitionKind.VerticalClose));
+    }
+
+    [Fact]
     public void FramesForSeconds()
     {
         Assert.Equal(25, EffectsViewModel.FramesFor(1, FrameRate.Fps25));

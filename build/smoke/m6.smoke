@@ -78,6 +78,10 @@ expect-transitions A1 1
 # add-transition sets kind and length directly: a dip to black replaces the crossfade at the same cut.
 add-transition diptoblack 20
 expect-transitions V1 1
+# A kind from effects batch 1 (one of the 41 xfade kinds) replaces it in turn; the export below renders it through
+# xfade=transition=wipeup, so the frame count check also proves the new kinds run on this ffmpeg.
+add-transition wipeup 20
+expect-transitions V1 1
 expect-duration 280
 frame
 wait 500
@@ -111,11 +115,13 @@ probe out/m6.mp4 frames=440 vcodec=h264 acodec=aac size=1280x720 bt709
 
 # ---- DESIGN 5 checklist screenshots (M6 verify). The export above is final; these steps only add state to look at.
 # Effects tab drops (the same calls the timeline control makes on a drop): 1 s fades on clipB, and a wipe dropped
-# near the cut at 90 replaces the dip to black there.
+# near the cut at 90 replaces the wipe up there; a second drop with a batch 1 kind (Pixelize) replaces that again.
 deselect
 zoom-fit
 effect-drop adjust:FadeInOut V1 150
 effect-drop transition:WipeLeft V1 95
+expect-transitions V1 1
+effect-drop transition:Pixelize V1 95
 expect-transitions V1 1
 
 # A selected clip with its fade handles and the Inspector Clip section.

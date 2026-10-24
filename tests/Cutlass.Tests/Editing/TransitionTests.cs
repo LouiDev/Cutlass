@@ -176,6 +176,40 @@ public sealed class TransitionTests
         ModelAssert.Unchanged(removed, TimelineEdits.RemoveTransitions(removed, ["x1"]));
     }
 
+    /// <summary>Every kind added after the first eight (effects batch 1).</summary>
+    public static TheoryData<TransitionKind> NewKinds()
+    {
+        var data = new TheoryData<TransitionKind>();
+        foreach (var kind in Enum.GetValues<TransitionKind>().Skip((int)TransitionKind.CircleOpen + 1).Where(k => k != TransitionKind.AudioCrossfade))
+        {
+            data.Add(kind);
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(NewKinds))]
+    public void NewVideoKindsAreKeptOnVideoAndCoercedOnAudio(TransitionKind kind)
+    {
+        var p = Cut();
+        var onVideo = ModelAssert.Changed(p, TimelineEdits.AddTransition(_ids, p, V1, 50, kind, 10));
+        Assert.Equal(kind, Assert.Single(ModelAssert.Track(onVideo, V1).Transitions).Kind);
+        ModelAssert.Valid(onVideo);
+
+        var onAudio = ModelAssert.Changed(p, TimelineEdits.AddTransition(_ids, p, A1, 50, kind, 10));
+        Assert.Equal(TransitionKind.AudioCrossfade, Assert.Single(ModelAssert.Track(onAudio, A1).Transitions).Kind);
+        ModelAssert.Valid(onAudio);
+
+        // SetTransitionKind takes the same path: kept on V1, coerced on A1.
+        var both = ModelAssert.Changed(p, TimelineEdits.AddTransitions(_ids, p, [(V1, 50), (A1, 50)], TransitionKind.Crossfade, 10));
+        var ids = both.Sequence.Tracks.SelectMany(t => t.Transitions).Select(t => t.Id).ToArray();
+        var set = ModelAssert.Changed(both, TimelineEdits.SetTransitionKind(both, ids, kind));
+        Assert.Equal(kind, Assert.Single(ModelAssert.Track(set, V1).Transitions).Kind);
+        Assert.Equal(TransitionKind.AudioCrossfade, Assert.Single(ModelAssert.Track(set, A1).Transitions).Kind);
+        ModelAssert.Valid(set);
+    }
+
     [Fact]
     public void LockedTracksRefuseTransitionEdits()
     {

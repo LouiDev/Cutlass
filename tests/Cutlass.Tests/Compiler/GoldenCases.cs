@@ -23,6 +23,7 @@ internal static class GoldenCases
         TwoClipsWithGap(),
         Cuts(),
         TransitionKinds(),
+        TransitionKindsMore(),
         WorkedExample(),
         WindowMidCrossfade(),
         WindowOutsideTransition(),
@@ -102,6 +103,29 @@ internal static class GoldenCases
             .ToList();
         var p = Project(Hd30, Hd(), VideoTrack("tr_v1", clips, transitions));
         return Make("transition_kinds", p, Export(0, 300, audio: false));
+    }
+
+    // Every kind added after the first eight (effects batch 1), one join each, so transition_kinds.ffg stays reviewable.
+    private static Case TransitionKindsMore()
+    {
+        TransitionKind?[] joins =
+        [
+            TransitionKind.WipeUp, TransitionKind.WipeDown, TransitionKind.WipeTopLeft, TransitionKind.WipeTopRight,
+            TransitionKind.WipeBottomLeft, TransitionKind.WipeBottomRight, TransitionKind.SlideUp, TransitionKind.SlideDown,
+            TransitionKind.SmoothLeft, TransitionKind.SmoothRight, TransitionKind.SmoothUp, TransitionKind.SmoothDown,
+            TransitionKind.CircleClose, TransitionKind.CircleCrop, TransitionKind.RectCrop, TransitionKind.Radial, TransitionKind.Distance,
+            TransitionKind.HorizontalOpen, TransitionKind.HorizontalClose, TransitionKind.VerticalOpen, TransitionKind.VerticalClose,
+            TransitionKind.DiagonalTopLeft, TransitionKind.DiagonalTopRight, TransitionKind.DiagonalBottomLeft, TransitionKind.DiagonalBottomRight,
+            TransitionKind.Dissolve, TransitionKind.Pixelize, TransitionKind.FadeGrays, TransitionKind.FadeFast, TransitionKind.FadeSlow,
+            TransitionKind.SqueezeHorizontal, TransitionKind.SqueezeVertical, TransitionKind.ZoomIn,
+        ];
+        var clips = Enumerable.Range(0, joins.Length + 1).Select(i => V($"c_{i}", i * 30, 30, i % 2 == 0 ? "m_a" : "m_b", (i + 1) * F)).ToList();
+        var transitions = joins
+            .Select((k, i) => k is { } kind ? new Transition($"x_{i}", kind, $"c_{i}", $"c_{i + 1}", 10) : null)
+            .OfType<Transition>()
+            .ToList();
+        var p = Project(Hd30, Hd(), VideoTrack("tr_v1", clips, transitions));
+        return Make("transition_kinds_more", p, Export(0, 30 * (joins.Length + 1), audio: false));
     }
 
     private static Case WorkedExample()

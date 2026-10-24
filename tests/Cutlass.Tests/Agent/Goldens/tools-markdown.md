@@ -899,7 +899,7 @@ Add a transition on the cut between two butting clips.
 |---|---|---|---|
 | `trackId` | string | yes | The track. |
 | `cutFrame` | integer, at least 0 | yes | The cut frame. |
-| `kind` | string: crossfade, dipToBlack, dipToWhite, wipeLeft, wipeRight, slideLeft, slideRight, circleOpen, audioCrossfade | no | Transition kind (crossfade). |
+| `kind` | string: crossfade, dipToBlack, dipToWhite, wipeLeft, wipeRight, slideLeft, slideRight, circleOpen, wipeUp, wipeDown, wipeTopLeft, wipeTopRight, wipeBottomLeft, wipeBottomRight, slideUp, slideDown, smoothLeft, smoothRight, smoothUp, smoothDown, circleClose, circleCrop, rectCrop, radial, distance, horizontalOpen, horizontalClose, verticalOpen, verticalClose, diagonalTopLeft, diagonalTopRight, diagonalBottomLeft, diagonalBottomRight, dissolve, pixelize, fadeGrays, fadeFast, fadeSlow, squeezeHorizontal, squeezeVertical, zoomIn, audioCrossfade | no | Transition kind (crossfade). |
 | `durationFrames` | integer, at least 2 | yes | Length in frames (at least 2). |
 | `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |
 | `returnProject` | boolean | no | Also return the project summary. |
@@ -927,7 +927,7 @@ Change a transition's kind or length.
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `transitionId` | string | yes | The transition. |
-| `kind` | string: crossfade, dipToBlack, dipToWhite, wipeLeft, wipeRight, slideLeft, slideRight, circleOpen, audioCrossfade | no | New kind. |
+| `kind` | string: crossfade, dipToBlack, dipToWhite, wipeLeft, wipeRight, slideLeft, slideRight, circleOpen, wipeUp, wipeDown, wipeTopLeft, wipeTopRight, wipeBottomLeft, wipeBottomRight, slideUp, slideDown, smoothLeft, smoothRight, smoothUp, smoothDown, circleClose, circleCrop, rectCrop, radial, distance, horizontalOpen, horizontalClose, verticalOpen, verticalClose, diagonalTopLeft, diagonalTopRight, diagonalBottomLeft, diagonalBottomRight, dissolve, pixelize, fadeGrays, fadeFast, fadeSlow, squeezeHorizontal, squeezeVertical, zoomIn, audioCrossfade | no | New kind. |
 | `durationFrames` | integer, at least 2 | no | New length. |
 | `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |
 | `returnProject` | boolean | no | Also return the project summary. |

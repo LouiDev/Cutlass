@@ -16,6 +16,9 @@ public sealed class EditFuzzTests
 {
     private static readonly string[] MediaIds = [Long, Short, Still, Music, Uhd];
 
+    // Every kind, so the fuzz exercises the new xfade kinds and the audio coercion alike.
+    private static readonly TransitionKind[] TransitionKinds = Enum.GetValues<TransitionKind>();
+
     [Theory]
     [InlineData(20261021, 5000)]
     [InlineData(7, 1500)]
@@ -185,7 +188,7 @@ public sealed class EditFuzzTests
                 var track = tracks[rng.Next(tracks.Length)];
                 var cuts = track.Clips.Zip(track.Clips.Skip(1)).Where(pair => pair.First.End == pair.Second.Start).Select(pair => pair.First.End).ToList();
                 var cut = cuts.Count > 0 ? cuts[rng.Next(cuts.Count)] : Frame();
-                var kind = (TransitionKind)rng.Next(9);
+                var kind = TransitionKinds[rng.Next(TransitionKinds.Length)];
                 return TimelineEdits.AddTransition(ids, p, track.Id, cut, kind, rng.Next(0, 90));
             }
 
@@ -201,7 +204,7 @@ public sealed class EditFuzzTests
                 return rng.Next(3) switch
                 {
                     0 => TimelineEdits.SetTransitionDuration(p, t.Id, rng.Next(-5, 120)),
-                    1 => TimelineEdits.SetTransitionKind(p, [t.Id], (TransitionKind)rng.Next(9)),
+                    1 => TimelineEdits.SetTransitionKind(p, [t.Id], TransitionKinds[rng.Next(TransitionKinds.Length)]),
                     _ => TimelineEdits.RemoveTransitions(p, [t.Id]),
                 };
             }

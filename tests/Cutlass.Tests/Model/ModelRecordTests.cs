@@ -76,8 +76,20 @@ public sealed class ModelRecordTests
         Assert.Equal(["Video", "Audio"], Enum.GetNames<StreamKind>());
         Assert.Equal(["Center", "LowerThird", "Top"], Enum.GetNames<TitleAnchor>());
         Assert.Equal(
-            ["Crossfade", "DipToBlack", "DipToWhite", "WipeLeft", "WipeRight", "SlideLeft", "SlideRight", "CircleOpen", "AudioCrossfade"],
+            [
+                "Crossfade", "DipToBlack", "DipToWhite", "WipeLeft", "WipeRight", "SlideLeft", "SlideRight", "CircleOpen",
+                "WipeUp", "WipeDown", "WipeTopLeft", "WipeTopRight", "WipeBottomLeft", "WipeBottomRight",
+                "SlideUp", "SlideDown",
+                "SmoothLeft", "SmoothRight", "SmoothUp", "SmoothDown",
+                "CircleClose", "CircleCrop", "RectCrop", "Radial", "Distance",
+                "HorizontalOpen", "HorizontalClose", "VerticalOpen", "VerticalClose",
+                "DiagonalTopLeft", "DiagonalTopRight", "DiagonalBottomLeft", "DiagonalBottomRight",
+                "Dissolve", "Pixelize", "FadeGrays", "FadeFast", "FadeSlow",
+                "SqueezeHorizontal", "SqueezeVertical", "ZoomIn",
+                "AudioCrossfade",
+            ],
             Enum.GetNames<TransitionKind>());
+        Assert.Equal(TransitionKind.AudioCrossfade, Enum.GetValues<TransitionKind>()[^1]);
     }
 
     private static MediaClip MakeMediaClip() =>

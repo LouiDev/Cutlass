@@ -10,8 +10,9 @@ using Cutlass.Core.Time;
 namespace Cutlass.App.ViewModels;
 
 /// <summary>
-/// The Effects tab of the left panel (DESIGN 4.2, 5.5): the eight video transitions plus Audio Crossfade, the title
-/// templates Centered, Lower Third and Top Caption, and fade presets. Apply acts on the timeline selection:
+/// The Effects tab of the left panel (DESIGN 4.2, 5.5): the 41 video transitions grouped under Fades, Wipes, Slides and
+/// Shapes plus Audio Crossfade, the title templates Centered, Lower Third and Top Caption, and fade presets. Apply acts
+/// on the timeline selection:
 /// <list type="bullet">
 /// <item>A transition goes to the selected transition (its kind changes), else to the cuts between adjacent selected
 /// clips, else to every cut of the selected clips, else to the cut nearest the playhead on the targeted tracks. Video
@@ -51,7 +52,7 @@ public sealed partial class EffectsViewModel : ObservableObject
         _timeline = timeline;
         foreach (var kind in Enum.GetValues<TransitionKind>())
         {
-            Transitions.Add(new EffectItem(
+            var item = new EffectItem(
                 EffectItem.TransitionPrefix + kind,
                 EffectItem.TransitionName(kind),
                 EffectCategory.Transition,
@@ -62,7 +63,9 @@ public sealed partial class EffectsViewModel : ObservableObject
                     : "Video transition on the selected cuts. Double-click to make it the default (Ctrl+D).")
             {
                 TransitionKind = kind,
-            });
+            };
+            Transitions.Add(item);
+            GroupOf(EffectItem.TransitionGroup(kind)).Add(item);
         }
 
         Titles.Add(TitleItem("Centered", "Centered", "Large centred title.", TitleSpec.Default with { Text = "Title", Anchor = TitleAnchor.Center }));
@@ -97,8 +100,35 @@ public sealed partial class EffectsViewModel : ObservableObject
     /// <summary>Raised when the default transition changes (the shell may persist it in settings).</summary>
     public event EventHandler? DefaultTransitionChanged;
 
-    /// <summary>The transitions.</summary>
+    /// <summary>Every transition, in enum order (the union of the five groups below; drops and Find use it).</summary>
     public ObservableCollection<EffectItem> Transitions { get; } = [];
+
+    /// <summary>The transitions shown under FADES (DESIGN 4.2).</summary>
+    public ObservableCollection<EffectItem> TransitionFades { get; } = [];
+
+    /// <summary>The transitions shown under WIPES.</summary>
+    public ObservableCollection<EffectItem> TransitionWipes { get; } = [];
+
+    /// <summary>The transitions shown under SLIDES.</summary>
+    public ObservableCollection<EffectItem> TransitionSlides { get; } = [];
+
+    /// <summary>The transitions shown under SHAPES.</summary>
+    public ObservableCollection<EffectItem> TransitionShapes { get; } = [];
+
+    /// <summary>The transitions shown under AUDIO (Audio Crossfade).</summary>
+    public ObservableCollection<EffectItem> TransitionAudio { get; } = [];
+
+    /// <summary>The collection a transition group is shown in.</summary>
+    /// <param name="group">The group.</param>
+    /// <returns>The collection.</returns>
+    public ObservableCollection<EffectItem> GroupOf(TransitionGroup group) => group switch
+    {
+        TransitionGroup.Fades => TransitionFades,
+        TransitionGroup.Wipes => TransitionWipes,
+        TransitionGroup.Slides => TransitionSlides,
+        TransitionGroup.Shapes => TransitionShapes,
+        _ => TransitionAudio,
+    };
 
     /// <summary>The title templates.</summary>
     public ObservableCollection<EffectItem> Titles { get; } = [];

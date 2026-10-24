@@ -16,9 +16,10 @@
 
     -Script m6 generates the same two 6 s clips as m4 (180 frames at 30 fps each) and runs build/smoke/m6.smoke: the
     Source monitor with In/Out and the three-point insert and overwrite keys, click-to-type timecode, match frame,
-    copy and paste, Q and W ripple trims, video and audio crossfades, speed, closing a gap, adding a track, and an
-    export whose frame count ffprobe checks. After the export it drops Effects tab items and Source ranges (video
-    only, audio only, both) and takes the DESIGN 5 checklist screenshots (shots/05 to shots/12).
+    copy and paste, Q and W ripple trims, video and audio crossfades (the video one replaced by a dip to black and
+    then by Wipe Up, one of the effects batch 1 xfade kinds), speed, closing a gap, adding a track, and an export
+    whose frame count ffprobe checks. After the export it drops Effects tab items (fades, Wipe Left, Pixelize) and
+    Source ranges (video only, audio only, both) and takes the DESIGN 5 checklist screenshots (shots/05 to shots/12).
 
     -Script m7 generates clipA.mp4 and clipB.mp4 (4 s, 640x360, 30 fps, 120 frames each) and runs
     build/smoke/m7.smoke: the Settings dialog through Ctrl+, (validation, live defaults, the ffmpeg re-detect, the

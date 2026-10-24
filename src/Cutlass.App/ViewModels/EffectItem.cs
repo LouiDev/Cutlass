@@ -89,8 +89,65 @@ public sealed partial class EffectItem : ObservableObject
         Core.Model.TransitionKind.SlideLeft => "Slide Left",
         Core.Model.TransitionKind.SlideRight => "Slide Right",
         Core.Model.TransitionKind.CircleOpen => "Circle Open",
+        Core.Model.TransitionKind.WipeUp => "Wipe Up",
+        Core.Model.TransitionKind.WipeDown => "Wipe Down",
+        Core.Model.TransitionKind.WipeTopLeft => "Wipe Top Left",
+        Core.Model.TransitionKind.WipeTopRight => "Wipe Top Right",
+        Core.Model.TransitionKind.WipeBottomLeft => "Wipe Bottom Left",
+        Core.Model.TransitionKind.WipeBottomRight => "Wipe Bottom Right",
+        Core.Model.TransitionKind.SlideUp => "Slide Up",
+        Core.Model.TransitionKind.SlideDown => "Slide Down",
+        Core.Model.TransitionKind.SmoothLeft => "Smooth Left",
+        Core.Model.TransitionKind.SmoothRight => "Smooth Right",
+        Core.Model.TransitionKind.SmoothUp => "Smooth Up",
+        Core.Model.TransitionKind.SmoothDown => "Smooth Down",
+        Core.Model.TransitionKind.CircleClose => "Circle Close",
+        Core.Model.TransitionKind.CircleCrop => "Circle Crop",
+        Core.Model.TransitionKind.RectCrop => "Rect Crop",
+        Core.Model.TransitionKind.Radial => "Radial Wipe",
+        Core.Model.TransitionKind.Distance => "Distance Dissolve",
+        Core.Model.TransitionKind.HorizontalOpen => "Horizontal Open",
+        Core.Model.TransitionKind.HorizontalClose => "Horizontal Close",
+        Core.Model.TransitionKind.VerticalOpen => "Vertical Open",
+        Core.Model.TransitionKind.VerticalClose => "Vertical Close",
+        Core.Model.TransitionKind.DiagonalTopLeft => "Diagonal Top Left",
+        Core.Model.TransitionKind.DiagonalTopRight => "Diagonal Top Right",
+        Core.Model.TransitionKind.DiagonalBottomLeft => "Diagonal Bottom Left",
+        Core.Model.TransitionKind.DiagonalBottomRight => "Diagonal Bottom Right",
+        Core.Model.TransitionKind.Dissolve => "Noise Dissolve",
+        Core.Model.TransitionKind.Pixelize => "Pixelate",
+        Core.Model.TransitionKind.FadeGrays => "Fade Grays",
+        Core.Model.TransitionKind.FadeFast => "Fade Fast",
+        Core.Model.TransitionKind.FadeSlow => "Fade Slow",
+        Core.Model.TransitionKind.SqueezeHorizontal => "Squeeze Horizontal",
+        Core.Model.TransitionKind.SqueezeVertical => "Squeeze Vertical",
+        Core.Model.TransitionKind.ZoomIn => "Zoom In",
         Core.Model.TransitionKind.AudioCrossfade => "Audio Crossfade",
         _ => kind.ToString(),
+    };
+
+    /// <summary>The Effects tab sub-header a transition kind is listed under.</summary>
+    /// <param name="kind">The kind.</param>
+    /// <returns>The group.</returns>
+    public static TransitionGroup TransitionGroup(TransitionKind kind) => kind switch
+    {
+        Core.Model.TransitionKind.Crossfade or Core.Model.TransitionKind.DipToBlack or Core.Model.TransitionKind.DipToWhite
+            or Core.Model.TransitionKind.FadeGrays or Core.Model.TransitionKind.FadeFast or Core.Model.TransitionKind.FadeSlow
+            or Core.Model.TransitionKind.Dissolve or Core.Model.TransitionKind.Pixelize => ViewModels.TransitionGroup.Fades,
+        Core.Model.TransitionKind.WipeLeft or Core.Model.TransitionKind.WipeRight or Core.Model.TransitionKind.WipeUp
+            or Core.Model.TransitionKind.WipeDown or Core.Model.TransitionKind.WipeTopLeft or Core.Model.TransitionKind.WipeTopRight
+            or Core.Model.TransitionKind.WipeBottomLeft or Core.Model.TransitionKind.WipeBottomRight
+            or Core.Model.TransitionKind.SmoothLeft or Core.Model.TransitionKind.SmoothRight or Core.Model.TransitionKind.SmoothUp
+            or Core.Model.TransitionKind.SmoothDown or Core.Model.TransitionKind.DiagonalTopLeft or Core.Model.TransitionKind.DiagonalTopRight
+            or Core.Model.TransitionKind.DiagonalBottomLeft or Core.Model.TransitionKind.DiagonalBottomRight
+            or Core.Model.TransitionKind.Radial or Core.Model.TransitionKind.Distance => ViewModels.TransitionGroup.Wipes,
+        Core.Model.TransitionKind.SlideLeft or Core.Model.TransitionKind.SlideRight or Core.Model.TransitionKind.SlideUp
+            or Core.Model.TransitionKind.SlideDown or Core.Model.TransitionKind.SqueezeHorizontal or Core.Model.TransitionKind.SqueezeVertical
+            or Core.Model.TransitionKind.ZoomIn => ViewModels.TransitionGroup.Slides,
+        Core.Model.TransitionKind.AudioCrossfade => ViewModels.TransitionGroup.Audio,
+
+        // CircleOpen, CircleClose, CircleCrop, RectCrop and the horizontal and vertical bar openings.
+        _ => ViewModels.TransitionGroup.Shapes,
     };
 
     /// <summary>The badge of a transition kind.</summary>
@@ -106,6 +163,39 @@ public sealed partial class EffectItem : ObservableObject
         Core.Model.TransitionKind.SlideLeft => "S←",
         Core.Model.TransitionKind.SlideRight => "S→",
         Core.Model.TransitionKind.CircleOpen => "O",
+        Core.Model.TransitionKind.WipeUp => "W↑",
+        Core.Model.TransitionKind.WipeDown => "W↓",
+        Core.Model.TransitionKind.WipeTopLeft => "W↖",
+        Core.Model.TransitionKind.WipeTopRight => "W↗",
+        Core.Model.TransitionKind.WipeBottomLeft => "W↙",
+        Core.Model.TransitionKind.WipeBottomRight => "W↘",
+        Core.Model.TransitionKind.SlideUp => "S↑",
+        Core.Model.TransitionKind.SlideDown => "S↓",
+        Core.Model.TransitionKind.SmoothLeft => "M←",
+        Core.Model.TransitionKind.SmoothRight => "M→",
+        Core.Model.TransitionKind.SmoothUp => "M↑",
+        Core.Model.TransitionKind.SmoothDown => "M↓",
+        Core.Model.TransitionKind.CircleClose => "●",
+        Core.Model.TransitionKind.CircleCrop => "OC",
+        Core.Model.TransitionKind.RectCrop => "RC",
+        Core.Model.TransitionKind.Radial => "R°",
+        Core.Model.TransitionKind.Distance => "DI",
+        Core.Model.TransitionKind.HorizontalOpen => "H↕",
+        Core.Model.TransitionKind.HorizontalClose => "H↓↑",
+        Core.Model.TransitionKind.VerticalOpen => "V↔",
+        Core.Model.TransitionKind.VerticalClose => "V→←",
+        Core.Model.TransitionKind.DiagonalTopLeft => "D↖",
+        Core.Model.TransitionKind.DiagonalTopRight => "D↗",
+        Core.Model.TransitionKind.DiagonalBottomLeft => "D↙",
+        Core.Model.TransitionKind.DiagonalBottomRight => "D↘",
+        Core.Model.TransitionKind.Dissolve => "DS",
+        Core.Model.TransitionKind.Pixelize => "PX",
+        Core.Model.TransitionKind.FadeGrays => "FG",
+        Core.Model.TransitionKind.FadeFast => "FF",
+        Core.Model.TransitionKind.FadeSlow => "FS",
+        Core.Model.TransitionKind.SqueezeHorizontal => "SQH",
+        Core.Model.TransitionKind.SqueezeVertical => "SQV",
+        Core.Model.TransitionKind.ZoomIn => "Z+",
         Core.Model.TransitionKind.AudioCrossfade => "AX",
         _ => "?",
     };

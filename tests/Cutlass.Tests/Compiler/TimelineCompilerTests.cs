@@ -247,17 +247,38 @@ public sealed class TimelineCompilerTests
         Assert.DoesNotContain("alimiter", render.GraphText, StringComparison.Ordinal);
     }
 
+    // The xfade transitions of ffmpeg 6.0 (the invariant: only filters and options that exist in 6.0). The 6.1 additions
+    // hlwind, hrwind, vuwind, vdwind, cover* and reveal* are deliberately absent.
+    private static readonly HashSet<string> Allowed60 =
+    [
+        "fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown", "circlecrop",
+        "rectcrop", "distance", "fadeblack", "fadewhite", "radial", "smoothleft", "smoothright", "smoothup", "smoothdown",
+        "circleopen", "circleclose", "vertopen", "vertclose", "horzopen", "horzclose", "dissolve", "pixelize", "diagtl", "diagtr",
+        "diagbl", "diagbr", "hlslice", "hrslice", "vuslice", "vdslice", "hblur", "fadegrays", "wipetl", "wipetr", "wipebl", "wipebr",
+        "squeezeh", "squeezev", "zoomin", "fadefast", "fadeslow",
+    ];
+
     [Fact]
     public void XfadeNamesCoverEveryVideoKind()
     {
-        Assert.Equal("fade", VideoEmitter.XfadeName(TransitionKind.Crossfade));
         Assert.Equal("fadeblack", VideoEmitter.XfadeName(TransitionKind.DipToBlack));
         Assert.Equal("fadewhite", VideoEmitter.XfadeName(TransitionKind.DipToWhite));
-        Assert.Equal("wipeleft", VideoEmitter.XfadeName(TransitionKind.WipeLeft));
-        Assert.Equal("wiperight", VideoEmitter.XfadeName(TransitionKind.WipeRight));
-        Assert.Equal("slideleft", VideoEmitter.XfadeName(TransitionKind.SlideLeft));
-        Assert.Equal("slideright", VideoEmitter.XfadeName(TransitionKind.SlideRight));
-        Assert.Equal("circleopen", VideoEmitter.XfadeName(TransitionKind.CircleOpen));
-        Assert.Equal("fade", VideoEmitter.XfadeName(TransitionKind.AudioCrossfade));
+        Assert.Equal("wipetl", VideoEmitter.XfadeName(TransitionKind.WipeTopLeft));
+        Assert.Equal("horzopen", VideoEmitter.XfadeName(TransitionKind.HorizontalOpen));
+        Assert.Equal("squeezeh", VideoEmitter.XfadeName(TransitionKind.SqueezeHorizontal));
+
+        // Enum driven, so the "_ => fade" default arm cannot hide a forgotten kind: only Crossfade and an audio crossfade
+        // that ended up on a video track dissolve, every other kind has its own name, and every name exists in 6.0.
+        var names = new Dictionary<TransitionKind, string>();
+        foreach (var kind in Enum.GetValues<TransitionKind>())
+        {
+            var name = VideoEmitter.XfadeName(kind);
+            names[kind] = name;
+            Assert.True(Allowed60.Contains(name), $"{kind} maps to '{name}', which is not an ffmpeg 6.0 xfade transition.");
+            Assert.Equal(kind is TransitionKind.Crossfade or TransitionKind.AudioCrossfade, name == "fade");
+        }
+
+        var video = names.Where(n => n.Key != TransitionKind.AudioCrossfade).Select(n => n.Value).ToList();
+        Assert.Equal(video.Count, video.Distinct(StringComparer.Ordinal).Count());
     }
 }

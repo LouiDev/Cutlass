@@ -178,6 +178,8 @@ public sealed class EditToolsTests : IDisposable
         var x = ModelAssert.Track(Current, V1).Transitions.Single();
         Assert.Equal(TransitionKind.DipToBlack, x.Kind);
         Assert.Equal(16, x.Duration);
+        await Ok("edit.transition.update", """{"transitionId":"x_1","kind":"wipeUp"}""", id);
+        Assert.Equal(TransitionKind.WipeUp, ModelAssert.Track(Current, V1).Transitions.Single().Kind);
         await Ok("edit.transition.remove", """{"transitionIds":["x_1"]}""", id);
         Assert.Empty(ModelAssert.Track(Current, V1).Transitions);
         await Ok("edit.transition.add", """{"trackId":"tr_a1","cutFrame":100,"durationFrames":8,"kind":"crossfade"}""", id);

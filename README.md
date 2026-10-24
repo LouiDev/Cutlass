@@ -8,7 +8,7 @@ Cutlass is a small, fast non-linear video editor for Windows and Linux, built wi
 
 - **Import.** Video, audio and stills through the file dialog (Ctrl+I), drops onto the Media panel or drops straight onto the timeline (file manager drops work on Windows; see the Linux notes). Probing, posters, thumbnails, waveforms and proxies run in the background.
 - **Timeline editing.** Up to 8 video and 8 audio tracks with the Select, Ripple, Roll, Slip and Razor tools, overwrite and insert edits, trim, split, lift, ripple delete, gap close, snapping, markers, In/Out, linked audio and video, copy and paste, three-point edits from the Source monitor, track lock, hide, mute, solo and gain, and undo up to 500 steps.
-- **Transitions.** Crossfade, Dip to Black, Dip to White, Wipe Left and Right, Slide Left and Right, Circle Open, and Audio Crossfade, plus fade handles on every clip.
+- **Transitions.** 41 ffmpeg xfade video transitions grouped in the Effects tab (fades and dissolves, wipes, smooth wipes and diagonals, slides, squeezes and zoom, circle and rect crops, bar openings) plus Audio Crossfade on audio tracks, and fade handles on every clip.
 - **Titles.** Centered, Lower Third and Top Caption text titles.
 - **Speed.** Constant speed from 25% to 400% with the pitch kept.
 - **Volume keyframes.** Clip gain and a keyframed volume envelope drawn on audio clips.

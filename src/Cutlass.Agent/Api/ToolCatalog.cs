@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using Cutlass.Agent.Tools;
 
 namespace Cutlass.Agent.Api;
 
@@ -244,7 +245,8 @@ public static class ToolCatalog
         Edit("edit.unlink", "cutlass_unlink_clips", "/v1/edit/unlink", "Unlink clips.", S().StrArray("clipIds", "Clip ids.", true, 1000));
         Edit("edit.volume-keys", "cutlass_set_volume_keys", "/v1/edit/volume-keys", "Replace an audio clip's volume envelope (empty clears).",
             S().Str("clipId", "The audio clip.", true).ObjArray("keys", "Keys relative to the clip start.", S().Int("frame", "Frame from the clip start.", true, 0).Num("db", "Level in dB.", true), true, 1000));
-        var kinds = new[] { "crossfade", "dipToBlack", "dipToWhite", "wipeLeft", "wipeRight", "slideLeft", "slideRight", "circleOpen", "audioCrossfade" };
+        // The enum of "kind" is the wire spelling of every TransitionKind, so the schema cannot drift from the model.
+        var kinds = EnumWire.Names<Cutlass.Core.Model.TransitionKind>().ToArray();
         Edit("edit.transition.add", "cutlass_add_transition", "/v1/edit/transition/add", "Add a transition on the cut between two butting clips.",
             S().Str("trackId", "The track.", true).Int("cutFrame", "The cut frame.", true, 0).Str("kind", "Transition kind (crossfade).", false, kinds).Int("durationFrames", "Length in frames (at least 2).", true, 2));
         Edit("edit.transition.update", "cutlass_update_transition", "/v1/edit/transition/update", "Change a transition's kind or length.",

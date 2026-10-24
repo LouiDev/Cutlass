@@ -91,11 +91,20 @@
       </Border>
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel x:Name="Lists" Margin="6,0,6,8">
-          <TextBlock Classes="panelTitle groupTitle" Text="TRANSITIONS" />
-          <ItemsControl ItemsSource="{Binding Transitions}" />
+          <!-- The 42 transition kinds are split into five groups (EffectItem.TransitionGroup) so the list stays scannable. -->
+          <TextBlock Classes="panelTitle groupTitle" Text="FADES" />
+          <ItemsControl ItemsSource="{Binding TransitionFades}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="WIPES" />
+          <ItemsControl ItemsSource="{Binding TransitionWipes}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="SLIDES" />
+          <ItemsControl ItemsSource="{Binding TransitionSlides}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="SHAPES" />
+          <ItemsControl ItemsSource="{Binding TransitionShapes}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="AUDIO" />
+          <ItemsControl ItemsSource="{Binding TransitionAudio}" />
           <TextBlock Classes="panelTitle groupTitle" Text="TITLES" />
           <ItemsControl ItemsSource="{Binding Titles}" />
-          <TextBlock Classes="panelTitle groupTitle" Text="FADES" />
+          <TextBlock Classes="panelTitle groupTitle" Text="CLIP FADES" />
           <ItemsControl ItemsSource="{Binding Adjustments}" />
         </StackPanel>
       </ScrollViewer>

@@ -422,7 +422,7 @@ public sealed class InspectorViewModelTests
         var section = Assert.IsType<TransitionSectionViewModel>(vm.Section);
         Assert.Equal(10, section.DurationRow.Value);
         Assert.Equal("0.40 s", section.SecondsRow.Text);
-        Assert.Equal(8, section.KindRow.Options.Count);
+        Assert.Equal(Enum.GetValues<TransitionKind>().Length - 1, section.KindRow.Options.Count);
         Assert.Equal(TransitionKind.Crossfade, section.KindRow.Selected?.Value);
         Assert.False(section.ClampNotice.IsVisible);
 

@@ -71,6 +71,8 @@ public sealed class AgentJsonTests
         Assert.Equal("dipToBlack", EnumWire.Name(TransitionKind.DipToBlack));
         Assert.Equal("lowerThird", EnumWire.Name(TitleAnchor.LowerThird));
         Assert.Equal("audioCrossfade", EnumWire.Name(TransitionKind.AudioCrossfade));
+        Assert.Equal("diagonalTopLeft", EnumWire.Name(TransitionKind.DiagonalTopLeft));
+        Assert.Equal(TransitionKind.SqueezeHorizontal, EnumWire.Parse("squeezeHorizontal", "kind", TransitionKind.Crossfade));
         Assert.Equal(TitleAnchor.LowerThird, EnumWire.Parse("lowerThird", "anchor", TitleAnchor.Center));
         Assert.Equal(TitleAnchor.Center, EnumWire.Parse<TitleAnchor>(null, "anchor", TitleAnchor.Center));
         var ex = Assert.Throws<ApiException>(() => EnumWire.Parse("sideways", "anchor", TitleAnchor.Center));

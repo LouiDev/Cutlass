@@ -82,6 +82,23 @@ public sealed class ProjectSerializerTests
         ModelAssert.Equivalent(Rich(), ProjectSerializer.Deserialize(File.ReadAllBytes(path)));
     }
 
+    // Transition kinds are persisted by camelCase name (effects batch 1 added kinds after CircleOpen; no schema bump).
+    [Theory]
+    [InlineData(TransitionKind.WipeUp, "wipeUp")]
+    [InlineData(TransitionKind.DiagonalBottomRight, "diagonalBottomRight")]
+    [InlineData(TransitionKind.SqueezeHorizontal, "squeezeHorizontal")]
+    public void NewTransitionKindsRoundTripByCamelCaseName(TransitionKind kind, string text)
+    {
+        var p = new ProjectBuilder()
+            .With(V1, V("c1", 0, 50, sourceFrame: 100), V("c2", 50, 50, sourceFrame: 300))
+            .Transition(V1, "x1", "c1", "c2", 10, kind)
+            .Build();
+        var json = ProjectSerializer.Serialize(p);
+        Assert.Contains("\"kind\": \"" + text + "\"", json);
+        Assert.Equal(kind, ModelAssert.Track(ProjectSerializer.Deserialize(json), V1).Transitions.Single().Kind);
+        Assert.Equal(Project.CurrentSchemaVersion, ProjectSerializer.Deserialize(json).SchemaVersion);
+    }
+
     [Fact]
     [UseCulture("de-DE")]
     public void NumbersUseTheInvariantCulture()

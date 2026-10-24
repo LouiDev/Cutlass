@@ -18,6 +18,10 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 | M7 Hardening | Partial | Autosave and recovery, relink (with remote-path confirmation), settings, recent projects, error dialogs, eviction, every preset, publish scripts: all done and verified locally (`m7`, `m7b`, published `m4`). Not verified: the Linux run and CI green on both OSes, which its Verify step also asks for. |
 | M8 Late items | Not started | Reverse shuttle, per-track meters, hardware encoders, segmented export. |
 
+### Effects batch 1: transition kinds (2026-10-24)
+
+`TransitionKind` grew from 8 to 41 video kinds (plus Audio Crossfade), every one an ffmpeg 6.0 `xfade` transition mapped explicitly in `VideoEmitter.XfadeName` and checked against the literal 6.0 list in `TimelineCompilerTests.XfadeNamesCoverEveryVideoKind`. The Effects tab lists them under FADES, WIPES, SLIDES, SHAPES and AUDIO (`EffectItem.TransitionGroup`), the agent API lists them from the enum (`apiRevision` 3), and projects persist them by camelCase name without a schema bump. New coverage: the `transition_kinds_more` compiler golden, the `TransitionTests` theory (kept on V1, coerced on A1), serializer round trips, the Effects tab name, badge and group test, the fuzz test picks from the whole enum, and `TransitionKindsTests` renders every kind on real ffmpeg with window equality. `m6` adds `add-transition wipeup 20` before the export and a `transition:Pixelize` drop after it (138 steps, green, screenshots reviewed).
+
 ### Agent integration (`docs/AGENT_INTEGRATION.md` section 8)
 
 | Milestone | State | Notes |
@@ -31,8 +35,8 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 
 | Suite | Count | Result on this machine |
 |---|---|---|
-| `tests/Cutlass.Tests` (no ffmpeg) | 1744 | All green (Debug) |
-| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 247 | All green, run three times in a row; no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
+| `tests/Cutlass.Tests` (no ffmpeg) | 1782 | All green (Debug) |
+| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 248 | All green (the 247 of the v1 close-out ran three times in a row; the effects batch 1 run added one and ran once); no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
 
 The provider-neutrality pass adds `tests/Cutlass.IntegrationTests/Examples` (6 tests, green: `agent-http.ps1` against an in-process headless host on the split and the marker path, the Python harnesses parse, stay under 150 lines and pass `check_harness.py` for `openai` and `anthropic`); the PowerShell tests skip without PowerShell and the Python ones without Python. The counts in the table include this pass (refreshed by the integration run of 2026-10-22, Debug and Release builds with 0 warnings). `VendorNeutralityTests` scans `src/Cutlass.App` (no vendor or client name outside `Assets/agent-clients.json`) and also `src/Cutlass.Agent` and `src/Cutlass.Agent.Mcp` (only the tool format ids in the exporters and the `discovery.tools` entry); `AgentClientRegistryTests` checks that the README client matrix lists every profile id in order.
 
@@ -74,7 +78,7 @@ Findings from a first attempt with gpt-oss 20B on Ollama, stopped when the run w
 
 ## Smoke scripts
 
-Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine (2026-10-22: m4 55 steps, m5 56, m6 134, m7 59, m7b 31, m9 92).
+Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine (2026-10-22: m4 55 steps, m5 56, m6 134, m7 59, m7b 31, m9 92; 2026-10-24: m6 138 after effects batch 1).
 
 | Script | Covers |
 |---|---|
@@ -156,4 +160,4 @@ Nothing has been committed yet: `git status` shows the whole tree as untracked.
 
 ---
 
-**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1744 unit and 247 integration tests, six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only. Provider neutrality (section 9): the discovery endpoints, the client profiles and three reference harnesses exist; the HTTP example is green against a headless host and `serve`, while the model-driven harness run is pending (user's request); the Python harnesses pass `py_compile` and the offline `check_harness.py` against the real served tool documents.
+**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1782 unit and 248 integration tests (after effects batch 1), six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only. Provider neutrality (section 9): the discovery endpoints, the client profiles and three reference harnesses exist; the HTTP example is green against a headless host and `serve`, while the model-driven harness run is pending (user's request); the Python harnesses pass `py_compile` and the offline `check_harness.py` against the real served tool documents.
