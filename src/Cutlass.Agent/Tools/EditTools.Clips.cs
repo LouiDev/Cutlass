@@ -279,6 +279,8 @@ internal sealed partial class EditTools
                 var tr = req.Transform;
                 var co = m.Video.Color;
                 var cr = req.Color;
+                var fo = m.Video.Effects;
+                var fr = req.Effects;
                 return m with
                 {
                     Enabled = enabled,
@@ -287,14 +289,29 @@ internal sealed partial class EditTools
                         Opacity = req.Opacity ?? m.Video.Opacity,
                         Transform = tr is null ? t : new Transform(tr.X ?? t.X, tr.Y ?? t.Y, tr.Scale ?? t.Scale, tr.CropLeft ?? t.CropLeft, tr.CropTop ?? t.CropTop, tr.CropRight ?? t.CropRight, tr.CropBottom ?? t.CropBottom),
                         Color = cr is null ? co : new ColorAdjust(cr.Brightness ?? co.Brightness, cr.Contrast ?? co.Contrast, cr.Saturation ?? co.Saturation, cr.Gamma ?? co.Gamma),
+                        Effects = fr is null ? fo : new VideoEffects(
+                            fr.FlipH ?? fo.FlipH,
+                            fr.FlipV ?? fo.FlipV,
+                            fr.RotationDegrees ?? fo.RotationDegrees,
+                            fr.HueDegrees ?? fo.HueDegrees,
+                            fr.TemperatureKelvin ?? fo.TemperatureKelvin,
+                            fr.Tint ?? fo.Tint,
+                            fr.Blur ?? fo.Blur,
+                            fr.Sharpen ?? fo.Sharpen,
+                            fr.Vignette ?? fo.Vignette,
+                            fr.Grayscale ?? fo.Grayscale,
+                            fr.KeyEnabled ?? fo.KeyEnabled,
+                            fr.KeyColor ?? fo.KeyColor,
+                            fr.KeySimilarity ?? fo.KeySimilarity,
+                            fr.KeyBlend ?? fo.KeyBlend),
                         FadeInFrames = req.FadeInFrames ?? m.Video.FadeInFrames,
                         FadeOutFrames = req.FadeOutFrames ?? m.Video.FadeOutFrames,
                     },
                 };
             case MediaClip m:
-                if (req.Opacity is not null || req.Transform is not null || req.Color is not null)
+                if (req.Opacity is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
                 {
-                    warnings.Add("opacity, transform and color apply to video clips only; they were ignored for audio clips.");
+                    warnings.Add("opacity, transform, color and effects apply to video clips only; they were ignored for audio clips.");
                 }
 
                 return m with
@@ -308,7 +325,7 @@ internal sealed partial class EditTools
                     },
                 };
             case TitleClip title:
-                if (req.GainDb is not null || req.Transform is not null || req.Color is not null)
+                if (req.GainDb is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
                 {
                     warnings.Add("Titles take opacity, fades and enabled only; use update_title for their style and position.");
                 }

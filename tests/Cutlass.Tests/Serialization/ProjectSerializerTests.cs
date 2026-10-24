@@ -22,7 +22,13 @@ public sealed class ProjectSerializerTests
     {
         var c1 = V("c1", 0, 50, link: "l1", sourceFrame: 100) with
         {
-            Video = new VideoProps(new Transform(-120.5, 64.25, 0.5, 0.1, 0.05, 0, 0.2), 0.75, new ColorAdjust(0.1, 1.2, 0.8, 1.5), 5, 0),
+            Video = new VideoProps(
+                new Transform(-120.5, 64.25, 0.5, 0.1, 0.05, 0, 0.2),
+                0.75,
+                new ColorAdjust(0.1, 1.2, 0.8, 1.5),
+                5,
+                0,
+                new VideoEffects(true, false, 12.5, -30, 4500, 0.25, 2.5, 0.4, 0.3, true, true, "#1A2B3C", 0.2, 0.05)),
         };
         var c2 = V("c2", 50, 40, media: Short, sourceFrame: 20) with { Enabled = false };
         var t1 = Title("t1", 120, 60, "Day One\n\u00c4 \"quoted\" \\ end") with
@@ -175,6 +181,7 @@ public sealed class ProjectSerializerTests
         var c01 = Assert.IsType<MediaClip>(v1.Clips[0]);
         Assert.Equal(("c_01", StreamKind.Video, 0L, 150L, "l_01", 1411200000L, 100), (c01.Id, c01.Stream, c01.Start, c01.Duration, c01.LinkId, c01.SourceInFlicks, c01.SpeedPercent));
         Assert.Equal(VideoProps.Default, c01.Video);
+        Assert.Equal(VideoEffects.None, c01.Video.Effects);
         var c02 = Assert.IsType<TitleClip>(v1.Clips[1]);
         Assert.Equal(("Day One", "builtin:Inter-Bold", 96.0, TitleAnchor.LowerThird), (c02.Title.Text, c02.Title.Font, c02.Title.Size, c02.Title.Anchor));
         Assert.Equal((1.0, 15L, 15L), (c02.Opacity, c02.FadeInFrames, c02.FadeOutFrames));

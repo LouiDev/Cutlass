@@ -732,7 +732,7 @@ Example call:
 
 ## cutlass_set_clip_props
 
-Opacity, transform, colour, gain, fades, enable.
+Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.
 
 - Catalog name `edit.clip-props`, route `POST /v1/edit/clip-props`.
 - Needs the lock; changes the project (one undo step); returns JSON.
@@ -755,6 +755,21 @@ Opacity, transform, colour, gain, fades, enable.
 | `color.contrast` | number | no | 0 to 2 (1). |
 | `color.saturation` | number | no | 0 to 3 (1). |
 | `color.gamma` | number | no | 0.1 to 4 (1). |
+| `effects` | object | no | Video effects (fields optional). |
+| `effects.flipH` | boolean | no | Mirror horizontally (false). |
+| `effects.flipV` | boolean | no | Mirror vertically (false). |
+| `effects.rotationDegrees` | number | no | -180 to 180 (0, clockwise). |
+| `effects.hueDegrees` | number | no | -180 to 180 (0). |
+| `effects.temperatureKelvin` | number | no | 1000 to 40000 (6500). |
+| `effects.tint` | number | no | -1 to 1 (0, positive towards magenta). |
+| `effects.blur` | number | no | 0 to 50 px (0). |
+| `effects.sharpen` | number | no | 0 to 1 (0). |
+| `effects.vignette` | number | no | 0 to 1 (0). |
+| `effects.grayscale` | boolean | no | Drop the colour (false). |
+| `effects.keyEnabled` | boolean | no | Chroma key on (false). |
+| `effects.keyColor` | string | no | #RRGGBB (#00FF00). |
+| `effects.keySimilarity` | number | no | 0.01 to 1 (0.1). |
+| `effects.keyBlend` | number | no | 0 to 1 (0). |
 | `gainDb` | number | no | Clip gain in dB (audio). |
 | `fadeInFrames` | integer, at least 0 | no | Fade-in frames. |
 | `fadeOutFrames` | integer, at least 0 | no | Fade-out frames. |

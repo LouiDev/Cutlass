@@ -16,6 +16,10 @@ internal static class GoldenCases
     private static readonly SequenceSettings Hd30 = new(1920, 1080, FrameRate.Fps30);
 
     /// <summary>Every case by name.</summary>
+    /// <summary>Every effect of batch 2 non-neutral on one clip, including the chroma key (TECH_BRIEF 7.3 order). Declared before <see cref="All"/>, which uses it.</summary>
+    internal static VideoEffects AllEffects { get; } =
+        new(true, true, 12.5, 30, 4500, 0.25, 2, 0.5, 0.4, true, true, "#00FF00", 0.2, 0.05);
+
     public static ImmutableArray<Case> All { get; } =
     [
         SingleClip(),
@@ -35,6 +39,8 @@ internal static class GoldenCases
         FadesWithWindowOffset(),
         Still(),
         ColorAdjust(),
+        VideoEffects(),
+        VideoEffectsInRun(),
         MuteSolo(),
         PerTrackAudio(),
         EmptyAudio(),
@@ -232,6 +238,28 @@ internal static class GoldenCases
         var video = VideoProps.Default with { Color = new Cutlass.Core.Model.ColorAdjust(0.1, 1.2, 0.8, 1.1) };
         var p = Project(Hd30, Hd(), VideoTrack("tr_v1", [V("c_1", 0, 30, "m_a", 0, video: video)]));
         return Make("color_adjust", p, Export(0, 30, audio: false));
+    }
+
+    private static Case VideoEffects()
+    {
+        var video = VideoProps.Default with { Effects = AllEffects };
+        var p = Project(Hd30, Hd(), VideoTrack("tr_v1", [V("c_1", 0, 30, "m_a", 0, video: video)]));
+        return Make("video_effects", p, Export(0, 30, audio: false));
+    }
+
+    // Two clips with effects joined by a crossfade: the alpha filters (chromakey, rotate) meet the yuva444p run path.
+    private static Case VideoEffectsInRun()
+    {
+        var left = VideoProps.Default with { Effects = AllEffects with { KeyEnabled = false, FlipV = false } };
+        var right = VideoProps.Default with { Effects = AllEffects with { RotationDegrees = -90, Blur = 0, Grayscale = false } };
+        var p = Project(
+            Hd30,
+            Hd(),
+            VideoTrack(
+                "tr_v1",
+                [V("c_1", 0, 60, "m_a", F, video: left), V("c_2", 60, 60, "m_b", F, video: right)],
+                [new Transition("x_1", TransitionKind.Crossfade, "c_1", "c_2", 20)]));
+        return Make("video_effects_in_run", p, Export(0, 120, audio: false));
     }
 
     private static Case MuteSolo()

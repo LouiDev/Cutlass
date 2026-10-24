@@ -258,6 +258,52 @@ public sealed class TimelineCompilerTests
         "squeezeh", "squeezev", "zoomin", "fadefast", "fadeslow",
     ];
 
+    private static readonly string[] EffectFilterNames =
+        ["hflip", "vflip", "colortemperature", "colorbalance", "hue=", "gblur", "unsharp", "vignette", "chromakey", "rotate="];
+
+    [Fact]
+    public void NeutralEffectsEmitNoEffectFilter()
+    {
+        var project = Project(Hd30, [VideoAsset("m_a", "D:/Clips/a.mp4")], VideoTrack("tr_v1", [V("c_1", 0, 30, "m_a", 0)]));
+
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, audio: false));
+
+        Assert.Equal(VideoEffects.None, ModelAssert.Media(project, "c_1").Video.Effects);
+        Assert.All(EffectFilterNames, name => Assert.DoesNotContain(name, render.GraphText, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EveryEffectEmitsInTheDocumentedOrder()
+    {
+        var video = VideoProps.Default with { Color = ColorAdjust.Neutral with { Saturation = 1.2 }, Effects = GoldenCases.AllEffects };
+        var project = Project(Hd30, [VideoAsset("m_a", "D:/Clips/a.mp4")], VideoTrack("tr_v1", [V("c_1", 0, 30, "m_a", 0, video: video)]));
+
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, audio: false));
+
+        Assert.Contains(
+            "scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,"
+            + "hflip,vflip,colortemperature=temperature=4500.000000,colorbalance=gm=-0.250000,eq=saturation=1.200000,"
+            + "hue=h=30.000000:s=0,gblur=sigma=2.000000,unsharp=lx=5:ly=5:la=0.750000,vignette=a=0.628319:dither=0,"
+            + "setsar=1,format=yuva420p,chromakey=color=0x00FF00:similarity=0.200000:blend=0.050000,"
+            + "rotate=a=12.500000*PI/180:fillcolor=black@0,",
+            render.GraphText,
+            StringComparison.Ordinal);
+        Assert.Empty(render.Warnings);
+    }
+
+    [Fact]
+    public void GrayscaleAloneAndABadKeyColourAreHandled()
+    {
+        var video = VideoProps.Default with { Effects = VideoEffects.None with { Grayscale = true, KeyEnabled = true, KeyColor = "lime" } };
+        var project = Project(Hd30, [VideoAsset("m_a", "D:/Clips/a.mp4")], VideoTrack("tr_v1", [V("c_1", 0, 30, "m_a", 0, video: video)]));
+
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, audio: false));
+
+        Assert.Contains(",hue=s=0,setsar=1,", render.GraphText, StringComparison.Ordinal);
+        Assert.DoesNotContain("chromakey", render.GraphText, StringComparison.Ordinal);
+        Assert.Contains(render.Warnings, w => w.Contains("key colour 'lime'", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void XfadeNamesCoverEveryVideoKind()
     {

@@ -12,4 +12,6 @@ internal sealed class VideoPropsDto
     public long FadeIn { get; set; }
 
     public long FadeOut { get; set; }
+
+    public VideoEffectsDto Effects { get; set; } = new();
 }

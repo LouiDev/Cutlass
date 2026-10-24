@@ -139,10 +139,12 @@ public sealed class EditToolsTests : IDisposable
         Assert.Equal(510 * F, ModelAssert.Media(Current, "v2").SourceInFlicks);
         await Ok("edit.speed", """{"clipIds":["v2"],"percent":200,"rippleFollowing":false}""", id);
         Assert.Equal(200, ModelAssert.Media(Current, "v2").SpeedPercent);
-        await Ok("edit.clip-props", """{"clipIds":["v1","a1"],"opacity":0.5,"gainDb":-6,"transform":{"scale":0.5},"color":{"saturation":0}}""", id);
+        var props = await Ok("edit.clip-props", """{"clipIds":["v1","a1"],"opacity":0.5,"gainDb":-6,"transform":{"scale":0.5},"color":{"saturation":0},"effects":{"flipH":true,"hueDegrees":20}}""", id);
         Assert.Equal(0.5, ModelAssert.Media(Current, "v1").Video.Opacity);
         Assert.Equal(0.5, ModelAssert.Media(Current, "v1").Video.Transform.Scale);
         Assert.Equal(0, ModelAssert.Media(Current, "v1").Video.Color.Saturation);
+        Assert.Equal(VideoEffects.None with { FlipH = true, HueDegrees = 20 }, ModelAssert.Media(Current, "v1").Video.Effects);
+        Assert.Contains(props.Warnings, w => w.Contains("effects apply to video clips only", StringComparison.Ordinal));
         Assert.Equal(-6, ModelAssert.Media(Current, "a1").Audio.GainDb);
         var keys = await Ok("edit.volume-keys", """{"clipId":"a1","keys":[{"frame":10,"db":-3},{"frame":500,"db":0}]}""", id);
         Assert.NotEmpty(keys.Warnings);

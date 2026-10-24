@@ -17,4 +17,7 @@ public sealed class ClipVideoDto
 
     /// <summary>Fade-out frames.</summary>
     public long FadeOutFrames { get; set; }
+
+    /// <summary>Static video effects.</summary>
+    public VideoEffectsDto Effects { get; set; } = new();
 }

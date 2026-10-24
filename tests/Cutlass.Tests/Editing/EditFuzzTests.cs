@@ -286,6 +286,21 @@ public sealed class EditFuzzTests
                 FadeOutFrames = rng.Next(-5, 60),
                 Transform = m.Video.Transform with { Scale = rng.NextDouble() * 3, CropLeft = rng.NextDouble(), CropRight = rng.NextDouble() },
                 Color = new ColorAdjust(rng.NextDouble() * 4 - 2, rng.NextDouble() * 3, rng.NextDouble() * 4, rng.NextDouble() * 5),
+                Effects = new VideoEffects(
+                    rng.Next(2) == 0,
+                    rng.Next(2) == 0,
+                    rng.NextDouble() * 800 - 400,
+                    rng.NextDouble() * 800 - 400,
+                    rng.NextDouble() * 60000 - 5000,
+                    rng.NextDouble() * 4 - 2,
+                    rng.NextDouble() * 120 - 20,
+                    rng.NextDouble() * 3 - 1,
+                    rng.NextDouble() * 3 - 1,
+                    rng.Next(2) == 0,
+                    rng.Next(2) == 0,
+                    rng.Next(3) switch { 0 => "#00FF00", 1 => "#12AB", _ => "green" },
+                    rng.NextDouble() * 3 - 1,
+                    rng.NextDouble() * 3 - 1),
             },
             Audio = m.Audio with
             {

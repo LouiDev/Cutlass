@@ -39,10 +39,22 @@ public sealed class WindowEqualityTests
         var intra = await kit.AssetAsync("m_intra", _media.Oracle25Intra);
         MediaAsset[] media = [cfr, lgop, intra];
         var catalog = await kit.CatalogAsync(media);
+        // Every batch 2 effect is per-frame stateless, so the one-frame windows must still match byte for byte.
         var pip = VideoProps.Default with
         {
             Transform = Transform.Identity with { X = 60, Y = -30, Scale = 0.5, CropLeft = 0.1 },
             Opacity = 0.8,
+            Effects = VideoEffects.None with
+            {
+                FlipH = true,
+                HueDegrees = 30,
+                Blur = 1.5,
+                Vignette = 0.3,
+                RotationDegrees = 10,
+                KeyEnabled = true,
+                KeyColor = "#00FF00",
+                KeySimilarity = 0.2,
+            },
         };
         var project = Project(
             W,
@@ -122,6 +134,7 @@ public sealed class WindowEqualityTests
         {
             Transform = Transform.Identity with { X = 40, Y = 20, Scale = 0.6 },
             Opacity = 0.7,
+            Effects = VideoEffects.None with { FlipV = true, TemperatureKelvin = 4000, Tint = 0.2, Sharpen = 0.5, Grayscale = true },
         };
         var xfadeFirst = shape == "xfade then cut";
         var project = Project(

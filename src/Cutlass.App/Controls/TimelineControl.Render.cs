@@ -277,7 +277,8 @@ public sealed partial class TimelineControl
                 badges.Add((m.SpeedPercent.ToString(CultureInfo.InvariantCulture) + "%", _palette.Bg0));
             }
 
-            if (m.Stream == StreamKind.Video && (m.Video.Transform != Cutlass.Core.Model.Transform.Identity || m.Video.Color != ColorAdjust.Neutral || m.Video.Opacity != 1))
+            // Anything but the fades lights "fx": transform, opacity, colour and the batch 2 effects.
+            if (m.Stream == StreamKind.Video && m.Video with { FadeInFrames = 0, FadeOutFrames = 0 } != VideoProps.Default)
             {
                 badges.Add(("fx", _palette.Bg0));
             }

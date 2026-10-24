@@ -138,6 +138,118 @@ public sealed class InspectorViewModelTests
     }
 
     [Fact]
+    public void EffectSetterRunsUpdateClipsWithTheCoalesceKey()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["v1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.True(section.EffectsGroup.IsVisible);
+        Assert.True(section.ChromaKeyGroup.IsVisible);
+        var rotation = section.Field("Rotation");
+        Assert.Equal("inspector:v1:video.effects.rotation", rotation.CoalesceKey);
+        Assert.Equal((-180.0, 180.0, 0.5, 1, "°"), (rotation.Minimum, rotation.Maximum, rotation.Step, rotation.Decimals, rotation.Unit));
+
+        rotation.Value = 45;
+        rotation.Value = 90;
+        Assert.Equal(90, Clip<MediaClip>(timeline, "v1").Video.Effects.RotationDegrees);
+        Assert.Equal(1, timeline.Session.UndoCount);
+        Assert.Equal("Rotation", timeline.Session.UndoLabel);
+
+        section.Field("Hue").Value = -20;
+        section.Field("Blur").Value = 2.5;
+        Assert.Equal(3, timeline.Session.UndoCount);
+        Assert.Equal(-20, Clip<MediaClip>(timeline, "v1").Video.Effects.HueDegrees);
+        Assert.Equal(2.5, Clip<MediaClip>(timeline, "v1").Video.Effects.Blur);
+    }
+
+    [Fact]
+    public void EffectFieldsConvertDisplayUnits()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["v1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Equal(0, section.Field("Tint").Value);
+        Assert.Equal(10, section.Field("Similarity").Value);
+        Assert.Equal(6500, section.Field("Temperature").Value);
+        section.Field("Tint").Value = 25;
+        section.Field("Sharpen").Value = 40;
+        section.Field("Vignette").Value = 30;
+        section.Field("Similarity").Value = 50;
+        section.Field("Blend").Value = 5;
+        var effects = Clip<MediaClip>(timeline, "v1").Video.Effects;
+        Assert.Equal(0.25, effects.Tint, 6);
+        Assert.Equal(0.4, effects.Sharpen, 6);
+        Assert.Equal(0.3, effects.Vignette, 6);
+        Assert.Equal(0.5, effects.KeySimilarity, 6);
+        Assert.Equal(0.05, effects.KeyBlend, 6);
+        Assert.Equal(25, section.Field("Tint").Value);
+    }
+
+    [Fact]
+    public void DifferentToggleValuesShowAsMixed()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Session.Execute(p => TimelineEdits.UpdateClips(p, ["v1"], c => ((MediaClip)c) with { Video = ((MediaClip)c).Video with { Effects = VideoEffects.None with { FlipH = true } } }, "Flip"));
+        timeline.Select(["v1", "v2"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Null(section.FlipHRow.IsChecked);
+        Assert.False(section.FlipVRow.IsChecked);
+        Assert.False(section.GrayscaleRow.IsChecked);
+        Assert.Equal("inspector:v1,v2:video.effects.flipH", section.FlipHRow.CoalesceKey);
+
+        section.GrayscaleRow.IsChecked = true;
+        Assert.True(Clip<MediaClip>(timeline, "v1").Video.Effects.Grayscale);
+        Assert.True(Clip<MediaClip>(timeline, "v2").Video.Effects.Grayscale);
+        Assert.Equal("Grayscale", timeline.Session.UndoLabel);
+
+        timeline.Session.Undo();
+        Assert.False(section.GrayscaleRow.IsChecked);
+    }
+
+    [Fact]
+    public void ResetRestoresTheEffectsDefaults()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["v1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        section.Field("Hue").Value = 30;
+        section.Field("Blur").Value = 4;
+        section.FlipVRow.IsChecked = true;
+        section.KeyEnabledRow.IsChecked = true;
+        Assert.NotEqual(VideoEffects.None, Clip<MediaClip>(timeline, "v1").Video.Effects);
+
+        section.ChromaKeyGroup.ResetCommand.Execute(null);
+        Assert.False(Clip<MediaClip>(timeline, "v1").Video.Effects.KeyEnabled);
+        Assert.Equal(30, Clip<MediaClip>(timeline, "v1").Video.Effects.HueDegrees);
+
+        section.EffectsGroup.ResetCommand.Execute(null);
+        Assert.Equal(VideoEffects.None, Clip<MediaClip>(timeline, "v1").Video.Effects);
+        Assert.True(section.EffectsGroup.CanReset);
+        Assert.Equal(0, section.Field("Hue").Value);
+        Assert.False(section.FlipVRow.IsChecked);
+    }
+
+    [Fact]
+    public void KeyColorRowEditsTheOpaqueKeyColour()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["v1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Equal("#00FF00FF", section.KeyColorRow.Text);
+        Assert.Equal("inspector:v1:video.effects.keyColor", section.KeyColorRow.CoalesceKey);
+
+        section.KeyColorRow.Text = "#f00";
+        Assert.Equal("#FF0000", Clip<MediaClip>(timeline, "v1").Video.Effects.KeyColor);
+        Assert.Equal("Key Color", timeline.Session.UndoLabel);
+        section.KeyEnabledRow.IsChecked = true;
+        Assert.True(Clip<MediaClip>(timeline, "v1").Video.Effects.KeyEnabled);
+
+        section.KeyColorRow.Text = "not a colour";
+        Assert.Equal("#FF0000", Clip<MediaClip>(timeline, "v1").Video.Effects.KeyColor);
+        Assert.Equal("#FF0000FF", section.KeyColorRow.Text);
+    }
+
+    [Fact]
     public void MultiSelectionAppliesToAllAsOneStep()
     {
         var vm = Vm(Linked(), out var timeline);

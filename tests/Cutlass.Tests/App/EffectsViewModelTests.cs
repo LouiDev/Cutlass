@@ -27,13 +27,16 @@ public sealed class EffectsViewModelTests
     private static IReadOnlyList<Transition> TransitionsOn(TimelineViewModel timeline, string trackId) =>
         TimelineQuery.FindTrack(timeline.Session.Current, trackId)!.Transitions;
 
+    private static T Clip<T>(TimelineViewModel timeline, string id)
+        where T : Clip => (T)TimelineQuery.FindClip(timeline.Session.Current, id)!.Value.Clip;
+
     [Fact]
     public void ListsEveryTransitionTitleAndFade()
     {
         var vm = Vm(Cuts(), out _);
         Assert.Equal(Enum.GetValues<TransitionKind>().Length, vm.Transitions.Count);
         Assert.Equal(["Centered", "Lower Third", "Top Caption"], vm.Titles.Select(t => t.Name));
-        Assert.Equal(4, vm.Adjustments.Count);
+        Assert.Equal(8, vm.Adjustments.Count);
         Assert.All(vm.Transitions, t => Assert.Equal("1 s", t.Detail));
         Assert.True(vm.Transitions.Single(t => t.TransitionKind == TransitionKind.Crossfade).IsDefault);
         Assert.Equal("cutlass/effect-id", EffectItem.DragFormat);
@@ -214,6 +217,59 @@ public sealed class EffectsViewModelTests
         video = (MediaClip)TimelineQuery.FindClip(timeline.Session.Current, "v1")!.Value.Clip;
         Assert.Equal(0, video.Video.FadeInFrames);
         Assert.Equal(0, video.Video.FadeOutFrames);
+    }
+
+    [Fact]
+    public void GrayscalePresetTogglesTheSelection()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        timeline.Select(["v1", "a1"], false);
+        vm.Apply(vm.Find("adjust:Grayscale")!);
+        Assert.True(Clip<MediaClip>(timeline, "v1").Video.Effects.Grayscale);
+        Assert.Equal(VideoProps.Default, Clip<MediaClip>(timeline, "a1").Video);
+        Assert.Equal("Grayscale applied.", vm.StatusText);
+        Assert.Equal(1, timeline.Session.UndoCount);
+
+        vm.Apply(vm.Find("adjust:Grayscale")!);
+        Assert.False(Clip<MediaClip>(timeline, "v1").Video.Effects.Grayscale);
+    }
+
+    [Fact]
+    public void FlipHorizontalPresetMirrorsAndMirrorsBack()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        timeline.Select(["v1"], false);
+        vm.Apply(vm.Find("adjust:FlipH")!);
+        Assert.True(Clip<MediaClip>(timeline, "v1").Video.Effects.FlipH);
+        Assert.Equal("Flip Horizontal", timeline.Session.UndoLabel);
+        vm.Apply(vm.Find("adjust:FlipH")!);
+        Assert.Equal(VideoEffects.None, Clip<MediaClip>(timeline, "v1").Video.Effects);
+    }
+
+    [Fact]
+    public void FlipVerticalPresetWorksAsADrop()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        vm.ApplyAt("adjust:FlipV", V1, 10);
+        Assert.True(Clip<MediaClip>(timeline, "v1").Video.Effects.FlipV);
+        Assert.False(Clip<MediaClip>(timeline, "v1").Video.Effects.FlipH);
+        Assert.Equal(new EffectDropPreview(V1, 0, 50, EffectCategory.Adjustment), vm.PreviewAt("adjust:FlipV", V1, 10));
+    }
+
+    [Fact]
+    public void ResetEffectsPresetRestoresNone()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        timeline.Session.Execute(p => TimelineEdits.UpdateClips(p, ["v1"], c => ((MediaClip)c) with { Video = ((MediaClip)c).Video with { Effects = VideoEffects.None with { HueDegrees = 30, Blur = 4, KeyEnabled = true } } }, "Effects"));
+        timeline.Select(["v1"], false);
+        vm.Apply(vm.Find("adjust:ResetEffects")!);
+        Assert.Equal(VideoEffects.None, Clip<MediaClip>(timeline, "v1").Video.Effects);
+        Assert.Equal("Reset Effects applied.", vm.StatusText);
+
+        var before = timeline.Session.UndoCount;
+        vm.Apply(vm.Find("adjust:ResetEffects")!);
+        Assert.Equal("Nothing to change.", vm.StatusText);
+        Assert.Equal(before, timeline.Session.UndoCount);
     }
 
     [Fact]

@@ -120,6 +120,22 @@ public sealed class PropsTests
     }
 
     [Fact]
+    public void VideoEffectRangesClampAndABadKeyColourFallsBack()
+    {
+        var p = new ProjectBuilder().With(V1, V("c1", 0, 10)).Build();
+        var wild = new VideoEffects(true, true, 400, -270, 10, 3, -4, 7, 2, true, true, "lime", 5, -1);
+        var q = ModelAssert.Changed(p, TimelineEdits.UpdateClips(p, ["c1"], c => c is MediaClip m ? m with { Video = m.Video with { Effects = wild } } : c, "Effects"));
+        Assert.Equal(
+            new VideoEffects(true, true, 180, -180, 1000, 1, 0, 1, 1, true, true, "#00FF00", 1, 0),
+            ModelAssert.Media(q, "c1").Video.Effects);
+
+        var nan = new VideoEffects(false, false, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, false, false, "#ABCDEF", double.NaN, double.NaN);
+        var r = ModelAssert.Changed(q, TimelineEdits.UpdateClips(q, ["c1"], c => c is MediaClip m ? m with { Video = m.Video with { Effects = nan } } : c, "Effects"));
+        Assert.Equal(VideoEffects.None with { KeyColor = "#ABCDEF" }, ModelAssert.Media(r, "c1").Video.Effects);
+        ModelAssert.Unchanged(r, TimelineEdits.UpdateClips(r, ["c1"], c => c is MediaClip m ? m with { Video = m.Video with { Effects = nan } } : c, "Effects"));
+    }
+
+    [Fact]
     public void EnableAndDisable()
     {
         var p = new ProjectBuilder().With(V1, V("c1", 0, 50)).Build();

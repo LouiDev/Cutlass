@@ -75,6 +75,7 @@ public static class SmokeScript
         ["expect-transitions"] = "expect-transitions <track> <count>: fail unless the track holds this many transitions",
         ["source-drop"] = "source-drop video|audio|both <track> <pos> [insert]: drag the Source range (a stream handle or the canvas) onto a track",
         ["effect-drop"] = "effect-drop <effect id> <track> <pos>: drop an Effects tab item (transition:Kind, title:Name, adjust:Name) on a track",
+        ["clip-prop"] = "clip-prop <track> <pos> <field>=<value>...: select the media clip under the frame and set Inspector rows by label (spaces as '-', for example rotation=15 hue=40 flip-horizontal=true key-color=#00FF00 gain=-6)",
         ["select-transition"] = "select-transition <track> [index]: click a transition block",
         ["volume-key"] = "volume-key <track> <pos> <dB>: select the audio clip under the frame and add a volume keyframe there",
         ["expect-section"] = "expect-section <key prefix> [header=<text>]: fail unless the Inspector shows that section (clip, title, transition, gap, sequence)",

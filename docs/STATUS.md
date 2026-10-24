@@ -22,6 +22,10 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 
 `TransitionKind` grew from 8 to 41 video kinds (plus Audio Crossfade), every one an ffmpeg 6.0 `xfade` transition mapped explicitly in `VideoEmitter.XfadeName` and checked against the literal 6.0 list in `TimelineCompilerTests.XfadeNamesCoverEveryVideoKind`. The Effects tab lists them under FADES, WIPES, SLIDES, SHAPES and AUDIO (`EffectItem.TransitionGroup`), the agent API lists them from the enum (`apiRevision` 3), and projects persist them by camelCase name without a schema bump. New coverage: the `transition_kinds_more` compiler golden, the `TransitionTests` theory (kept on V1, coerced on A1), serializer round trips, the Effects tab name, badge and group test, the fuzz test picks from the whole enum, and `TransitionKindsTests` renders every kind on real ffmpeg with window equality. `m6` adds `add-transition wipeup 20` before the export and a `transition:Pixelize` drop after it (138 steps, green, screenshots reviewed).
 
+### Effects batch 2: static video effects (2026-10-24)
+
+`VideoProps` gained a sixth parameter, `VideoEffects Effects` (flip H/V, rotation, hue, colour temperature, tint, blur, sharpen, vignette, grayscale and a chroma key), clamped in `SanitizeVideo`, persisted as `video.effects` without a schema bump (old files read `VideoEffects.None`), and emitted by `VideoEffectFilters` at the TECH_BRIEF 7.3 positions (picture filters between `scale` and `setsar`, `chromakey` and `rotate` after `format=yuva420p`); a neutral clip emits nothing, so every earlier compiler golden and the 7.8 script are unchanged. `FfmpegCapabilities.RequiredFilters` grew by the ten filters. The Inspector shows EFFECTS and CHROMA KEY groups (toggle rows through `VideoToggle`, the colour row shares `InspectorColorField`), the Effects tab has Grayscale, Flip Horizontal, Flip Vertical and Reset Effects presets, the `fx` badge compares the whole `VideoProps` except the fades, and the agent API takes an `effects` object in `clip-props` and reports it in the summary (`apiRevision` 4, `describe_project` tokens). New coverage: the `video_effects` and `video_effects_in_run` compiler goldens with exact-order facts, serializer and fuzz coverage, the Inspector and Effects tab tests, `WindowEqualityTests` with every effect on the PiP clip, and `VideoEffectsTests` on real ffmpeg (oracle flips and a half turn, chroma key over the red still with the new `green.png` recipe, BT.709 tags after a temperature change, blur and vignette decoding). `m6` adds `clip-prop V1 150 rotation=15 hue=40` and an `adjust:Grayscale` drop before the export (146 steps, green, screenshots reviewed). Known limitation: the chroma key decides per 4:2:0 chroma sample, so its matte is 2x2 blocky at the edges.
+
 ### Agent integration (`docs/AGENT_INTEGRATION.md` section 8)
 
 | Milestone | State | Notes |
@@ -35,8 +39,8 @@ The build order and the Verify step of each milestone are in TECH_BRIEF section 
 
 | Suite | Count | Result on this machine |
 |---|---|---|
-| `tests/Cutlass.Tests` (no ffmpeg) | 1782 | All green (Debug) |
-| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 248 | All green (the 247 of the v1 close-out ran three times in a row; the effects batch 1 run added one and ran once); no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
+| `tests/Cutlass.Tests` (no ffmpeg) | 1797 | All green (Debug) |
+| `tests/Cutlass.IntegrationTests` (real ffmpeg, `[FfmpegFact]`) | 255 | All green (the 247 of the v1 close-out ran three times in a row; effects batch 1 added one, effects batch 2 added 7, each run once); no ffmpeg, ffprobe, Cutlass.App or Cutlass.Agent.Mcp process and no `endpoint.json` left afterwards |
 
 The provider-neutrality pass adds `tests/Cutlass.IntegrationTests/Examples` (6 tests, green: `agent-http.ps1` against an in-process headless host on the split and the marker path, the Python harnesses parse, stay under 150 lines and pass `check_harness.py` for `openai` and `anthropic`); the PowerShell tests skip without PowerShell and the Python ones without Python. The counts in the table include this pass (refreshed by the integration run of 2026-10-22, Debug and Release builds with 0 warnings). `VendorNeutralityTests` scans `src/Cutlass.App` (no vendor or client name outside `Assets/agent-clients.json`) and also `src/Cutlass.Agent` and `src/Cutlass.Agent.Mcp` (only the tool format ids in the exporters and the `discovery.tools` entry); `AgentClientRegistryTests` checks that the README client matrix lists every profile id in order.
 
@@ -78,13 +82,13 @@ Findings from a first attempt with gpt-oss 20B on Ollama, stopped when the run w
 
 ## Smoke scripts
 
-Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine (2026-10-22: m4 55 steps, m5 56, m6 134, m7 59, m7b 31, m9 92; 2026-10-24: m6 138 after effects batch 1).
+Run with `powershell -File build/smoke.ps1 -Script <name>` (or `pwsh`). Each generates its own lavfi clips, drives the real app through `--smoke-script`, logs every step and exits 0 only when every step passed. All six are green on this machine (2026-10-22: m4 55 steps, m5 56, m6 134, m7 59, m7b 31, m9 92; 2026-10-24: m6 138 after effects batch 1, 146 after effects batch 2).
 
 | Script | Covers |
 |---|---|
 | `m4` (default) | Import, insert, scrub with frame presentation, split, ripple delete, undo, save and reopen, export through the export dialog, an ffprobe check of the file, and a timeline file drop. Also run against the published win-x64 exe (`-AppPath ... -NoBuild`). |
 | `m5` | Media jobs, proxies, playback drift on the audio device, the master meter, live mute and solo, and 2x/4x shuttle. |
-| `m6` | Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed and export, Source and Effects drops, and the DESIGN 5 checklist screenshots. |
+| `m6` | Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed, Inspector effect rows (`clip-prop`) and a Grayscale preset drop rendered by the export, Source and Effects drops, and the DESIGN 5 checklist screenshots. |
 | `m7` | The Settings dialog and one export per DESIGN 9 preset, each checked with ffprobe. |
 | `m7b` | A media file taken offline (hatched clips with the `OFFLINE` badge, striped bin card) and screenshots of the real Relink, Settings, Export, Speed and Sequence Settings dialog windows. |
 | `m9` | The agent HTTP API in process (`--agent-server --port 47399`): lock, banner, read-only UI, an agent batch, silence removal, a frame PNG, pause, take over, one-step undo, an agent export, the Agent panel and Settings > Agents; the Agent menu (briefings, Stop and Start, the open menu and its "Copy briefing for" submenu); the agent clients in the sandbox home (detect, register, update, remove, the briefing per target, Connect clients screenshots). 92 steps. Also run against the published win-x64 exe. |
@@ -112,6 +116,7 @@ Verified only by reading the code (never executed):
 - Two instances sharing one cache can evict each other's proxies; the app detaches and re-queues lost proxies but does not lease artifacts.
 - atempo alignment is calibrated with tone bursts (mean within 1 ms); a single click cannot be held to 1 ms by any constant compensation.
 - M8 items are not built: reverse shuttle (J steps back one frame), per-track meters, hardware encoders, segmented export for very large timelines.
+- The project schema stays at 1 through the effects batches: a build from before a batch opens a newer file and silently drops the fields it does not know (video effects read as neutral, unknown transition kinds fall back to Crossfade).
 
 ## How to try it
 
@@ -160,4 +165,4 @@ Nothing has been committed yet: `git status` shows the whole tree as untracked.
 
 ---
 
-**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1782 unit and 248 integration tests (after effects batch 1), six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only. Provider neutrality (section 9): the discovery endpoints, the client profiles and three reference harnesses exist; the HTTP example is green against a headless host and `serve`, while the model-driven harness run is pending (user's request); the Python harnesses pass `py_compile` and the offline `check_harness.py` against the real served tool documents.
+**TLDR:** M0 to M6 are done, M7 is done locally but its Linux run and CI parts were never executed, M8 is not started. The agent milestones A1 to A4 are done, including story 1 by hand with Claude Code against the published exe. 1797 unit and 255 integration tests (after effects batch 2), six smoke scripts (m9 included), the win-x64 publish with both exes and the serve demo are green on Windows; everything Linux and CI is verified by reading only. Provider neutrality (section 9): the discovery endpoints, the client profiles and three reference harnesses exist; the HTTP example is green against a headless host and `serve`, while the model-driven harness run is pending (user's request); the Python harnesses pass `py_compile` and the offline `check_harness.py` against the real served tool documents.

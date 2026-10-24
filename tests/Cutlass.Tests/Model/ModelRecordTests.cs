@@ -15,6 +15,8 @@ public sealed class ModelRecordTests
         Assert.Equal(1.0, VideoProps.Default.Opacity);
         Assert.Equal(0, VideoProps.Default.FadeInFrames);
         Assert.Equal(0, VideoProps.Default.FadeOutFrames);
+        Assert.Equal(new VideoEffects(false, false, 0, 0, 6500, 0, 0, 0, 0, false, false, "#00FF00", 0.1, 0), VideoEffects.None);
+        Assert.Equal(VideoEffects.None, VideoProps.Default.Effects);
         Assert.Equal(0, AudioProps.Default.GainDb);
         Assert.True(AudioProps.Default.Keys.IsEmpty);
     }

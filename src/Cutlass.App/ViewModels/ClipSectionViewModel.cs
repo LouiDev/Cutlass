@@ -10,7 +10,7 @@ namespace Cutlass.App.ViewModels;
 
 /// <summary>
 /// The inspector for media clips (DESIGN 4.4): Clip (name, file, enabled, start, duration, source in and out, speed),
-/// Transform, Color, Fades and Audio. With several clips selected only fields they share show, and an edit applies to
+/// Transform, Color, Effects, Chroma Key, Fades and Audio. With several clips selected only fields they share show, and an edit applies to
 /// all of them as one undo step: the video groups act on the selected video clips and the audio group on the selected
 /// audio clips, so a linked video and audio pair shows both. Selected titles take part in the Clip rows only.
 /// </summary>
@@ -21,9 +21,13 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private readonly ImmutableArray<string> _sourceIds;
     private readonly List<InspectorNumberField> _videoFields = [];
     private readonly List<InspectorNumberField> _audioFields = [];
+    private readonly List<(InspectorToggleRow Row, Func<VideoProps, bool> Read)> _videoToggles = [];
     private readonly InspectorGroup _clipGroup;
     private readonly InspectorGroup _transformGroup;
     private readonly InspectorGroup _colorGroup;
+    private readonly InspectorGroup _effectsGroup;
+    private readonly InspectorGroup _keyGroup;
+    private readonly InspectorColorField _keyColorRow;
     private readonly InspectorGroup _fadesGroup;
     private readonly InspectorGroup _audioGroup;
     private readonly InspectorInfoRow _fileRow;
@@ -79,6 +83,33 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         Video(_colorGroup, "Saturation", "color.saturation", "Saturation", c => c.Color.Saturation, (m, v) => C(m, a => a with { Saturation = v }), 1, 0, 3, 0.01, 2, null);
         Video(_colorGroup, "Gamma", "color.gamma", "Gamma", c => c.Color.Gamma, (m, v) => C(m, a => a with { Gamma = v }), 1, 0.1, 4, 0.01, 2, null);
 
+        // Effects batch 2 (DESIGN 4.4): the static effects and the chroma key, each with its own Reset. Percent rows
+        // convert like Opacity; the model keeps 0..1 (or -1..1 for the tint).
+        _effectsGroup = AddGroup("EFFECTS", () => Run(UpdateVideo("Reset Effects", m => m with { Video = m.Video with { Effects = VideoEffects.None } })));
+        FlipHRow = VideoToggle(_effectsGroup, "Flip horizontal", "video.effects.flipH", "Flip Horizontal", c => c.Effects.FlipH, (m, on) => E(m, e => e with { FlipH = on }));
+        FlipVRow = VideoToggle(_effectsGroup, "Flip vertical", "video.effects.flipV", "Flip Vertical", c => c.Effects.FlipV, (m, on) => E(m, e => e with { FlipV = on }));
+        Video(_effectsGroup, "Rotation", "video.effects.rotation", "Rotation", c => c.Effects.RotationDegrees, (m, v) => E(m, e => e with { RotationDegrees = v }), 0, -180, 180, 0.5, 1, "°");
+        Video(_effectsGroup, "Hue", "video.effects.hue", "Hue", c => c.Effects.HueDegrees, (m, v) => E(m, e => e with { HueDegrees = v }), 0, -180, 180, 0.5, 1, "°");
+        Video(_effectsGroup, "Temperature", "video.effects.temperature", "Temperature", c => c.Effects.TemperatureKelvin, (m, v) => E(m, e => e with { TemperatureKelvin = v }), 6500, 1000, 40000, 50, 0, "K");
+        Video(_effectsGroup, "Tint", "video.effects.tint", "Tint", c => c.Effects.Tint * 100, (m, v) => E(m, e => e with { Tint = v / 100 }), 0, -100, 100, 0.5, 0, "%");
+        Video(_effectsGroup, "Blur", "video.effects.blur", "Blur", c => c.Effects.Blur, (m, v) => E(m, e => e with { Blur = v }), 0, 0, 50, 0.1, 1, "px");
+        Video(_effectsGroup, "Sharpen", "video.effects.sharpen", "Sharpen", c => c.Effects.Sharpen * 100, (m, v) => E(m, e => e with { Sharpen = v / 100 }), 0, 0, 100, 0.5, 0, "%");
+        Video(_effectsGroup, "Vignette", "video.effects.vignette", "Vignette", c => c.Effects.Vignette * 100, (m, v) => E(m, e => e with { Vignette = v / 100 }), 0, 0, 100, 0.5, 0, "%");
+        GrayscaleRow = VideoToggle(_effectsGroup, "Grayscale", "video.effects.grayscale", "Grayscale", c => c.Effects.Grayscale, (m, on) => E(m, e => e with { Grayscale = on }));
+
+        _keyGroup = AddGroup("CHROMA KEY", () => Run(UpdateVideo("Reset Chroma Key", m => E(m, e => e with
+        {
+            KeyEnabled = VideoEffects.None.KeyEnabled,
+            KeyColor = VideoEffects.None.KeyColor,
+            KeySimilarity = VideoEffects.None.KeySimilarity,
+            KeyBlend = VideoEffects.None.KeyBlend,
+        }))));
+        KeyEnabledRow = VideoToggle(_keyGroup, "Enabled", "video.effects.keyEnabled", "Chroma Key", c => c.Effects.KeyEnabled, (m, on) => E(m, e => e with { KeyEnabled = on }));
+        // The colour field normalizes to #RRGGBBAA; the key colour is opaque, so the model keeps the #RRGGBB part.
+        _keyColorRow = _keyGroup.Add(new InspectorColorField(editor, "Key color", Key2(_videoIds, "video.effects.keyColor"), c => UpdateVideo("Key Color", m => E(m, e => e with { KeyColor = c[..7] }))));
+        Video(_keyGroup, "Similarity", "video.effects.keySimilarity", "Key Similarity", c => c.Effects.KeySimilarity * 100, (m, v) => E(m, e => e with { KeySimilarity = v / 100 }), 10, 1, 100, 0.5, 0, "%");
+        Video(_keyGroup, "Blend", "video.effects.keyBlend", "Key Blend", c => c.Effects.KeyBlend * 100, (m, v) => E(m, e => e with { KeyBlend = v / 100 }), 0, 0, 100, 0.5, 0, "%");
+
         _fadesGroup = AddGroup("FADES", () => Run(UpdateVideo("Reset Fades", m => m with { Video = m.Video with { FadeInFrames = 0, FadeOutFrames = 0 } })));
         Video(_fadesGroup, "Fade in", "video.fadeIn", "Fade", c => c.FadeInFrames, (m, v) => m with { Video = m.Video with { FadeInFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
         Video(_fadesGroup, "Fade out", "video.fadeOut", "Fade", c => c.FadeOutFrames, (m, v) => m with { Video = m.Video with { FadeOutFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
@@ -94,6 +125,8 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
 
         _transformGroup.IsVisible = !_videoIds.IsEmpty;
         _colorGroup.IsVisible = !_videoIds.IsEmpty;
+        _effectsGroup.IsVisible = !_videoIds.IsEmpty;
+        _keyGroup.IsVisible = !_videoIds.IsEmpty;
         _fadesGroup.IsVisible = !_videoIds.IsEmpty;
         _audioGroup.IsVisible = !_audioIds.IsEmpty;
         _sourceInRow.IsVisible = !_sourceIds.IsEmpty;
@@ -115,6 +148,24 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     /// <summary>Every numeric field of the audio group (keyframe rows excluded).</summary>
     public IReadOnlyList<InspectorNumberField> AudioFields => _audioFields;
 
+    /// <summary>Every toggle row of the video groups (flips, grayscale, chroma key enabled).</summary>
+    public IReadOnlyList<InspectorToggleRow> VideoToggles => [.. _videoToggles.Select(t => t.Row)];
+
+    /// <summary>The Flip horizontal toggle.</summary>
+    public InspectorToggleRow FlipHRow { get; }
+
+    /// <summary>The Flip vertical toggle.</summary>
+    public InspectorToggleRow FlipVRow { get; }
+
+    /// <summary>The Grayscale toggle.</summary>
+    public InspectorToggleRow GrayscaleRow { get; }
+
+    /// <summary>The chroma key Enabled toggle.</summary>
+    public InspectorToggleRow KeyEnabledRow { get; }
+
+    /// <summary>The chroma key colour row.</summary>
+    public InspectorColorField KeyColorRow => _keyColorRow;
+
     /// <summary>The keyframe rows of a single selected audio clip.</summary>
     public IReadOnlyList<InspectorKeyframeRow> KeyframeRows => _keyRows;
 
@@ -132,6 +183,12 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
 
     /// <summary>The Color group.</summary>
     public InspectorGroup ColorGroup => _colorGroup;
+
+    /// <summary>The Effects group.</summary>
+    public InspectorGroup EffectsGroup => _effectsGroup;
+
+    /// <summary>The Chroma Key group.</summary>
+    public InspectorGroup ChromaKeyGroup => _keyGroup;
 
     /// <summary>The video Fades group.</summary>
     public InspectorGroup FadesGroup => _fadesGroup;
@@ -170,6 +227,15 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         {
             field.LoadFrom(videos);
         }
+
+        // Toggle and colour rows have no Read like the number fields, so they load here (as the title section does).
+        var videoProps = videos.OfType<MediaClip>().Select(m => m.Video).ToList();
+        foreach (var (row, read) in _videoToggles)
+        {
+            row.LoadMany(videoProps.Select(read));
+        }
+
+        _keyColorRow.LoadMany(videoProps.Select(v => v.Effects.KeyColor));
 
         var audios = clips.Where(c => _audioIds.Contains(c.Id)).ToList();
         foreach (var field in _audioFields)
@@ -214,6 +280,9 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private static MediaClip C(MediaClip m, Func<ColorAdjust, ColorAdjust> change) =>
         m with { Video = m.Video with { Color = change(m.Video.Color) } };
 
+    private static MediaClip E(MediaClip m, Func<VideoEffects, VideoEffects> change) =>
+        m with { Video = m.Video with { Effects = change(m.Video.Effects) } };
+
     private Func<Project, EditResult> UpdateVideo(string label, Func<MediaClip, MediaClip> change) =>
         p => TimelineEdits.UpdateClips(p, _videoIds, c => c is MediaClip m ? change(m) : c, label);
 
@@ -245,6 +314,19 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             Unit = unit,
         };
         _videoFields.Add(group.Add(number));
+    }
+
+    private InspectorToggleRow VideoToggle(
+        InspectorGroup group,
+        string label,
+        string field,
+        string undoLabel,
+        Func<VideoProps, bool> read,
+        Func<MediaClip, bool, MediaClip> write)
+    {
+        var row = group.Add(new InspectorToggleRow(Editor, label, Key2(_videoIds, field), on => UpdateVideo(undoLabel, m => write(m, on))));
+        _videoToggles.Add((row, read));
+        return row;
     }
 
     private void Audio(

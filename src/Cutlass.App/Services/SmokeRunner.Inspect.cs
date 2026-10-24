@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Globalization;
+using Cutlass.App.ViewModels;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 
@@ -22,6 +23,9 @@ public sealed partial class SmokeRunner
                 return true;
             case "effect-drop":
                 EffectDrop(step);
+                return true;
+            case "clip-prop":
+                ClipProp(step);
                 return true;
             case "select-transition":
                 SelectTransition(step);
@@ -73,6 +77,55 @@ public sealed partial class SmokeRunner
             () => effects.ApplyAt(id, track.Id, frame),
             string.Create(CultureInfo.InvariantCulture, $"dropped {id} on {track.Name} at {frame} ({preview.Category} [{preview.Start},{preview.Start + preview.Duration}))"));
         _log.Write("  Effects: " + effects.StatusText);
+    }
+
+    // clip-prop <track> <pos> <field>=<value>...: the Inspector rows of the media clip under the frame, set like a user
+    // types them (effects batch 2). A row is found by its label with '-' for spaces; number rows take the display unit.
+    private void ClipProp(SmokeStep step)
+    {
+        var track = Track(Arg(step, 0));
+        var frame = Position(step, 1);
+        var clip = TimelineQuery.ClipAt(track, frame) as MediaClip
+            ?? throw Fail(string.Create(CultureInfo.InvariantCulture, $"no media clip on {track.Name} at {frame}"));
+        _vm.Timeline.Select([clip.Id], false);
+        var section = _vm.Inspector.Section as ClipSectionViewModel ?? throw Fail("the Inspector shows no clip section");
+        var options = step.Args.Where(a => a.Contains('=', StringComparison.Ordinal)).ToList();
+        Expect(options.Count > 0, SmokeScript.Commands["clip-prop"]);
+        foreach (var option in options)
+        {
+            var eq = option.IndexOf('=', StringComparison.Ordinal);
+            var label = option[..eq].Replace('-', ' ');
+            var value = option[(eq + 1)..];
+            Edit(() => SetInspectorRow(section, label, value), string.Create(CultureInfo.InvariantCulture, $"set {label} to {value} on {clip.Id}"));
+        }
+
+        var video = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Video;
+        _log.Write("  video: " + (video is null ? "(gone)" : video.ToString()));
+    }
+
+    private static void SetInspectorRow(ClipSectionViewModel section, string label, string value)
+    {
+        var number = section.VideoFields.Concat(section.AudioFields).FirstOrDefault(f => string.Equals(f.Label, label, StringComparison.OrdinalIgnoreCase));
+        if (number is not null)
+        {
+            number.Value = double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+            return;
+        }
+
+        var toggle = section.VideoToggles.FirstOrDefault(t => string.Equals(t.Label, label, StringComparison.OrdinalIgnoreCase));
+        if (toggle is not null)
+        {
+            toggle.IsChecked = bool.Parse(value);
+            return;
+        }
+
+        if (string.Equals(section.KeyColorRow.Label, label, StringComparison.OrdinalIgnoreCase))
+        {
+            section.KeyColorRow.Text = value;
+            return;
+        }
+
+        throw Fail("the Clip section has no row labelled '" + label + "'");
     }
 
     // select-transition <track> [index]: a click on a transition block.

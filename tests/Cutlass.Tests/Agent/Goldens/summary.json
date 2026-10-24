@@ -98,7 +98,23 @@
               "gamma": 1
             },
             "fadeInFrames": 0,
-            "fadeOutFrames": 0
+            "fadeOutFrames": 0,
+            "effects": {
+              "flipH": false,
+              "flipV": false,
+              "rotationDegrees": 0,
+              "hueDegrees": 0,
+              "temperatureKelvin": 6500,
+              "tint": 0,
+              "blur": 0,
+              "sharpen": 0,
+              "vignette": 0,
+              "grayscale": false,
+              "keyEnabled": false,
+              "keyColor": "#00FF00",
+              "keySimilarity": 0.1,
+              "keyBlend": 0
+            }
           }
         },
         {
@@ -136,7 +152,23 @@
               "gamma": 1
             },
             "fadeInFrames": 0,
-            "fadeOutFrames": 0
+            "fadeOutFrames": 0,
+            "effects": {
+              "flipH": true,
+              "flipV": false,
+              "rotationDegrees": 0,
+              "hueDegrees": 20,
+              "temperatureKelvin": 6500,
+              "tint": 0,
+              "blur": 4,
+              "sharpen": 0,
+              "vignette": 0,
+              "grayscale": false,
+              "keyEnabled": true,
+              "keyColor": "#00FF00",
+              "keySimilarity": 0.1,
+              "keyBlend": 0
+            }
           }
         }
       ],

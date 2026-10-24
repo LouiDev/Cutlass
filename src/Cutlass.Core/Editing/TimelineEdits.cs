@@ -145,12 +145,29 @@ public static partial class TimelineEdits
             Clamp(c.Saturation, 0, 3, 1),
             Clamp(c.Gamma, 0.1, 4, 1));
         var (fadeIn, fadeOut) = ClampFades(v.FadeInFrames, v.FadeOutFrames, duration);
+        var e = v.Effects;
+        var effects = new VideoEffects(
+            e.FlipH,
+            e.FlipV,
+            Clamp(e.RotationDegrees, -180, 180, 0),
+            Clamp(e.HueDegrees, -180, 180, 0),
+            Clamp(e.TemperatureKelvin, 1000, 40000, 6500),
+            Clamp(e.Tint, -1, 1, 0),
+            Clamp(e.Blur, 0, 50, 0),
+            Clamp(e.Sharpen, 0, 1, 0),
+            Clamp(e.Vignette, 0, 1, 0),
+            e.Grayscale,
+            e.KeyEnabled,
+            ValidColor(e.KeyColor) ? e.KeyColor : VideoEffects.None.KeyColor,
+            Clamp(e.KeySimilarity, 0.01, 1, 0.1),
+            Clamp(e.KeyBlend, 0, 1, 0));
         var result = new VideoProps(
             transform == tr ? tr : transform,
             Clamp(v.Opacity, 0, 1, 1),
             color == c ? c : color,
             fadeIn,
-            fadeOut);
+            fadeOut,
+            effects == e ? e : effects);
         return result == v ? v : result;
     }
 

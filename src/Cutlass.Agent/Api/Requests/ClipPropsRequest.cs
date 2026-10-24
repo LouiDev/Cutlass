@@ -20,6 +20,9 @@ public sealed class ClipPropsRequest : MutationRequest
     /// <summary>Colour fields (video).</summary>
     public ColorDto? Color { get; set; }
 
+    /// <summary>Video effect fields (video).</summary>
+    public VideoEffectsDto? Effects { get; set; }
+
     /// <summary>Gain in dB (audio).</summary>
     public double? GainDb { get; set; }
 

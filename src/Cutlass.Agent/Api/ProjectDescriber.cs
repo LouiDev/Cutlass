@@ -265,6 +265,7 @@ public static class ProjectDescriber
                     }
 
                     AppendFades(sb, m.Video.FadeInFrames, m.Video.FadeOutFrames);
+                    AppendEffects(sb, m.Video.Effects);
                 }
 
                 if (!isOnline(m.MediaId))
@@ -291,6 +292,66 @@ public static class ProjectDescriber
         if (fadeIn != 0 || fadeOut != 0)
         {
             sb.Append(CultureInfo.InvariantCulture, $" fade {fadeIn}/{fadeOut}");
+        }
+    }
+
+    // Compact tokens, one per non-neutral effect, so an agent sees that a clip is filtered without the full summary.
+    private static void AppendEffects(StringBuilder sb, VideoEffects e)
+    {
+        var c = CultureInfo.InvariantCulture;
+        if (e.FlipH)
+        {
+            sb.Append(" flipH");
+        }
+
+        if (e.FlipV)
+        {
+            sb.Append(" flipV");
+        }
+
+        if (e.RotationDegrees != 0)
+        {
+            sb.Append(c, $" rot {Num(e.RotationDegrees)}");
+        }
+
+        if (e.HueDegrees != 0)
+        {
+            sb.Append(c, $" hue {Num(e.HueDegrees)}");
+        }
+
+        if (e.TemperatureKelvin != VideoEffects.None.TemperatureKelvin)
+        {
+            sb.Append(c, $" temp {Num(e.TemperatureKelvin)}K");
+        }
+
+        if (e.Tint != 0)
+        {
+            sb.Append(c, $" tint {Num(e.Tint)}");
+        }
+
+        if (e.Blur > 0)
+        {
+            sb.Append(c, $" blur {Num(e.Blur)}");
+        }
+
+        if (e.Sharpen > 0)
+        {
+            sb.Append(c, $" sharpen {Num(e.Sharpen)}");
+        }
+
+        if (e.Vignette > 0)
+        {
+            sb.Append(c, $" vignette {Num(e.Vignette)}");
+        }
+
+        if (e.Grayscale)
+        {
+            sb.Append(" gray");
+        }
+
+        if (e.KeyEnabled)
+        {
+            sb.Append(" key");
         }
     }
 

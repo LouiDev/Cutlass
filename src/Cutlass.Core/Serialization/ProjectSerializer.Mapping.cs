@@ -149,6 +149,23 @@ public static partial class ProjectSerializer
                             },
                             FadeIn = m.Video.FadeInFrames,
                             FadeOut = m.Video.FadeOutFrames,
+                            Effects = new VideoEffectsDto
+                            {
+                                FlipH = m.Video.Effects.FlipH,
+                                FlipV = m.Video.Effects.FlipV,
+                                RotationDegrees = m.Video.Effects.RotationDegrees,
+                                HueDegrees = m.Video.Effects.HueDegrees,
+                                TemperatureKelvin = m.Video.Effects.TemperatureKelvin,
+                                Tint = m.Video.Effects.Tint,
+                                Blur = m.Video.Effects.Blur,
+                                Sharpen = m.Video.Effects.Sharpen,
+                                Vignette = m.Video.Effects.Vignette,
+                                Grayscale = m.Video.Effects.Grayscale,
+                                KeyEnabled = m.Video.Effects.KeyEnabled,
+                                KeyColor = m.Video.Effects.KeyColor,
+                                KeySimilarity = m.Video.Effects.KeySimilarity,
+                                KeyBlend = m.Video.Effects.KeyBlend,
+                            },
                         }
                         : null,
                     Audio = isVideo
@@ -283,6 +300,7 @@ public static partial class ProjectSerializer
                 var t = v.Transform ?? new TransformDto();
                 var crop = t.Crop ?? [];
                 var c = v.Color ?? new ColorAdjustDto();
+                var fx = v.Effects ?? new VideoEffectsDto();
                 return new MediaClip(
                     dto.Id ?? string.Empty,
                     dto.Start,
@@ -298,7 +316,22 @@ public static partial class ProjectSerializer
                         v.Opacity,
                         new ColorAdjust(c.Brightness, c.Contrast, c.Saturation, c.Gamma),
                         v.FadeIn,
-                        v.FadeOut),
+                        v.FadeOut,
+                        new VideoEffects(
+                            fx.FlipH,
+                            fx.FlipV,
+                            fx.RotationDegrees,
+                            fx.HueDegrees,
+                            fx.TemperatureKelvin,
+                            fx.Tint,
+                            fx.Blur,
+                            fx.Sharpen,
+                            fx.Vignette,
+                            fx.Grayscale,
+                            fx.KeyEnabled,
+                            fx.KeyColor ?? VideoEffects.None.KeyColor,
+                            fx.KeySimilarity,
+                            fx.KeyBlend)),
                     new AudioProps(
                         a.GainDb,
                         a.FadeIn,

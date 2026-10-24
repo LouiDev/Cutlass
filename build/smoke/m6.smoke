@@ -109,6 +109,18 @@ frame
 wait 500
 screenshot shots/04-edited.png
 
+# Effects batch 2: Rotation and Hue typed into the Inspector rows of clipB at 150, and the Grayscale preset dropped on
+# clipA at 30. The export below renders them through rotate, hue=h and hue=s=0, so its frame count check also proves
+# the effect filters run on this ffmpeg.
+clip-prop V1 150 rotation=15 hue=40
+effect-drop adjust:Grayscale V1 30
+expect-section clip
+playhead 150
+frame
+wait 500
+screenshot shots/13-effects.png
+deselect
+
 # Export through the export dialog and check the frame count with ffprobe.
 export h264 out/m6.mp4 quality=draft
 probe out/m6.mp4 frames=440 vcodec=h264 acodec=aac size=1280x720 bt709

@@ -91,6 +91,11 @@ public sealed partial class EffectsViewModel : ObservableObject
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FadeOut", "Fade Out", EffectCategory.Adjustment, "F↘", "1 s", "1 s video and audio fade out on the selected clips."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FadeInOut", "Fade In and Out", EffectCategory.Adjustment, "F↕", "1 s", "1 s fades at both ends of the selected clips."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "RemoveFades", "Remove Fades", EffectCategory.Adjustment, "F0", string.Empty, "Removes the fades of the selected clips."));
+        // Effects batch 2: toggles of the static video effects, and a reset of all of them.
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "Grayscale", "Grayscale", EffectCategory.Adjustment, "BW", string.Empty, "Toggles grayscale on the selected video clips."));
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FlipH", "Flip Horizontal", EffectCategory.Adjustment, "⇋", string.Empty, "Mirrors the selected video clips horizontally (again to undo)."));
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FlipV", "Flip Vertical", EffectCategory.Adjustment, "⇅", string.Empty, "Mirrors the selected video clips vertically (again to undo)."));
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "ResetEffects", "Reset Effects", EffectCategory.Adjustment, "E0", string.Empty, "Removes every video effect (flips, rotation, colour effects, blur, sharpen, vignette, chroma key) of the selected clips."));
 
         DefaultTransitionKind = TransitionKind.Crossfade;
         MarkDefault(DefaultTransitionKind);
@@ -311,7 +316,7 @@ public sealed partial class EffectsViewModel : ObservableObject
                 return track.Kind == TrackKind.Video ? AddTitle(spec, frame, track.Id) : null;
             case EffectCategory.Adjustment when TimelineQuery.ClipAt(track, frame) is { } clip:
                 // Like a click, a drop on a clip also reaches its linked partners while linked selection is on.
-                return Fade(item.Id, _timeline.LinkedSelection ? TimelineQuery.WithLinkedPartners(project, [clip.Id]) : [clip.Id]);
+                return Adjust(item.Id, _timeline.LinkedSelection ? TimelineQuery.WithLinkedPartners(project, [clip.Id]) : [clip.Id]);
             default:
                 return null;
         }
@@ -540,31 +545,39 @@ public sealed partial class EffectsViewModel : ObservableObject
             return null;
         }
 
-        return Fade(effectId, ids);
+        return Adjust(effectId, ids);
     }
 
-    private EditResult? Fade(string effectId, IReadOnlyCollection<string> clipIds)
+    // The adjustment presets: the fades and, since effects batch 2, the effect toggles and their reset.
+    private EditResult? Adjust(string effectId, IReadOnlyCollection<string> clipIds)
     {
         var project = _timeline.Session.Current;
         var frames = FramesFor(FadeSeconds, project.Sequence.Settings.Rate);
         var name = effectId[EffectItem.AdjustmentPrefix.Length..];
-        (long? In, long? Out, string Label) spec = name switch
+        (Func<Clip, Clip>? Change, string Label) spec = name switch
         {
-            "FadeIn" => (frames, null, "Fade In"),
-            "FadeOut" => (null, frames, "Fade Out"),
-            "FadeInOut" => (frames, frames, "Fade In and Out"),
-            "RemoveFades" => (0, 0, "Remove Fades"),
-            _ => (null, null, string.Empty),
+            "FadeIn" => (c => WithFades(c, frames, null), "Fade In"),
+            "FadeOut" => (c => WithFades(c, null, frames), "Fade Out"),
+            "FadeInOut" => (c => WithFades(c, frames, frames), "Fade In and Out"),
+            "RemoveFades" => (c => WithFades(c, 0, 0), "Remove Fades"),
+            "Grayscale" => (c => WithEffects(c, e => e with { Grayscale = !e.Grayscale }), "Grayscale"),
+            "FlipH" => (c => WithEffects(c, e => e with { FlipH = !e.FlipH }), "Flip Horizontal"),
+            "FlipV" => (c => WithEffects(c, e => e with { FlipV = !e.FlipV }), "Flip Vertical"),
+            "ResetEffects" => (c => WithEffects(c, _ => VideoEffects.None), "Reset Effects"),
+            _ => (null, string.Empty),
         };
-        if (spec.In is null && spec.Out is null)
+        if (spec.Change is null)
         {
             return null;
         }
 
-        var result = _timeline.Run(p => TimelineEdits.UpdateClips(p, clipIds, c => WithFades(c, spec.In, spec.Out), spec.Label));
+        var result = _timeline.Run(p => TimelineEdits.UpdateClips(p, clipIds, spec.Change, spec.Label));
         StatusText = result.Changed(project) ? spec.Label + " applied." : "Nothing to change.";
         return result;
     }
+
+    private static Clip WithEffects(Clip clip, Func<VideoEffects, VideoEffects> change) =>
+        clip is MediaClip { Stream: StreamKind.Video } m ? m with { Video = m.Video with { Effects = change(m.Video.Effects) } } : clip;
 
     private static Clip WithFades(Clip clip, long? fadeIn, long? fadeOut) => clip switch
     {

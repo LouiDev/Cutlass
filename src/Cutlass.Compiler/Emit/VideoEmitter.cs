@@ -358,12 +358,22 @@ internal static class VideoEmitter
         chain.Then(
             "scale=w=" + FfNum.Integer(g.Width) + ":h=" + FfNum.Integer(g.Height) + ":flags=" + ctx.ScaleFlags
             + ":out_color_matrix=bt709:out_range=tv");
-        if (Eq(clip.Video.Color) is { } eq)
-        {
-            chain.Then(eq);
-        }
+        // TECH_BRIEF 7.3 steps 5 to 7: flips, then the RGB-domain colour pair, eq, hue, blur, sharpen and vignette on
+        // yuv420p; after the alpha format the chroma key and the user rotation (transparent fill). Neutral emits nothing.
+        var fx = clip.Video.Effects;
+        Then(chain, VideoEffectFilters.FlipH(fx));
+        Then(chain, VideoEffectFilters.FlipV(fx));
+        Then(chain, VideoEffectFilters.Temperature(fx));
+        Then(chain, VideoEffectFilters.Tint(fx));
+        Then(chain, Eq(clip.Video.Color));
+        Then(chain, VideoEffectFilters.Hue(fx));
+        Then(chain, VideoEffectFilters.Blur(fx, ctx.PixelScale));
+        Then(chain, VideoEffectFilters.Sharpen(fx));
+        Then(chain, VideoEffectFilters.Vignette(fx));
 
         chain.Then("setsar=1").Then("format=yuva420p");
+        Then(chain, VideoEffectFilters.ChromaKey(ctx, clip.Id, fx));
+        Then(chain, VideoEffectFilters.Rotate(fx));
         OpacityAndFades(ctx, chain, segment, clip.Video.Opacity, clip.Video.FadeInFrames, clip.Video.FadeOutFrames);
 
         if (g.IsIdentity)
@@ -451,6 +461,14 @@ internal static class VideoEmitter
 
         var shift = (d0 > 0 ? "-" : "+") + FfNum.Integer(Math.Abs(d0));
         return [FlickTimeBase, speedPercent == 100 ? "setpts=PTS" + shift : "setpts=(PTS" + shift + ")/" + speed];
+    }
+
+    private static void Then(GraphChain chain, string? filter)
+    {
+        if (filter is not null)
+        {
+            chain.Then(filter);
+        }
     }
 
     private static string? Eq(ColorAdjust color)

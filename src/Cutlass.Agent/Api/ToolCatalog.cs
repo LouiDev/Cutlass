@@ -235,9 +235,15 @@ public static class ToolCatalog
         var transform = S().Num("x", "Offset from centre in pixels.").Num("y", "Offset from centre in pixels.").Num("scale", "Scale (1 fits).")
             .Num("cropLeft", "0 to 0.9.").Num("cropTop", "0 to 0.9.").Num("cropRight", "0 to 0.9.").Num("cropBottom", "0 to 0.9.");
         var color = S().Num("brightness", "-1 to 1 (0).").Num("contrast", "0 to 2 (1).").Num("saturation", "0 to 3 (1).").Num("gamma", "0.1 to 4 (1).");
-        Edit("edit.clip-props", "cutlass_set_clip_props", "/v1/edit/clip-props", "Opacity, transform, colour, gain, fades, enable.",
+        var effects = S().Bool("flipH", "Mirror horizontally (false).").Bool("flipV", "Mirror vertically (false).")
+            .Num("rotationDegrees", "-180 to 180 (0, clockwise).").Num("hueDegrees", "-180 to 180 (0).").Num("temperatureKelvin", "1000 to 40000 (6500).")
+            .Num("tint", "-1 to 1 (0, positive towards magenta).").Num("blur", "0 to 50 px (0).").Num("sharpen", "0 to 1 (0).").Num("vignette", "0 to 1 (0).")
+            .Bool("grayscale", "Drop the colour (false).").Bool("keyEnabled", "Chroma key on (false).").Str("keyColor", "#RRGGBB (#00FF00).")
+            .Num("keySimilarity", "0.01 to 1 (0.1).").Num("keyBlend", "0 to 1 (0).");
+        Edit("edit.clip-props", "cutlass_set_clip_props", "/v1/edit/clip-props", "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.",
             S().StrArray("clipIds", "Clip ids.", true, 1000).Bool("enabled", "Enable or disable.").Num("opacity", "0 to 1 (video and titles).")
                 .Obj("transform", "Video placement (fields optional).", transform).Obj("color", "Colour adjustment (fields optional).", color)
+                .Obj("effects", "Video effects (fields optional).", effects)
                 .Num("gainDb", "Clip gain in dB (audio).").Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
         Edit("edit.speed", "cutlass_set_speed", "/v1/edit/speed", "Set clip speed in percent.",
             S().StrArray("clipIds", "Clip ids.", true, 1000).Int("percent", "25 to 400.", true, 25, 400).Bool("rippleFollowing", "Shift later clips (true)."));

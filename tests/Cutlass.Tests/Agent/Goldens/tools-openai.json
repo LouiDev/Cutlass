@@ -963,7 +963,7 @@
     "type": "function",
     "function": {
       "name": "cutlass_set_clip_props",
-      "description": "Opacity, transform, colour, gain, fades, enable.",
+      "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1036,6 +1036,68 @@
               "gamma": {
                 "type": "number",
                 "description": "0.1 to 4 (1)."
+              }
+            }
+          },
+          "effects": {
+            "description": "Video effects (fields optional).",
+            "type": "object",
+            "properties": {
+              "flipH": {
+                "type": "boolean",
+                "description": "Mirror horizontally (false)."
+              },
+              "flipV": {
+                "type": "boolean",
+                "description": "Mirror vertically (false)."
+              },
+              "rotationDegrees": {
+                "type": "number",
+                "description": "-180 to 180 (0, clockwise)."
+              },
+              "hueDegrees": {
+                "type": "number",
+                "description": "-180 to 180 (0)."
+              },
+              "temperatureKelvin": {
+                "type": "number",
+                "description": "1000 to 40000 (6500)."
+              },
+              "tint": {
+                "type": "number",
+                "description": "-1 to 1 (0, positive towards magenta)."
+              },
+              "blur": {
+                "type": "number",
+                "description": "0 to 50 px (0)."
+              },
+              "sharpen": {
+                "type": "number",
+                "description": "0 to 1 (0)."
+              },
+              "vignette": {
+                "type": "number",
+                "description": "0 to 1 (0)."
+              },
+              "grayscale": {
+                "type": "boolean",
+                "description": "Drop the colour (false)."
+              },
+              "keyEnabled": {
+                "type": "boolean",
+                "description": "Chroma key on (false)."
+              },
+              "keyColor": {
+                "type": "string",
+                "description": "#RRGGBB (#00FF00)."
+              },
+              "keySimilarity": {
+                "type": "number",
+                "description": "0.01 to 1 (0.1)."
+              },
+              "keyBlend": {
+                "type": "number",
+                "description": "0 to 1 (0)."
               }
             }
           },

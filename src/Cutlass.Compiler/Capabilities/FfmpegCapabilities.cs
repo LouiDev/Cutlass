@@ -29,7 +29,8 @@ public sealed record FfmpegCapabilities(
         "color", "anullsrc", "nullsrc", "trim", "atrim", "setpts", "asetpts", "fps", "tpad", "apad", "concat", "xfade",
         "overlay", "scale", "pad", "crop", "setsar", "setparams", "format", "aformat", "aresample", "atempo", "afade",
         "fade", "volume", "amix", "amerge", "adelay", "eq", "lut", "framestep", "alimiter", "split", "palettegen",
-        "paletteuse", "tile", "settb", "anull",
+        "paletteuse", "tile", "settb", "anull", "hflip", "vflip", "rotate", "hue", "colortemperature", "colorbalance",
+        "gblur", "unsharp", "vignette", "chromakey",
     ];
 
     /// <summary>The required filters this build lacks, in <see cref="RequiredFilters"/> order.</summary>

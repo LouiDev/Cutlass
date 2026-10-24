@@ -11,7 +11,7 @@ namespace Cutlass.IntegrationTests.Infrastructure;
 public sealed class TestMediaFixture : IAsyncLifetime
 {
     /// <summary>Bump when a recipe changes so stale media in the temp folder is not reused.</summary>
-    public const int RecipeVersion = 1;
+    public const int RecipeVersion = 2;
 
     /// <summary>Oracle frame width in pixels.</summary>
     public const int OracleWidth = 320;
@@ -68,6 +68,9 @@ public sealed class TestMediaFixture : IAsyncLifetime
     /// <summary>A single 320x240 red PNG.</summary>
     public string RedPng => PathOf("red.png");
 
+    /// <summary>A single 320x240 green PNG (the chroma key test keys it out).</summary>
+    public string GreenPng => PathOf("green.png");
+
     /// <summary>4 s testsrc2 at 25 fps (mpeg4) with a 48 kHz stereo sine (aac) in mp4. CFR, start time 0.</summary>
     public string Cfr25Av => PathOf("cfr25_av.mp4");
 
@@ -107,7 +110,7 @@ public sealed class TestMediaFixture : IAsyncLifetime
     /// <summary>Every generated file.</summary>
     public IReadOnlyList<string> AllFiles =>
     [
-        Oracle25Intra, Oracle25LongGop, Oracle2997, OracleVfr, Impulse, DelayedAudio, Sync, Tone, RedPng,
+        Oracle25Intra, Oracle25LongGop, Oracle2997, OracleVfr, Impulse, DelayedAudio, Sync, Tone, RedPng, GreenPng,
         Cfr25Av, Cfr2997Av, OffsetStart, VfrMixed, RotatedSource, Rotated90, OddPathClip, Bursts, Oracle25AviBFrames,
     ];
 
@@ -170,6 +173,7 @@ public sealed class TestMediaFixture : IAsyncLifetime
 
         await GenerateAsync(Tone, ["-f", "lavfi", "-i", "sine=f=1000:r=48000:d=10", "-c:a", "pcm_s16le"]).ConfigureAwait(false);
         await GenerateAsync(RedPng, ["-f", "lavfi", "-i", "color=c=red:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
+        await GenerateAsync(GreenPng, ["-f", "lavfi", "-i", "color=c=green:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
 
         // M2 probe and process media.
         await GenerateAsync(

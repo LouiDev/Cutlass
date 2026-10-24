@@ -247,6 +247,23 @@ public static class ProjectSummaryMapper
                         Color = new ColorDto { Brightness = v.Color.Brightness, Contrast = v.Color.Contrast, Saturation = v.Color.Saturation, Gamma = v.Color.Gamma },
                         FadeInFrames = v.FadeInFrames,
                         FadeOutFrames = v.FadeOutFrames,
+                        Effects = new VideoEffectsDto
+                        {
+                            FlipH = v.Effects.FlipH,
+                            FlipV = v.Effects.FlipV,
+                            RotationDegrees = v.Effects.RotationDegrees,
+                            HueDegrees = v.Effects.HueDegrees,
+                            TemperatureKelvin = v.Effects.TemperatureKelvin,
+                            Tint = v.Effects.Tint,
+                            Blur = v.Effects.Blur,
+                            Sharpen = v.Effects.Sharpen,
+                            Vignette = v.Effects.Vignette,
+                            Grayscale = v.Effects.Grayscale,
+                            KeyEnabled = v.Effects.KeyEnabled,
+                            KeyColor = v.Effects.KeyColor,
+                            KeySimilarity = v.Effects.KeySimilarity,
+                            KeyBlend = v.Effects.KeyBlend,
+                        },
                     };
                 }
                 else
