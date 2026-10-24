@@ -96,7 +96,7 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
   - `Emit/`: VideoEmitter, AudioEmitter, TitleEmitter, TimelineCompiler, plus the internal EmitContext, InputTable, SegmentPlacement and VideoSegmentOutput.
   - `Export/`: ExportPreset, ExportPresetKind, ExportPresets, ExportQuality, ExportEncoding, EncoderTemplate, FfmpegArgsBuilder, OutputTail, OutputTailKind.
   - `Capabilities/`: FfmpegCapabilities, FilterScriptSyntax.
-- Effects batch 2: `Emit/VideoEffectFilters` (one helper per effect filter, null when neutral).
+- Effects batch 2: `Emit/VideoEffectFilters` (one helper per effect filter, null when neutral); `tests/Cutlass.IntegrationTests/Export/VideoEffectsTests` renders them on the oracle.
 
 **Cutlass.Media**
 - M2:
@@ -652,7 +652,7 @@ For a segment rendering `[g0, g1)`:
 4. `scale=w=<SW>:h=<SH>:flags=<bicubic export|bilinear preview>:out_color_matrix=bt709:out_range=tv`.
 5. The picture effects (`VideoEffectFilters`; a neutral value emits nothing, so a clip without effects keeps the old chain byte for byte), in this order:
    - `hflip` (FlipH), `vflip` (FlipV). The crop fractions of step 3 refer to the unflipped source, so a left crop followed by a flip leaves the hole on the right (the usual NLE behaviour).
-   - `colortemperature=temperature=<K>` (TemperatureKelvin != 6500) and `colorbalance=gm=<-Tint>` (Tint != 0). Both are RGB-only filters, so libavfilter converts yuv420p to gbrp and back around them; they are adjacent so that happens once, and the BT.709 tags set by `scale` survive (checked by `VideoEffectsTests`).
+   - `colortemperature=temperature=<K>` (TemperatureKelvin != 6500) and `colorbalance=gm=<-Tint>` (Tint != 0). Both are RGB-only filters, so libavfilter negotiates the step 4 `scale` to RGB output (its `out_color_matrix` then has no effect) and the pair is followed by `scale=out_color_matrix=bt709:out_range=tv,format=yuv420p`, which converts back with the BT.709 matrix explicitly instead of leaving it to an auto-inserted scaler; they are adjacent so this happens once. The export keeps the BT.709 tags (checked by `VideoEffectsTests`).
    - `eq=` with only the non-neutral parameters, in the order brightness, contrast, saturation, gamma.
    - `hue=h=<degrees>` (HueDegrees != 0) with `:s=0` appended for Grayscale; Grayscale alone emits `hue=s=0`.
    - `gblur=sigma=<Blur * PixelScale>` (Blur > 0; the sigma is in sequence pixels and scales with the render size, so proxies and the export look alike).
@@ -1095,7 +1095,7 @@ color=c=black:s=320x180:r=25:d=20,geq=lum='if(bitand(N\,pow(2\,floor(X/40)+8*flo
 aevalsrc='if(eq(mod(n\,48000)\,0)\,0.9\,0)':s=48000:d=20      -> impulse every second
 testsrc2=s=320x180:r=30:d=3 + -itsoffset 0.5 impulse            -> delayed_audio.mov (pcm_s16le)
 flash on frames with mod(N,30)=0 + impulse                        -> sync.mkv
-sine=f=1000:r=48000:d=10 -> tone.wav;  color=c=red:s=320x240 -frames:v 1 -> red.png;  color=c=green:s=320x240 -frames:v 1 -> green.png
+sine=f=1000:r=48000:d=10 -> tone.wav;  color=c=red:s=320x240 -frames:v 1 -> red.png;  color=c=0x00FF00:s=320x240 -frames:v 1 -> green.png (pure #00FF00, the key colour the test uses)
 probe and process media (M2), testsrc2=s=320x180 + sine, mpeg4 video:
    -> cfr25_av.mp4 (r=25, aac 48 kHz stereo); cfr2997_av.mkv (r=30000/1001, pcm_s16le 44.1 kHz mono)
    -> offset_start.mov (-output_ts_offset 2.5, so format.start_time is 2.5)

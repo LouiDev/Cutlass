@@ -15,11 +15,11 @@ internal static class GoldenCases
 
     private static readonly SequenceSettings Hd30 = new(1920, 1080, FrameRate.Fps30);
 
-    /// <summary>Every case by name.</summary>
     /// <summary>Every effect of batch 2 non-neutral on one clip, including the chroma key (TECH_BRIEF 7.3 order). Declared before <see cref="All"/>, which uses it.</summary>
     internal static VideoEffects AllEffects { get; } =
         new(true, true, 12.5, 30, 4500, 0.25, 2, 0.5, 0.4, true, true, "#00FF00", 0.2, 0.05);
 
+    /// <summary>Every case by name.</summary>
     public static ImmutableArray<Case> All { get; } =
     [
         SingleClip(),

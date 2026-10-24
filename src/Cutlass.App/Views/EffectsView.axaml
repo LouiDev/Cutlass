@@ -104,7 +104,7 @@
           <ItemsControl ItemsSource="{Binding TransitionAudio}" />
           <TextBlock Classes="panelTitle groupTitle" Text="TITLES" />
           <ItemsControl ItemsSource="{Binding Titles}" />
-          <TextBlock Classes="panelTitle groupTitle" Text="CLIP FADES" />
+          <TextBlock Classes="panelTitle groupTitle" Text="FADES AND PRESETS" />
           <ItemsControl ItemsSource="{Binding Adjustments}" />
         </StackPanel>
       </ScrollViewer>

@@ -11,7 +11,7 @@ namespace Cutlass.IntegrationTests.Infrastructure;
 public sealed class TestMediaFixture : IAsyncLifetime
 {
     /// <summary>Bump when a recipe changes so stale media in the temp folder is not reused.</summary>
-    public const int RecipeVersion = 2;
+    public const int RecipeVersion = 3;
 
     /// <summary>Oracle frame width in pixels.</summary>
     public const int OracleWidth = 320;
@@ -173,7 +173,7 @@ public sealed class TestMediaFixture : IAsyncLifetime
 
         await GenerateAsync(Tone, ["-f", "lavfi", "-i", "sine=f=1000:r=48000:d=10", "-c:a", "pcm_s16le"]).ConfigureAwait(false);
         await GenerateAsync(RedPng, ["-f", "lavfi", "-i", "color=c=red:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
-        await GenerateAsync(GreenPng, ["-f", "lavfi", "-i", "color=c=green:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
+        await GenerateAsync(GreenPng, ["-f", "lavfi", "-i", "color=c=0x00FF00:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
 
         // M2 probe and process media.
         await GenerateAsync(

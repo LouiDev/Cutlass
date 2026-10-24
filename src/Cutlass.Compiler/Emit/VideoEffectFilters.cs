@@ -33,6 +33,19 @@ internal static class VideoEffectFilters
     public static string? Tint(VideoEffects effects) =>
         effects.Tint != 0 ? "colorbalance=gm=" + FfNum.Decimal(-effects.Tint) : null;
 
+    /// <summary>
+    /// The conversion back from the RGB domain after <see cref="Temperature"/> or <see cref="Tint"/>. The RGB-only
+    /// filters make libavfilter negotiate the preceding <c>scale</c> to RGB output, which bypasses its
+    /// <c>out_color_matrix</c>; this explicit scale pinned to yuv420p converts back with BT.709 instead of leaving the
+    /// matrix to an auto-inserted scaler.
+    /// </summary>
+    /// <param name="effects">The effects.</param>
+    /// <returns>The filter text, or null when neither RGB filter is emitted.</returns>
+    public static string? RgbToYuv(VideoEffects effects) =>
+        Temperature(effects) is not null || Tint(effects) is not null
+            ? "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p"
+            : null;
+
     /// <summary>The <c>hue</c> filter: the hue shift in degrees, with <c>s=0</c> appended for grayscale.</summary>
     /// <param name="effects">The effects.</param>
     /// <returns>The filter text, or null when the hue is 0 and the clip keeps its colour.</returns>

@@ -277,7 +277,7 @@ public sealed class EffectsViewModelTests
     {
         var vm = Vm(Cuts(), out var timeline);
         Assert.Null(vm.Apply(vm.Find("adjust:FadeIn")!));
-        Assert.Equal("Select clips to fade.", vm.StatusText);
+        Assert.Equal("Select clips to apply the preset to.", vm.StatusText);
         Assert.Equal(0, timeline.Session.UndoCount);
     }
 

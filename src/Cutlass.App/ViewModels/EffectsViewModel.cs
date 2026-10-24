@@ -541,7 +541,7 @@ public sealed partial class EffectsViewModel : ObservableObject
         var ids = TimelineQuery.ExistingIds(_timeline.Session.Current, _timeline.SelectedClipIds);
         if (ids.IsEmpty)
         {
-            StatusText = "Select clips to fade.";
+            StatusText = "Select clips to apply the preset to.";
             return null;
         }
 

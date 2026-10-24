@@ -156,7 +156,7 @@ It covers the panels and the timeline only: the menu row with the agent banner a
 - **Effects tab.**
   - Transitions: the 41 video transitions under four sub-headers, FADES (Cross Dissolve, Dip to Black, Dip to White, Fade Grays, Fade Fast, Fade Slow, Noise Dissolve, Pixelate), WIPES (the eight wipes, the four smooth wipes, the four diagonals, Radial Wipe, Distance Dissolve), SLIDES (the four slides, Squeeze Horizontal, Squeeze Vertical, Zoom In) and SHAPES (Circle Open, Circle Close, Circle Crop, Rect Crop, Horizontal Open and Close, Vertical Open and Close), plus AUDIO (Audio Crossfade). Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
   - Title templates (TITLES): Centered, Lower Third and Top Caption. Drag one onto a video track to create a 5 s title.
-  - Clip fades (CLIP FADES): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
+  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
 - **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.
@@ -193,7 +193,7 @@ Context sensitive, with collapsible sections whose state is remembered.
   - Transform: Position X/Y (px from canvas center), Scale (% of fit), Crop L/T/R/B (% of source), Opacity %.
   - Color: Brightness (-1..1), Contrast (0..2), Saturation (0..3), Gamma (0.1..4), Reset.
   - Effects: Flip horizontal, Flip vertical, Rotation (-180..180 degrees, clockwise positive), Hue (-180..180 degrees), Temperature (1000..40000 K, 6500 neutral), Tint (-100..100 %, towards magenta), Blur (0..50 px), Sharpen (0..100 %), Vignette (0..100 %), Grayscale, Reset (everything including the key).
-  - Chroma key: Enabled, Key color (#RRGGBB), Similarity (1..100 %), Blend (0..100 %), Reset.
+  - Chroma key: Key enabled, Key color (#RRGGBB; the row shows the normalised #RRGGBBAA form), Similarity (1..100 %), Blend (0..100 %), Reset.
   - Fades: video fade in and out (frames).
   - Audio: gain dB, fades, and a keyframe list (time, dB) with add and remove.
 - **Title clip.**

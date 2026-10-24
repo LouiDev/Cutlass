@@ -104,7 +104,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             KeySimilarity = VideoEffects.None.KeySimilarity,
             KeyBlend = VideoEffects.None.KeyBlend,
         }))));
-        KeyEnabledRow = VideoToggle(_keyGroup, "Enabled", "video.effects.keyEnabled", "Chroma Key", c => c.Effects.KeyEnabled, (m, on) => E(m, e => e with { KeyEnabled = on }));
+        KeyEnabledRow = VideoToggle(_keyGroup, "Key enabled", "video.effects.keyEnabled", "Chroma Key", c => c.Effects.KeyEnabled, (m, on) => E(m, e => e with { KeyEnabled = on }));
         // The colour field normalizes to #RRGGBBAA; the key colour is opaque, so the model keeps the #RRGGBB part.
         _keyColorRow = _keyGroup.Add(new InspectorColorField(editor, "Key color", Key2(_videoIds, "video.effects.keyColor"), c => UpdateVideo("Key Color", m => E(m, e => e with { KeyColor = c[..7] }))));
         Video(_keyGroup, "Similarity", "video.effects.keySimilarity", "Key Similarity", c => c.Effects.KeySimilarity * 100, (m, v) => E(m, e => e with { KeySimilarity = v / 100 }), 10, 1, 100, 0.5, 0, "%");

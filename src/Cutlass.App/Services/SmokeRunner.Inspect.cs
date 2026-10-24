@@ -100,7 +100,11 @@ public sealed partial class SmokeRunner
         }
 
         var video = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Video;
-        _log.Write("  video: " + (video is null ? "(gone)" : video.ToString()));
+        _log.Write(video is null
+            ? "  video: (gone)"
+            : string.Create(
+                CultureInfo.InvariantCulture,
+                $"  video: opacity={video.Opacity} rotation={video.Effects.RotationDegrees} hue={video.Effects.HueDegrees} blur={video.Effects.Blur} flipH={video.Effects.FlipH} flipV={video.Effects.FlipV} grayscale={video.Effects.Grayscale} key={video.Effects.KeyEnabled}"));
     }
 
     private static void SetInspectorRow(ClipSectionViewModel section, string label, string value)

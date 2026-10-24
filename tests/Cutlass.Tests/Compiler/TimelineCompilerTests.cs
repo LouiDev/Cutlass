@@ -282,7 +282,7 @@ public sealed class TimelineCompilerTests
 
         Assert.Contains(
             "scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,"
-            + "hflip,vflip,colortemperature=temperature=4500.000000,colorbalance=gm=-0.250000,eq=saturation=1.200000,"
+            + "hflip,vflip,colortemperature=temperature=4500.000000,colorbalance=gm=-0.250000,scale=out_color_matrix=bt709:out_range=tv,format=yuv420p,eq=saturation=1.200000,"
             + "hue=h=30.000000:s=0,gblur=sigma=2.000000,unsharp=lx=5:ly=5:la=0.750000,vignette=a=0.628319:dither=0,"
             + "setsar=1,format=yuva420p,chromakey=color=0x00FF00:similarity=0.200000:blend=0.050000,"
             + "rotate=a=12.500000*PI/180:fillcolor=black@0,",
