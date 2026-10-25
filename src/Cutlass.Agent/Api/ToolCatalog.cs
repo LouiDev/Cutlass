@@ -240,11 +240,17 @@ public static class ToolCatalog
             .Num("tint", "-1 to 1 (0, positive towards magenta).").Num("blur", "0 to 50 px (0).").Num("sharpen", "0 to 1 (0).").Num("vignette", "0 to 1 (0).")
             .Bool("grayscale", "Drop the colour (false).").Bool("keyEnabled", "Chroma key on (false).").Str("keyColor", "#RRGGBB (#00FF00).")
             .Num("keySimilarity", "0.01 to 1 (0.1).").Num("keyBlend", "0 to 1 (0).");
-        Edit("edit.clip-props", "cutlass_set_clip_props", "/v1/edit/clip-props", "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.",
+        var audioEffects = S().Num("highPassHz", "0 or 20 to 2000 (0 = off).").Num("lowPassHz", "0 or 200 to 20000 (0 = off).")
+            .Num("bassDb", "-20 to 20 (0), shelf at 100 Hz.").Num("trebleDb", "-20 to 20 (0), shelf at 3 kHz.")
+            .Bool("compressor", "Compressor on (false).").Num("compressorThresholdDb", "-60 to 0 (-20).").Num("compressorRatio", "1 to 20 (4).")
+            .Bool("gate", "Noise gate on (false).").Num("gateThresholdDb", "-80 to 0 (-40).")
+            .Num("pan", "-1 left to 1 right (0).").Bool("mono", "Sum to mono, stays stereo (false).");
+        Edit("edit.clip-props", "cutlass_set_clip_props", "/v1/edit/clip-props", "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
             S().StrArray("clipIds", "Clip ids.", true, 1000).Bool("enabled", "Enable or disable.").Num("opacity", "0 to 1 (video and titles).")
                 .Obj("transform", "Video placement (fields optional).", transform).Obj("color", "Colour adjustment (fields optional).", color)
                 .Obj("effects", "Video effects (fields optional).", effects)
-                .Num("gainDb", "Clip gain in dB (audio).").Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
+                .Num("gainDb", "Clip gain in dB (audio).").Obj("audioEffects", "Audio filters (fields optional).", audioEffects)
+                .Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
         Edit("edit.speed", "cutlass_set_speed", "/v1/edit/speed", "Set clip speed in percent.",
             S().StrArray("clipIds", "Clip ids.", true, 1000).Int("percent", "25 to 400.", true, 25, 400).Bool("rippleFollowing", "Shift later clips (true)."));
         Edit("edit.link", "cutlass_link_clips", "/v1/edit/link", "Link clips so they select and move together.", S().StrArray("clipIds", "Clip ids.", true, 1000));

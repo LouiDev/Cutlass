@@ -203,13 +203,37 @@ public static partial class TimelineEdits
 
         var (fadeIn, fadeOut) = ClampFades(a.FadeInFrames, a.FadeOutFrames, duration);
         var gain = Clamp(a.GainDb, MinGainDb, MaxGainDb, 0);
-        if (ordered && !a.Keys.IsDefault && gain.Equals(a.GainDb) && fadeIn == a.FadeInFrames && fadeOut == a.FadeOutFrames)
+        var effects = SanitizeAudioEffects(a.Effects);
+        if (ordered && !a.Keys.IsDefault && gain.Equals(a.GainDb) && fadeIn == a.FadeInFrames && fadeOut == a.FadeOutFrames
+            && effects == a.Effects)
         {
             return a;
         }
 
-        return new AudioProps(gain, fadeIn, fadeOut, keys);
+        return new AudioProps(gain, fadeIn, fadeOut, keys, effects == a.Effects ? a.Effects : effects);
     }
+
+    // Effects batch 3: every range of AudioEffects, with the cut-offs snapping to "off" below their lowest audible value.
+    private static AudioEffects SanitizeAudioEffects(AudioEffects e)
+    {
+        var result = new AudioEffects(
+            CutOff(e.HighPassHz, 20, 2000),
+            CutOff(e.LowPassHz, 200, 20000),
+            Clamp(e.BassDb, -20, 20, 0),
+            Clamp(e.TrebleDb, -20, 20, 0),
+            e.Compressor,
+            Clamp(e.CompressorThresholdDb, -60, 0, AudioEffects.None.CompressorThresholdDb),
+            Clamp(e.CompressorRatio, 1, 20, AudioEffects.None.CompressorRatio),
+            e.Gate,
+            Clamp(e.GateThresholdDb, -80, 0, AudioEffects.None.GateThresholdDb),
+            Clamp(e.Pan, -1, 1, 0),
+            e.Mono);
+        return result == e ? e : result;
+    }
+
+    // 0 means off; a value between 0 and the lowest cut-off snaps to off, anything above the highest clamps to it.
+    private static double CutOff(double hz, double min, double max) =>
+        double.IsNaN(hz) || hz < min ? 0 : Math.Min(hz, max);
 
     private static TitleSpec SanitizeTitle(TitleSpec t)
     {

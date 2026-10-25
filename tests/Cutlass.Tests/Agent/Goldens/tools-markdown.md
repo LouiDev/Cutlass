@@ -732,7 +732,7 @@ Example call:
 
 ## cutlass_set_clip_props
 
-Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.
+Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.
 
 - Catalog name `edit.clip-props`, route `POST /v1/edit/clip-props`.
 - Needs the lock; changes the project (one undo step); returns JSON.
@@ -771,6 +771,18 @@ Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blu
 | `effects.keySimilarity` | number | no | 0.01 to 1 (0.1). |
 | `effects.keyBlend` | number | no | 0 to 1 (0). |
 | `gainDb` | number | no | Clip gain in dB (audio). |
+| `audioEffects` | object | no | Audio filters (fields optional). |
+| `audioEffects.highPassHz` | number | no | 0 or 20 to 2000 (0 = off). |
+| `audioEffects.lowPassHz` | number | no | 0 or 200 to 20000 (0 = off). |
+| `audioEffects.bassDb` | number | no | -20 to 20 (0), shelf at 100 Hz. |
+| `audioEffects.trebleDb` | number | no | -20 to 20 (0), shelf at 3 kHz. |
+| `audioEffects.compressor` | boolean | no | Compressor on (false). |
+| `audioEffects.compressorThresholdDb` | number | no | -60 to 0 (-20). |
+| `audioEffects.compressorRatio` | number | no | 1 to 20 (4). |
+| `audioEffects.gate` | boolean | no | Noise gate on (false). |
+| `audioEffects.gateThresholdDb` | number | no | -80 to 0 (-40). |
+| `audioEffects.pan` | number | no | -1 left to 1 right (0). |
+| `audioEffects.mono` | boolean | no | Sum to mono, stays stereo (false). |
 | `fadeInFrames` | integer, at least 0 | no | Fade-in frames. |
 | `fadeOutFrames` | integer, at least 0 | no | Fade-out frames. |
 | `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |

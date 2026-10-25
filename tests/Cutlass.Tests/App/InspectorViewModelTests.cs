@@ -250,6 +250,125 @@ public sealed class InspectorViewModelTests
     }
 
     [Fact]
+    public void AudioEffectSetterRunsUpdateClipsWithTheCoalesceKey()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["a1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.True(section.AudioEffectsGroup.IsVisible);
+        Assert.False(section.EffectsGroup.IsVisible);
+        var highPass = section.Field("High-pass", audio: true);
+        Assert.Equal("inspector:a1:audio.effects.highPass", highPass.CoalesceKey);
+        Assert.Equal((0.0, 2000.0, 10.0, 0, "Hz"), (highPass.Minimum, highPass.Maximum, highPass.Step, highPass.Decimals, highPass.Unit));
+
+        highPass.Value = 100;
+        highPass.Value = 120;
+        Assert.Equal(120, Clip<MediaClip>(timeline, "a1").Audio.Effects.HighPassHz);
+        Assert.Equal(1, timeline.Session.UndoCount);
+        Assert.Equal("High-pass", timeline.Session.UndoLabel);
+
+        section.Field("Bass", audio: true).Value = 3.5;
+        section.Field("Gate threshold", audio: true).Value = -50;
+        Assert.Equal(3, timeline.Session.UndoCount);
+        Assert.Equal(3.5, Clip<MediaClip>(timeline, "a1").Audio.Effects.BassDb);
+        Assert.Equal(-50, Clip<MediaClip>(timeline, "a1").Audio.Effects.GateThresholdDb);
+        Assert.Equal("Gate Threshold", timeline.Session.UndoLabel);
+        // The Audio group keeps the keyframe button as its last row.
+        Assert.IsType<InspectorButtonRow>(section.AudioGroup.Rows[^1]);
+    }
+
+    [Fact]
+    public void PanRowIsPercentOverTheModelRange()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["a1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Equal(0, section.Field("Pan", audio: true).Value);
+        Assert.Equal(-20, section.Field("Threshold", audio: true).Value);
+        Assert.Equal(4, section.Field("Ratio", audio: true).Value);
+
+        section.Field("Pan", audio: true).Value = -30;
+        Assert.Equal(-0.3, Clip<MediaClip>(timeline, "a1").Audio.Effects.Pan, 6);
+        Assert.Equal(-30, section.Field("Pan", audio: true).Value);
+        Assert.Equal((-100.0, 100.0, "%"), (section.Field("Pan", audio: true).Minimum, section.Field("Pan", audio: true).Maximum, section.Field("Pan", audio: true).Unit));
+    }
+
+    [Fact]
+    public void DifferentAudioToggleValuesShowAsMixed()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Session.Execute(p => TimelineEdits.UpdateClips(p, ["a1"], c => ((MediaClip)c) with { Audio = ((MediaClip)c).Audio with { Effects = AudioEffects.None with { Mono = true } } }, "Mono"));
+        timeline.Select(["a1", "a2"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Null(section.MonoRow.IsChecked);
+        Assert.False(section.CompressorRow.IsChecked);
+        Assert.False(section.GateRow.IsChecked);
+        Assert.Equal("inspector:a1,a2:audio.effects.mono", section.MonoRow.CoalesceKey);
+
+        section.CompressorRow.IsChecked = true;
+        Assert.True(Clip<MediaClip>(timeline, "a1").Audio.Effects.Compressor);
+        Assert.True(Clip<MediaClip>(timeline, "a2").Audio.Effects.Compressor);
+        Assert.Equal("Compressor", timeline.Session.UndoLabel);
+
+        timeline.Session.Undo();
+        Assert.False(section.CompressorRow.IsChecked);
+    }
+
+    [Fact]
+    public void ResetRestoresTheAudioEffectsDefaultsAndKeepsTheGain()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["a1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        section.Field("Gain", audio: true).Value = -6;
+        section.Field("High-pass", audio: true).Value = 200;
+        section.Field("Low-pass", audio: true).Value = 8000;
+        section.GateRow.IsChecked = true;
+        Assert.NotEqual(AudioEffects.None, Clip<MediaClip>(timeline, "a1").Audio.Effects);
+
+        section.AudioEffectsGroup.ResetCommand.Execute(null);
+        Assert.Equal(AudioEffects.None, Clip<MediaClip>(timeline, "a1").Audio.Effects);
+        Assert.Equal(-6, Clip<MediaClip>(timeline, "a1").Audio.GainDb);
+        Assert.True(section.AudioEffectsGroup.CanReset);
+        Assert.Equal(0, section.Field("High-pass", audio: true).Value);
+        Assert.False(section.GateRow.IsChecked);
+        Assert.Equal("Reset Audio Effects", timeline.Session.UndoLabel);
+    }
+
+    [Fact]
+    public void AudioGroupResetKeepsTheAudioEffects()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["a1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        section.Field("Gain", audio: true).Value = -6;
+        section.Field("High-pass", audio: true).Value = 200;
+
+        section.AudioGroup.ResetCommand.Execute(null);
+
+        var audio = Clip<MediaClip>(timeline, "a1").Audio;
+        Assert.Equal(0, audio.GainDb);
+        Assert.Equal(200, audio.Effects.HighPassHz);
+        Assert.Equal("Reset Audio", timeline.Session.UndoLabel);
+    }
+
+    [Fact]
+    public void LinkedPairAudioEffectsLeaveTheVideoPartnerAlone()
+    {
+        var vm = Vm(Linked(), out var timeline);
+        timeline.Select(["v1", "a1"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.True(section.EffectsGroup.IsVisible);
+        Assert.True(section.AudioEffectsGroup.IsVisible);
+
+        section.Field("High-pass", audio: true).Value = 80;
+        Assert.Equal(80, Clip<MediaClip>(timeline, "a1").Audio.Effects.HighPassHz);
+        Assert.Equal(AudioProps.Default, Clip<MediaClip>(timeline, "v1").Audio);
+        Assert.Equal(VideoProps.Default, Clip<MediaClip>(timeline, "v1").Video);
+        Assert.Equal("inspector:a1:audio.effects.highPass", section.Field("High-pass", audio: true).CoalesceKey);
+    }
+
+    [Fact]
     public void MultiSelectionAppliesToAllAsOneStep()
     {
         var vm = Vm(Linked(), out var timeline);

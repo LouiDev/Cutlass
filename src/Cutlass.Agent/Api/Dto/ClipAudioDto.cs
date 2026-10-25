@@ -14,4 +14,7 @@ public sealed class ClipAudioDto
 
     /// <summary>Volume keys relative to the clip start.</summary>
     public List<VolumeKeyDto> Keys { get; set; } = [];
+
+    /// <summary>Static audio effects.</summary>
+    public AudioEffectsDto Effects { get; set; } = new();
 }

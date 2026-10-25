@@ -19,6 +19,9 @@ internal static class GoldenCases
     internal static VideoEffects AllEffects { get; } =
         new(true, true, 12.5, 30, 4500, 0.25, 2, 0.5, 0.4, true, true, "#00FF00", 0.2, 0.05);
 
+    /// <summary>Every audio effect of batch 3 on one clip (mono wins over pan, so the pan is 0 here). Declared before <see cref="All"/>.</summary>
+    internal static AudioEffects AllAudioEffects { get; } = new(80, 12000, 3, -2, true, -24, 3, true, -50, 0, true);
+
     /// <summary>Every case by name.</summary>
     public static ImmutableArray<Case> All { get; } =
     [
@@ -41,6 +44,7 @@ internal static class GoldenCases
         ColorAdjust(),
         VideoEffects(),
         VideoEffectsInRun(),
+        AudioEffects(),
         MuteSolo(),
         PerTrackAudio(),
         EmptyAudio(),
@@ -208,7 +212,7 @@ internal static class GoldenCases
 
     private static Case Envelope()
     {
-        var audio = new AudioProps(3, 0, 0, [new VolumeKey(10, -6), new VolumeKey(40, 0), new VolumeKey(60, -12)]);
+        var audio = new AudioProps(3, 0, 0, [new VolumeKey(10, -6), new VolumeKey(40, 0), new VolumeKey(60, -12)], Cutlass.Core.Model.AudioEffects.None);
         MediaAsset[] media = [AudioAsset("m_music", "D:/Audio/music.wav")];
         var p = Project(Hd30, media, AudioTrack("tr_a1", [A("c_1", 15, 90, "m_music", 2 * F, audio: audio)]));
         return Make("envelope", p, Export(0, 120, video: false));
@@ -260,6 +264,28 @@ internal static class GoldenCases
                 [V("c_1", 0, 60, "m_a", F, video: left), V("c_2", 60, 60, "m_b", F, video: right)],
                 [new Transition("x_1", TransitionKind.Crossfade, "c_1", "c_2", 20)]));
         return Make("video_effects_in_run", p, Export(0, 120, audio: false));
+    }
+
+    // Three audio clips in a window that starts at 20: c_env (keys, fades, gain and a pan plus treble) gets the asetpts
+    // offset, so the golden pins the effects before the offset, the envelope and afade; c_all has every effect on; c_fast
+    // runs at speed 50 with a high-pass, pinning the position after the atempo block.
+    private static Case AudioEffects()
+    {
+        var env = new AudioProps(-3, 10, 10, [new VolumeKey(5, -6), new VolumeKey(40, 0)], Cutlass.Core.Model.AudioEffects.None with { Pan = 0.5, TrebleDb = 4 });
+        var all = AudioProps.Default with { Effects = AllAudioEffects };
+        var fast = AudioProps.Default with { Effects = Cutlass.Core.Model.AudioEffects.None with { HighPassHz = 120 } };
+        MediaAsset[] media = [AudioAsset("m_music", "D:/Audio/music.wav")];
+        var p = Project(
+            Hd30,
+            media,
+            AudioTrack(
+                "tr_a1",
+                [
+                    A("c_env", 0, 60, "m_music", F, audio: env),
+                    A("c_all", 60, 30, "m_music", 5 * F, audio: all),
+                    A("c_fast", 90, 30, "m_music", 10 * F, speed: 50, audio: fast),
+                ]));
+        return Make("audio_effects", p, Export(20, 120, video: false));
     }
 
     private static Case MuteSolo()

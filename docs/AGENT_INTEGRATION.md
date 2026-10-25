@@ -540,7 +540,7 @@ Edits never throw on user input (TECH_BRIEF 3.3), so a clamped edit is a success
 | `/v1/edit/delete` | `{clipIds, ripple: false, includeLinked: true}` | `Lift` or `RippleDelete` |
 | `/v1/edit/remove-ranges` | `{ranges[{start, end}]<=500, trackIds?, ripple: true}` | `RemoveRanges` |
 | `/v1/edit/close-gap` | `{trackId, gapStart}` | `CloseGap` |
-| `/v1/edit/clip-props` | `{clipIds, enabled?, opacity?, transform?, color?, effects?, gainDb?, fadeInFrames?, fadeOutFrames?}` | `UpdateClips` + `SanitizeClip`; video fields for video and title clips, audio fields for audio clips. `effects` (apiRevision 4) holds `flipH, flipV, rotationDegrees, hueDegrees, temperatureKelvin, tint, blur, sharpen, vignette, grayscale, keyEnabled, keyColor, keySimilarity, keyBlend`, every field optional and clamped to its range (a bad `keyColor` falls back to `#00FF00`). |
+| `/v1/edit/clip-props` | `{clipIds, enabled?, opacity?, transform?, color?, effects?, gainDb?, audioEffects?, fadeInFrames?, fadeOutFrames?}` | `UpdateClips` + `SanitizeClip`; video fields for video and title clips, audio fields for audio clips. `effects` (apiRevision 4) holds `flipH, flipV, rotationDegrees, hueDegrees, temperatureKelvin, tint, blur, sharpen, vignette, grayscale, keyEnabled, keyColor, keySimilarity, keyBlend`, every field optional and clamped to its range (a bad `keyColor` falls back to `#00FF00`). `audioEffects` (apiRevision 5) holds `highPassHz, lowPassHz, bassDb, trebleDb, compressor, compressorThresholdDb, compressorRatio, gate, gateThresholdDb, pan, mono`, every field optional and clamped (a cut-off below 20 Hz or 200 Hz snaps to 0, which is off); sent for a video or title clip it is ignored with a warning, like `gainDb`. |
 | `/v1/edit/speed` | `{clipIds, percent 25..400, rippleFollowing: true}` | `SetSpeed` |
 | `/v1/edit/link`, `/v1/edit/unlink` | `{clipIds}` | `Link`, `Unlink` |
 | `/v1/edit/volume-keys` | `{clipId, keys[{frame, db}]}` (replaces; empty clears) | `UpdateClips` with `WithKeys` |
@@ -594,7 +594,10 @@ Title fonts are `builtin:<name>`, a system family `FontLocator` resolves, or a f
     { "id": "tr_a1", "kind": "audio", "name": "A1", "index": 1, "muted": false, "solo": false, "locked": false,
       "targeted": true, "gainDb": 0,
       "clips": [ { "id": "c_11", "type": "media", "stream": "audio", "...": "as above",
-                   "audio": { "gainDb": 0, "fadeInFrames": 0, "fadeOutFrames": 12, "keys": [ { "frame": 90, "db": 0 } ] } } ],
+                   "audio": { "gainDb": 0, "fadeInFrames": 0, "fadeOutFrames": 12, "keys": [ { "frame": 90, "db": 0 } ],
+                              "effects": { "highPassHz": 0, "lowPassHz": 0, "bassDb": 0, "trebleDb": 0, "compressor": false,
+                                           "compressorThresholdDb": -20, "compressorRatio": 4, "gate": false, "gateThresholdDb": -40,
+                                           "pan": 0, "mono": false } } } ],
       "transitions": [] } ],
   "markers": [ { "id": "k_3m9q0aa1", "frame": 300, "name": "Drop", "color": "#F5D547" } ],
   "media": [ { "id": "m_7f2c4k9q", "path": "D:/Footage/ana.mp4", "fileName": "ana.mp4", "online": true,
@@ -709,7 +712,7 @@ There is no SSE in v1. The MCP server does not need events. Events were built in
 | `cutlass_find_silences` | `start?, end?, thresholdDb?, minDurationMs?, padMs?, trackIds?` | Frame ranges quieter than the threshold. |
 | `cutlass_place_media` | as `/edit/place` | Put media, or a source range of it, on the timeline. |
 | `cutlass_move_clips`, `cutlass_trim_clip`, `cutlass_split`, `cutlass_delete_clips`, `cutlass_remove_ranges`, `cutlass_close_gap` | as the edits | Timeline edits; remove_ranges cuts time ranges out of all tracks and closes the gaps. |
-| `cutlass_set_clip_props`, `cutlass_set_speed`, `cutlass_set_volume_keys` | as the edits | Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable; speed; volume envelope. |
+| `cutlass_set_clip_props`, `cutlass_set_speed`, `cutlass_set_volume_keys` | as the edits | Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable; speed; volume envelope. |
 | `cutlass_add_transition`, `cutlass_update_transition`, `cutlass_remove_transitions` | as the edits | Transitions between butting clips. |
 | `cutlass_add_title`, `cutlass_update_title` | as the edits | Text titles on a video track. |
 | `cutlass_add_marker`, `cutlass_update_marker`, `cutlass_remove_markers`, `cutlass_set_in_out` | as the edits | Markers and In/Out. |
@@ -1074,7 +1077,7 @@ Rules:
 - Vendor formats are produced by pure functions in `Cutlass.Agent/Api/Export/` (`OpenAiToolExporter`, `AnthropicToolExporter`, `GeminiToolExporter`, `MarkdownToolExporter`, `OpenApiDocument`), each unit tested against a golden file and, for the JSON ones, validated by loading them into the vendor SDK in the example harnesses (9.5).
 - `GeminiToolExporter` is the only one that rewrites schemas; the others pass the catalog schema through. The rewrite is documented in the class and tested.
 
-Implementation notes (filled gaps, 2026-10-22; `capabilities.apiRevision` is 4: revision 2 added the discovery routes, revision 3 the 33 extra xfade transition kinds, `wipeUp` to `zoomIn`, in `capabilities.transitionKinds` and the `kind` enums of `cutlass_add_transition` and `cutlass_update_transition` (the enum is generated from the model, so it cannot drift), revision 4 the `effects` object of `cutlass_set_clip_props` and of every video clip's `video` block in the project summary; `describe_project` prints compact tokens such as `flipH`, `rot 90`, `hue 20`, `blur 4` and `key` for non-neutral effects):
+Implementation notes (filled gaps, 2026-10-22; `capabilities.apiRevision` is 5: revision 2 added the discovery routes, revision 3 the 33 extra xfade transition kinds, `wipeUp` to `zoomIn`, in `capabilities.transitionKinds` and the `kind` enums of `cutlass_add_transition` and `cutlass_update_transition` (the enum is generated from the model, so it cannot drift), revision 4 the `effects` object of `cutlass_set_clip_props` and of every video clip's `video` block in the project summary, revision 5 the `audioEffects` object of `cutlass_set_clip_props` and the `effects` block of every audio clip's `audio`; `describe_project` prints compact tokens such as `flipH`, `rot 90`, `hue 20`, `blur 4` and `key` for non-neutral video effects and `hp 80Hz`, `lp 8000Hz`, `bass +3dB`, `treble -2dB`, `comp`, `gate`, `pan L30` and `mono` for active audio effects):
 
 - The three routes are catalog tools without an MCP name (`discovery.tools`, `discovery.openapi`, `discovery.instructions`, result kind `document`), so the auth guard, rate limit and audit log apply as to any read. They answer the document itself, not the envelope; through `/v1/call` the JSON document (or `{ "text" }` for Markdown) becomes `result`.
 - `/v1/tools` entries also carry `method` and `route`; `result` is `json`, `png`, `text` or `document`. The vendor formats and the Markdown reference list only tools with an MCP name, with the catalog (HTTP) argument names, so `cutlass_acquire_lock` takes `waitMs` there, not the MCP exe's `waitSeconds`.

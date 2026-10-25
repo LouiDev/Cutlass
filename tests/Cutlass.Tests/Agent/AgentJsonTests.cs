@@ -55,7 +55,7 @@ public sealed class AgentJsonTests
         RoundTrip(new MoveRequest { ClipIds = ["c"], DeltaFrames = -3 }, c.MoveRequest);
         RoundTrip(new TrimRequest { ClipId = "c", Edge = "end", ToFrame = 4 }, c.TrimRequest);
         RoundTrip(new RemoveRangesRequest { Ranges = [new FrameRange { Start = 1, End = 2 }] }, c.RemoveRangesRequest);
-        RoundTrip(new ClipPropsRequest { ClipIds = ["c"], Transform = new TransformDto { Scale = 0.5 }, Color = new ColorDto { Gamma = 1.2 }, Effects = new VideoEffectsDto { HueDegrees = 20 } }, c.ClipPropsRequest);
+        RoundTrip(new ClipPropsRequest { ClipIds = ["c"], Transform = new TransformDto { Scale = 0.5 }, Color = new ColorDto { Gamma = 1.2 }, Effects = new VideoEffectsDto { HueDegrees = 20 }, AudioEffects = new AudioEffectsDto { Pan = -0.5, Compressor = true } }, c.ClipPropsRequest);
         RoundTrip(new VolumeKeysRequest { ClipId = "c", Keys = [new VolumeKeyDto { Frame = 1, Db = -6.5 }] }, c.VolumeKeysRequest);
         RoundTrip(new TitleAddRequest { TrackId = "t", At = 0, DurationFrames = 5, Title = new TitleDto { Text = "Hi", Anchor = "lowerThird" } }, c.TitleAddRequest);
         RoundTrip(new TrackUpdateRequest { TrackId = "t", GainDb = -3.5 }, c.TrackUpdateRequest);

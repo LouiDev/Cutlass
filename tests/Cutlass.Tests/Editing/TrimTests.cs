@@ -192,7 +192,7 @@ public sealed class TrimTests
     {
         var clip = A("a1", 0, 50) with
         {
-            Audio = new AudioProps(0, 10, 30, [new VolumeKey(5, -6), new VolumeKey(20, 0), new VolumeKey(45, -12)]),
+            Audio = new AudioProps(0, 10, 30, [new VolumeKey(5, -6), new VolumeKey(20, 0), new VolumeKey(45, -12)], AudioEffects.None),
         };
         var p = new ProjectBuilder().With(A1, clip).Build();
         var q = ModelAssert.Changed(p, TimelineEdits.Trim(p, "a1", ClipEdge.Start, 10, false, false));

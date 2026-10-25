@@ -215,7 +215,20 @@
             "gainDb": 0,
             "fadeInFrames": 0,
             "fadeOutFrames": 0,
-            "keys": []
+            "keys": [],
+            "effects": {
+              "highPassHz": 0,
+              "lowPassHz": 0,
+              "bassDb": 0,
+              "trebleDb": 0,
+              "compressor": false,
+              "compressorThresholdDb": -20,
+              "compressorRatio": 4,
+              "gate": false,
+              "gateThresholdDb": -40,
+              "pan": 0,
+              "mono": false
+            }
           }
         }
       ],
@@ -258,7 +271,20 @@
                 "frame": 90,
                 "db": -3
               }
-            ]
+            ],
+            "effects": {
+              "highPassHz": 80,
+              "lowPassHz": 0,
+              "bassDb": 0,
+              "trebleDb": 0,
+              "compressor": true,
+              "compressorThresholdDb": -20,
+              "compressorRatio": 4,
+              "gate": false,
+              "gateThresholdDb": -40,
+              "pan": -0.3,
+              "mono": false
+            }
           }
         }
       ],

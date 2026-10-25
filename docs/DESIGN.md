@@ -47,6 +47,7 @@ Principles:
   - Picture in picture: position, scale, crop, opacity.
   - Color: brightness, contrast, saturation, gamma.
   - Video effects (static per clip, effects batch 2): flip horizontal and vertical, rotation (-180..180 degrees, the frame keeps its size), hue shift, colour temperature and tint, gaussian blur, sharpen, vignette, grayscale, and a chroma key (colour, similarity, blend) that lets the tracks below show through.
+  - Audio effects (static per clip, effects batch 3): high-pass and low-pass filters, bass and treble shelves, a compressor (threshold, ratio), a noise gate (threshold), a constant-power pan and a mono sum that keeps the stream stereo.
 - **Preview.**
   - Frame-accurate scrub and step.
   - Real-time playback with audio, JKL forward at 1x, 2x and 4x.
@@ -66,10 +67,10 @@ Principles:
 
 ### 2.3 Not in v1
 - **Sequences:** nested or multiple sequences, multicam.
-- **Keyframes:** only audio volume has them. Transform, opacity, color and the video effects are static per clip.
+- **Keyframes:** only audio volume has them. Transform, opacity, color and the video and audio effects are static per clip.
 - **Color:** LUTs, curves, wheels, scopes, HDR tone mapping (HDR gets a warning badge), 10-bit preview.
 - **Time:** reverse clips, freeze frames, speed ramps.
-- **Audio:** effects beyond gain, fades, crossfades and the export limiter, surround output, audio scrubbing, voice-over recording.
+- **Audio:** surround output, audio scrubbing, voice-over recording, noise reduction and other effects beyond the batch 3 set (filters, shelves, compressor, gate, pan, mono).
 - **Visual effects:** subtitles, masks, stabilisation, tracking.
 - **Extensibility:** plugins, scripting, a user keymap file.
 - **Formats:** drop-frame timecode, deinterlacing, image sequences.
@@ -156,7 +157,7 @@ It covers the panels and the timeline only: the menu row with the agent banner a
 - **Effects tab.**
   - Transitions: the 41 video transitions under four sub-headers, FADES (Cross Dissolve, Dip to Black, Dip to White, Fade Grays, Fade Fast, Fade Slow, Noise Dissolve, Pixelate), WIPES (the eight wipes, the four smooth wipes, the four diagonals, Radial Wipe, Distance Dissolve), SLIDES (the four slides, Squeeze Horizontal, Squeeze Vertical, Zoom In) and SHAPES (Circle Open, Circle Close, Circle Crop, Rect Crop, Horizontal Open and Close, Vertical Open and Close), plus AUDIO (Audio Crossfade). Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
   - Title templates (TITLES): Centered, Lower Third and Top Caption. Drag one onto a video track to create a 5 s title.
-  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
+  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral), and the audio presets Mono (toggles the mono sum on the audio clips), Voice (high-pass 80 Hz) and Reset Audio Effects (every audio effect back to neutral). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
 - **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.
@@ -196,6 +197,7 @@ Context sensitive, with collapsible sections whose state is remembered.
   - Chroma key: Key enabled, Key color (#RRGGBB; the row shows the normalised #RRGGBBAA form), Similarity (1..100 %), Blend (0..100 %), Reset.
   - Fades: video fade in and out (frames).
   - Audio: gain dB, fades, and a keyframe list (time, dB) with add and remove.
+  - Audio effects: High-pass (Hz, 0 is off, 20..2000), Low-pass (Hz, 0 is off, 200..20000), Bass (-20..20 dB, shelf at 100 Hz), Treble (-20..20 dB, shelf at 3 kHz), Compressor with Threshold (-60..0 dB) and Ratio (1..20 :1), Gate with Gate threshold (-80..0 dB), Pan (-100..100 %, constant power, left negative), Mono, Reset.
 - **Title clip.**
   - Text (multi-line).
   - Font: bundled Inter Regular, SemiBold or Bold, or a system font file.
@@ -250,7 +252,7 @@ Context sensitive, with collapsible sections whose state is remembered.
 - **Clip body.**
   - Rounded rectangle (3 px) in VideoClip, AudioClip, TitleClip or StillClip color.
   - Name in Inter 11 px at the top left.
-  - Badges: speed (`150%`), `fx` (any transform, opacity, color or video effect that is not neutral; fades do not count), and a red sync badge (`+5`) when linked clips have drifted.
+  - Badges: speed (`150%`), `fx` (on a video clip any transform, opacity, color or video effect that is not neutral, on an audio clip any audio effect; fades, gain and keyframes do not count), and a red sync badge (`+5`) when linked clips have drifted.
 - **Clip content.**
   - Video clips tile a filmstrip, each tile showing the source frame at its left edge.
   - Audio clips draw a min/max waveform from the peak level nearest one peak per pixel, overlaid by the volume line and keyframe dots. The height follows the square root of the normalised peak (`WaveformScale`), so quiet material stays readable: -20 dBFS fills about a third of the half height, full scale touches the edge.

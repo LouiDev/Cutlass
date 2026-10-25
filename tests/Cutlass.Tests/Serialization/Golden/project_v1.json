@@ -431,7 +431,20 @@
                   "frame": 30,
                   "db": -12.5
                 }
-              ]
+              ],
+              "effects": {
+                "highPassHz": 80,
+                "lowPassHz": 12000,
+                "bassDb": 2.5,
+                "trebleDb": -1.5,
+                "compressor": true,
+                "compressorThresholdDb": -24,
+                "compressorRatio": 3,
+                "gate": true,
+                "gateThresholdDb": -50,
+                "pan": -0.4,
+                "mono": true
+              }
             }
           },
           {
@@ -448,7 +461,20 @@
               "gainDb": 0,
               "fadeIn": 0,
               "fadeOut": 0,
-              "keys": []
+              "keys": [],
+              "effects": {
+                "highPassHz": 0,
+                "lowPassHz": 0,
+                "bassDb": 0,
+                "trebleDb": 0,
+                "compressor": false,
+                "compressorThresholdDb": -20,
+                "compressorRatio": 4,
+                "gate": false,
+                "gateThresholdDb": -40,
+                "pan": 0,
+                "mono": false
+              }
             }
           }
         ],
@@ -486,7 +512,20 @@
               "gainDb": 0,
               "fadeIn": 0,
               "fadeOut": 0,
-              "keys": []
+              "keys": [],
+              "effects": {
+                "highPassHz": 0,
+                "lowPassHz": 0,
+                "bassDb": 0,
+                "trebleDb": 0,
+                "compressor": false,
+                "compressorThresholdDb": -20,
+                "compressorRatio": 4,
+                "gate": false,
+                "gateThresholdDb": -40,
+                "pan": 0,
+                "mono": false
+              }
             }
           }
         ],

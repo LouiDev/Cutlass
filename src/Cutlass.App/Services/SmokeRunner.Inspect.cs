@@ -105,18 +105,27 @@ public sealed partial class SmokeRunner
             : string.Create(
                 CultureInfo.InvariantCulture,
                 $"  video: opacity={video.Opacity} rotation={video.Effects.RotationDegrees} hue={video.Effects.HueDegrees} blur={video.Effects.Blur} flipH={video.Effects.FlipH} flipV={video.Effects.FlipV} grayscale={video.Effects.Grayscale} key={video.Effects.KeyEnabled}"));
+        var audio = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Audio;
+        if (audio is not null)
+        {
+            var e = audio.Effects;
+            _log.Write(string.Create(
+                CultureInfo.InvariantCulture,
+                $"  audio: gain={audio.GainDb} highPass={e.HighPassHz} lowPass={e.LowPassHz} bass={e.BassDb} treble={e.TrebleDb} comp={e.Compressor} gate={e.Gate} pan={e.Pan} mono={e.Mono}"));
+        }
     }
 
     private static void SetInspectorRow(ClipSectionViewModel section, string label, string value)
     {
-        var number = section.VideoFields.Concat(section.AudioFields).FirstOrDefault(f => string.Equals(f.Label, label, StringComparison.OrdinalIgnoreCase));
+        // Hyphenated labels ("High-pass") match their spaced spelling, since the command spells spaces as '-'.
+        var number = section.VideoFields.Concat(section.AudioFields).FirstOrDefault(f => string.Equals(f.Label.Replace('-', ' '), label, StringComparison.OrdinalIgnoreCase));
         if (number is not null)
         {
             number.Value = double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
             return;
         }
 
-        var toggle = section.VideoToggles.FirstOrDefault(t => string.Equals(t.Label, label, StringComparison.OrdinalIgnoreCase));
+        var toggle = section.VideoToggles.Concat(section.AudioToggles).FirstOrDefault(t => string.Equals(t.Label, label, StringComparison.OrdinalIgnoreCase));
         if (toggle is not null)
         {
             toggle.IsChecked = bool.Parse(value);

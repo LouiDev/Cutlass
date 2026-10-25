@@ -87,6 +87,7 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
   - `Session/`: ProjectSession, UndoHistory, HistoryEntry, ChangeKind, ProjectChangedEventArgs.
   - `Serialization/`: ProjectSerializer, ProjectJsonContext, ProjectMigrator, ViewState, `Dto/*`.
 - Effects batch 2 (static video effects): `Model/VideoEffects` (the sixth `VideoProps` parameter), `Serialization/Dto/VideoEffectsDto`.
+- Effects batch 3 (per-clip audio effects): `Model/AudioEffects` (the fifth `AudioProps` parameter), `Serialization/Dto/AudioEffectsDto`.
 
 **Cutlass.Compiler**
 - M3:
@@ -97,6 +98,7 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
   - `Export/`: ExportPreset, ExportPresetKind, ExportPresets, ExportQuality, ExportEncoding, EncoderTemplate, FfmpegArgsBuilder, OutputTail, OutputTailKind.
   - `Capabilities/`: FfmpegCapabilities, FilterScriptSyntax.
 - Effects batch 2: `Emit/VideoEffectFilters` (one helper per effect filter, null when neutral); `tests/Cutlass.IntegrationTests/Export/VideoEffectsTests` renders them on the oracle.
+- Effects batch 3: `Emit/AudioEffectFilters` (one helper per audio filter, null when neutral; `Append` emits the 7.3 step 3a order), `tests/Cutlass.Tests/Compiler/AudioEffectFiltersTests` (de-DE) and the `audio_effects` golden pair under `tests/Cutlass.Tests/Compiler/Goldens/`; `tests/Cutlass.IntegrationTests/Export/AudioEffectsTests` measures them on the sine oracle.
 
 **Cutlass.Media**
 - M2:
@@ -137,13 +139,14 @@ Each milestone (section 12) adds roughly 15 to 25 files. Files are grouped by pr
   - Viewer: `ViewModels/SourceViewerViewModel` (Source mode), `Services/TimecodeEntry` (click-to-type timecode), `Services/SmokeRunner.Editing`, `Services/SmokeRunner.Inspect` and `build/smoke/m6.smoke`, run by `build/smoke.ps1 -Script m6` (section 10.4).
   - Drops: `Services/SourceDrag` and `SourceStreams` (the Source monitor drag payload), `ViewModels/TimelineViewModel.Drops` (Source and effect drops), `ViewModels/EffectDropPreview` (the effect drop ghost).
 - Effects batch 2: the EFFECTS and CHROMA KEY groups in `ClipSectionViewModel` (toggle rows through `VideoToggle`), the Grayscale, Flip and Reset Effects presets in `EffectsViewModel`, the `clip-prop` smoke command in `Services/SmokeRunner.Inspect` and `build/smoke/m6.smoke`.
+- Effects batch 3: the AUDIO EFFECTS group in `ClipSectionViewModel` (an `Audio` overload that takes the group, toggle rows through `AudioToggle`), the Mono, Voice and Reset Audio Effects presets in `EffectsViewModel`, and the audio `fx` badge in `Controls/TimelineControl.Render`.
 - M7: SettingsViewModel and SettingsDialog, RelinkDialog (with RelinkDialogViewModel and RelinkItemViewModel), `Services/` AutosaveService and RecoveryChoice, `ViewModels/MainWindowViewModel.Data` (autosave, recovery, relink on open, Clear cache), `App.Crash` (crash log and last autosave), `Views/WindowCapture` (window and dialog screenshots), `Services/SmokeRunner.Settings` and `Services/SmokeRunner.Dialogs` with `build/smoke/m7.smoke` and `build/smoke/m7b.smoke` (section 10.4), the root `README.md`. After the M7 review: `Services/PlatformFeatures` (where OS file drops work, section 10.1).
 
 **Agent integration** (milestones A1 to A4; the full map and rules are in `docs/AGENT_INTEGRATION.md` section 2.1):
 - **Core (A1):** `Session/ProjectSession.Group.cs` (groups and the write gate; ProjectSession becomes partial), `Session/SessionWriter`, `ChangeKind.GroupCommit` and `GroupCancel`, `Editing/TimelineEdits.Ranges.cs` (`RemoveRanges`).
 - **Media (A2):** `Preview/StillRenderer`, `Preview/RangeAudioReader`, `Settings/AppSettings.Agent`, `AppPaths.AgentDirectory`.
 - **Cutlass.Agent (A1, A2):**
-  - `Api/`: DTOs, requests, `AgentJsonContext`, `ToolCatalog`, summary mapper and describer. Effects batch 2 adds `Api/Dto/VideoEffectsDto` (the `effects` object of `edit.clip-props` and of every video clip's `video` block).
+  - `Api/`: DTOs, requests, `AgentJsonContext`, `ToolCatalog`, summary mapper and describer. Effects batch 2 adds `Api/Dto/VideoEffectsDto` (the `effects` object of `edit.clip-props` and of every video clip's `video` block); effects batch 3 adds `Api/Dto/AudioEffectsDto` (the `audioEffects` object of `edit.clip-props` and the `effects` block of every audio clip's `audio`).
   - `Lock/`: `AgentLock` and its states.
   - `Tools/`: the tool groups, `EditRunner`, `PathPolicy`, `LevelAnalyzer`, `SilenceFinder`, the audit log and the event queue.
   - `Imaging/`: `PngEncoder`, `ContactSheetComposer`.
@@ -211,7 +214,13 @@ public sealed record VideoEffects(bool FlipH, bool FlipV, double RotationDegrees
 public sealed record Transform(double X, double Y, double Scale, double CropLeft, double CropTop, double CropRight,
     double CropBottom);   // X,Y px from canvas center; Scale relative to fit; crops are fractions 0..0.9
 public sealed record ColorAdjust(double Brightness, double Contrast, double Saturation, double Gamma); // neutral 0,1,1,1
-public sealed record AudioProps(double GainDb, long FadeInFrames, long FadeOutFrames, ImmutableArray<VolumeKey> Keys);
+public sealed record AudioProps(double GainDb, long FadeInFrames, long FadeOutFrames, ImmutableArray<VolumeKey> Keys,
+    AudioEffects Effects);
+public sealed record AudioEffects(double HighPassHz, double LowPassHz, double BassDb, double TrebleDb, bool Compressor,
+    double CompressorThresholdDb, double CompressorRatio, bool Gate, double GateThresholdDb, double Pan, bool Mono);
+                                              // None = (0, 0, 0, 0, false, -20, 4, false, -40, 0, false); cut-offs 0 (off) or
+                                              // 20..2000 Hz and 200..20000 Hz (a value below the range snaps to 0), shelves -20..20 dB,
+                                              // thresholds -60..0 and -80..0 dBFS, ratio 1..20, pan -1..1; clamped in SanitizeAudio
 public sealed record VolumeKey(long Frame, double Db);      // Frame relative to clip Start
 public sealed record TitleSpec(string Text, string Font, double Size, string Color, double OutlineWidth, string OutlineColor,
     bool Box, string BoxColor, double BoxPadding, TitleAnchor Anchor, double OffsetX, double OffsetY);
@@ -305,7 +314,7 @@ public sealed class ProjectSession                                   // UI threa
 ### 3.5 Serialization
 
 - **Format.** System.Text.Json with a source-generated `ProjectJsonContext`, camelCase, indented, UTF-8 without BOM, `\n` line endings on every OS, and the relaxed encoder so non-ASCII text stays literal.
-- **DTOs.** The serializer maps to and from DTOs, so the model has no JSON attributes. Unknown fields are ignored. Additive fields need no schema bump: a DTO initializer equal to the neutral value plus `?? new()` on read makes a missing field mean "neutral" (effects batch 2 added `video.effects` this way; the example below omits it, as every file saved before the batch does, and it reads as `VideoEffects.None`).
+- **DTOs.** The serializer maps to and from DTOs, so the model has no JSON attributes. Unknown fields are ignored. Additive fields need no schema bump: a DTO initializer equal to the neutral value plus `?? new()` on read makes a missing field mean "neutral" (effects batch 2 added `video.effects` and effects batch 3 `audio.effects` this way; the example below omits them, as every file saved before the batch does, and they read as `VideoEffects.None` and `AudioEffects.None`).
 - **Migration.** `ProjectMigrator.Migrate(JsonNode)` upgrades old `schemaVersion`s. Schema 0 (files without `schemaVersion`) gains `format`, renames `fps` to `frameRate`, and adds missing `markers`, `transitions` and clip `type`. A newer schema is refused.
 - **Paths** use forward slashes.
 - **Atomic save.** `ProjectStore` writes a unique temp file `<path>.<pid>.<8 hex>.tmp` (`ProjectStore.TempPath`), flushes, then calls `File.Move(tmp, path, overwrite: true)`. `SettingsStore` (`settings.json`) and `RecentProjectsStore` (`recent.json`) use the same temp name, so two instances saving at once never write into one temp file.
@@ -401,7 +410,7 @@ On Linux a picked or bundled build that lost its execute bits (unzipped) gets th
 
 **`CapabilityProbe`** caches its results in `capabilities.json`, keyed by path, size and mtime.
 - **Lists.** Encoders come from `-encoders` and filters from `-filters`. A filter line is one whose first token contains only `TSC.` and whose third token contains `->`. The name is the second token.
-- **Required filters:** color, anullsrc, nullsrc, trim, atrim, setpts, asetpts, fps, tpad, apad, concat, xfade, overlay, scale, pad, crop, setsar, setparams, format, aformat, aresample, atempo, afade, fade, volume, amix, amerge, adelay, eq, lut, framestep, alimiter, split, palettegen, paletteuse, tile, settb, anull, hflip, vflip, rotate, hue, colortemperature, colorbalance, gblur, unsharp, vignette, chromakey.
+- **Required filters:** color, anullsrc, nullsrc, trim, atrim, setpts, asetpts, fps, tpad, apad, concat, xfade, overlay, scale, pad, crop, setsar, setparams, format, aformat, aresample, atempo, afade, fade, volume, amix, amerge, adelay, eq, lut, framestep, alimiter, split, palettegen, paletteuse, tile, settb, anull, hflip, vflip, rotate, hue, colortemperature, colorbalance, gblur, unsharp, vignette, chromakey, highpass, lowpass, bass, treble, agate, acompressor, pan.
   - If any is missing, the status is red and preview and export are disabled.
   - `drawtext` is optional. Without it, titles are disabled with a banner.
 - **Script syntax.** Write `nullsrc=s=16x16:d=0.04[v]` to `probe.ffg`, then:
@@ -673,7 +682,16 @@ For a segment rendering `[g0, g1)`:
 **Audio segment** (`S_seg = SamplesAt(g1) - SamplesAt(g0)`, seek `FloorMicros(s(g0))`):
 1. `[k:<audioStreamIndex>]aresample=48000:async=1:first_pts=0` (pads leading silence when the audio starts after the seek point).
 2. Only if speed != 1, the atempo pre-roll (`AtempoPreRoll`): the seek moves 0.2 s (9600 source samples) earlier, and `adelay=<d>S:all=1` pads with silence the part of those 0.2 s that lies before the file start. Then the `atempo` steps within [0.5, 2.0], then `atrim=start_sample=<H>,asetpts=PTS-STARTPTS`, where `H = round(9600*100/speed) - lead(speed)`. atempo (WSOLA) fades in its first window and puts its output early by a speed-dependent lead (about 4.5 to 32 ms); the lead is calibrated every 5 percent per chain shape (0.5 then f, f alone, 2 then f) on 100 ms Hann-windowed 997 Hz tone bursts and interpolated linearly. It depends a little on the content (a 311 Hz burst differs by up to 2 ms at 25 percent, under 0.5 ms from 50 percent up). Every segment and every playback window therefore starts in atempo's steady state, so window seams neither skip nor repeat source audio. A single isolated click cannot be placed better than about half an atempo window (WSOLA moves it with its phase), so the calibration and its integration test (`AtempoAlignmentTests`: within 1 ms at 25, 50, 150, 200 and 300 percent) use bursts.
-3. `aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo`, then `apad=whole_len=<S_seg>,atrim=end_sample=<S_seg>`.
+3. `aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo`.
+   3a. The per-clip audio effects (`AudioEffectFilters`, effects batch 3). At this point the stream is 48 kHz stereo fltp, every filter below is 1:1 in sample count, and nothing here depends on timestamps, so they sit before the seal of step 3b, the offset of step 4 and the pts-based envelope and fades. A neutral value emits nothing, so a clip without effects keeps the old chain byte for byte. Fixed order, numbers through `FfNum`, dynamics values linear (never a `dB` suffix):
+      1. `highpass=f=<Hz>` when the high-pass is on (`HighPassHz > 0`).
+      2. `lowpass=f=<Hz>` when the low-pass is on.
+      3. `bass=g=<dB>:f=100` when `BassDb != 0`.
+      4. `treble=g=<dB>:f=3000` when `TrebleDb != 0`.
+      5. `agate=threshold=<lin>:ratio=4:attack=5:release=100:range=0.001000` when the gate is on, `lin = 10^(GateThresholdDb/20)` (the range is explicit because the default closes the gate by only 24 dB).
+      6. `acompressor=threshold=<lin>:ratio=<ratio>:attack=5:release=50:knee=1:makeup=1` when the compressor is on, threshold linear with a floor of 0.001 (the filter's minimum); clip gain in step 5 then acts as make-up gain.
+      7. The stereo field: `pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1` for Mono (the stream stays stereo), else for `Pan != 0` the constant-power pan `pan=stereo|c0=<l>*c0|c1=<r>*c1` with `theta = (Pan + 1) * PI / 4`, `l = cos(theta)`, `r = sin(theta)`. The pan spec uses `|` separators and holds only digits, `*` and `+`, never `:` or `,`, so it needs no quoting.
+   3b. `apad=whole_len=<S_seg>,atrim=end_sample=<S_seg>`.
 4. `asetpts=PTS-STARTPTS+<oS>`, only when `oS > 0`. The timebase is exactly 1/48000.
 5. `volume=<g>dB`, or the envelope from section 7.7.
 6. `afade`, `curve=tri`, for the crossfade or the user fade at each end, with `ss` and `ns` in samples from the extent start.
@@ -727,6 +745,7 @@ Every range compiles through one path: export, one-frame scrub, playback window,
   - Output is `-f s16le -c:a pcm_s16le` with 2N channels (verified for N = 2, 5, 8).
   - If it fails at runtime, playback falls back to Mixed, where mute and solo changes restart playback.
 - **Speed in windows.** Both layouts carry the atempo pre-roll of 7.3, so a playback window that starts inside a speed-changed clip begins in atempo's steady state and its first sample follows the previous window's last one (`AtempoAlignmentTests` joins 37-frame windows at 50 and 200 percent).
+- **Effects in windows.** The per-clip audio effects (7.3 step 3a) are emitted per segment, so they apply in both layouts. Their filter state (the IIR biquads and the dynamics envelopes) starts cold at every playback window, and the atempo pre-roll is not extended for them (effects batch 3), so a very low cut-off or a slow release may click at a window seam; exports are one continuous graph and are unaffected.
 
 ### 7.7 Tails, numbers, labels, delivery
 
@@ -1044,7 +1063,7 @@ ffmpeg `bgra` alpha is 255, so `Premul` is correct. Both bitmaps are recreated w
   - A 20 minute watchdog ends a hung run with code 1.
   - M5 adds `play [speed=1|2|4]` (Space, then L), `stop [max-drift=<frames>]`, `wait-jobs [timeout=s]` and `mute <track>`. While playing, the runner samples the clock frame, the last presented frame and the meter every 0.5 s. `stop` presses K, checks that the playhead parked on the last presented frame, and fails when the clock drifted from the wall clock by more than `max-drift` frames (default 2), measured from the first sample so the start latency does not count.
   - M6 adds `source-open`, `source-in`, `source-out`, `source-insert`, `source-overwrite`, `monitor`, `match-frame`, `key <chord>` (a press through `KeyBindingService`), `timecode <text>` (the click-to-type readout), `copy`, `cut`, `paste`, `trim-start`, `trim-end`, `add-transition`, `speed`, `select-gap`, `close-gap`, `add-track`, `expect-duration`, `expect-playhead`, `expect-source` and `expect-transitions`, and `expect-clips <count>` counts every track. Commands are run through the command registry, so menus, keys and the smoke run share one path. `build/smoke.ps1 -Script m6` runs `build/smoke/m6.smoke` on the m4 clips with an export whose frame count ffprobe checks.
-  - Effects batch 2 adds `clip-prop <track> <pos> <field>=<value>...`: it selects the media clip under the frame and sets Inspector rows by label (spaces as `-`, number rows in their display unit, toggles `true|false`, `key-color=#RRGGBB`), through the same row objects the view binds, so the coalesce keys and undo labels are exercised. `m6.smoke` uses it for Rotation and Hue on clipB and drops `adjust:Grayscale` on clipA before the export, so the export's frame count check proves `rotate`, `hue=h` and `hue=s=0` run on the installed ffmpeg; `shots/13-effects.png` shows the EFFECTS and CHROMA KEY groups.
+  - Effects batch 2 adds `clip-prop <track> <pos> <field>=<value>...`: it selects the media clip under the frame and sets Inspector rows by label (spaces as `-`, number rows in their display unit, toggles `true|false`, `key-color=#RRGGBB`), through the same row objects the view binds, so the coalesce keys and undo labels are exercised. `m6.smoke` uses it for Rotation and Hue on clipB and drops `adjust:Grayscale` on clipA before the export, so the export's frame count check proves `rotate`, `hue=h` and `hue=s=0` run on the installed ffmpeg; `shots/13-effects.png` shows the EFFECTS and CHROMA KEY groups. Effects batch 3 adds no command: a hyphenated row label matches its spaced spelling, so `clip-prop A1 150 high-pass=120 pan=-30` sets the AUDIO EFFECTS rows of the clipB audio, `effect-drop adjust:Mono A1 30` drops the Mono preset on the clipA audio, both before the export (its probe proves `highpass`, `pan` and the mono downmix run), and `shots/14-audio-effects.png` shows the group.
   - The M6 verify run adds `source-drop video|audio|both <track> <pos> [insert]` (the Source payload round-trips through its drag text, then `PreviewSourcePlacements` and `PlaceSource`), `effect-drop <effect id> <track> <pos>` (`PreviewAt`, then `ApplyAt`), `select-transition <track> [index]`, `volume-key <track> <pos> <dB>`, `panel media|effects` and `expect-section <key prefix> [header=<text>]`. After the export, `m6.smoke` uses them for the DESIGN 5 checklist screenshots: a selected clip with fades and the Clip section, Source with In/Out after Source drops, a title with the Title section, a clamped transition with its red flag and notice, a gap selection, ruler markers, volume keyframes and the Effects tab. Mouse drags themselves (roll, slip, trims, fades) cannot be scripted and were checked by reading the drag classes against DESIGN 5.4 and 5.5.
   - The M5 verify run also uses `solo <track>`, `expect-meter [min=<dBFS>] [max=<dBFS>]` (the louder master meter channel, for live mute and solo), `expect-artifacts <media> [thumbs] [peaks] [proxy]` and `jobs open|close`. The jobs popover is its own window, so `screenshot` does not show it; `log CAPTURE <name>` lines mark moments for an outside screen capture.
 - M7 adds `settings [key] [page=...] [<field>=<value>...] [expect-problem=<text>] [validate] [clear-cache] [apply|cancel]` (drives `SettingsViewModel`; `key` opens it with Ctrl+, through the keymap and takes the dialog the smoke dialog service was asked to show), `expect-setting <property> <value>` (in effect and in `settings.json`), `export ... height=<n>` (the custom size) and `width=<n>` (a GIF width), and `probe ... container=<name> novideo noaudio pixfmt=<fmt> tag=<fourcc> duration=<s>|export [tolerance=<s>]`. A run writes the settings it started with back at its end, so it never changes the user's settings (exports remember their folder and preset there).
@@ -1072,7 +1091,7 @@ ffmpeg `bgra` alpha is 255, so `Premul` is correct. Both bitmaps are recreated w
 - **Other Core:** `SnapEngine` (threshold across zooms, nearest candidate, excluded ids). Session and history (coalescing inside and outside 1.5 s, gestures, the 500 cap, dirty state). Serializer (round trip, golden file, unknown fields, migration). Number-formatting classes run under `de-DE`.
 - **Compiler golden tests:**
   - Files: `tests/Cutlass.Tests/Compiler/Goldens/<case>.ffg` and `<case>.inputs.txt` (one input per line). `CUTLASS_UPDATE_GOLDEN=1` rewrites them.
-  - Cases: single clip, gap first, cuts, each transition kind (`transition_kinds` for the first eight, `transition_kinds_more` for the 33 kinds of effects batch 1), a one-frame mid-transition window, title, PiP with negative position, crop and opacity, letterboxed fit, speeds 25%/50%/200%, envelope, fades with a window offset, still, colour adjust, every video effect on one clip (`video_effects`) and on both clips of a crossfade run (`video_effects_in_run`), mute/solo export, PerTrack audio, empty audio, audio-only, GIF, framestep, and section 7.8 byte for byte. `TimelineCompilerTests` also pins that a neutral clip emits none of the effect filters and that every effect emits in the 7.3 order.
+  - Cases: single clip, gap first, cuts, each transition kind (`transition_kinds` for the first eight, `transition_kinds_more` for the 33 kinds of effects batch 1), a one-frame mid-transition window, title, PiP with negative position, crop and opacity, letterboxed fit, speeds 25%/50%/200%, envelope, fades with a window offset, still, colour adjust, every video effect on one clip (`video_effects`) and on both clips of a crossfade run (`video_effects_in_run`), every audio effect across three clips (`audio_effects`: all on one clip, a high-pass after the atempo block at speed 50, and treble plus pan on a clip with keys and fades in a window that starts inside it, so the order against the asetpts offset, the envelope and afade is pinned), mute/solo export, PerTrack audio, empty audio, audio-only, GIF, framestep, and section 7.8 byte for byte. `TimelineCompilerTests` also pins that a neutral clip emits none of the effect filters and that every effect emits in the 7.3 order, and for audio that the effects sit between `channel_layouts=stereo,` and `,apad=whole_len=` in the step 3a order while `AudioProps.Default` keeps the historical chain; `AudioEffectFiltersTests` (de-DE) covers the pan law, the dB to linear conversion and the filter text.
   - A determinism test compiles the same project twice.
   - Inputs: a duplicated clip gets two inputs, linked audio and video share one, different speeds never share. The atempo head trim follows its calibration table, and a pre-roll before the file start is padded with `adelay`.
 - **Parsers:**
@@ -1095,7 +1114,8 @@ color=c=black:s=320x180:r=25:d=20,geq=lum='if(bitand(N\,pow(2\,floor(X/40)+8*flo
 aevalsrc='if(eq(mod(n\,48000)\,0)\,0.9\,0)':s=48000:d=20      -> impulse every second
 testsrc2=s=320x180:r=30:d=3 + -itsoffset 0.5 impulse            -> delayed_audio.mov (pcm_s16le)
 flash on frames with mod(N,30)=0 + impulse                        -> sync.mkv
-sine=f=1000:r=48000:d=10 -> tone.wav;  color=c=red:s=320x240 -frames:v 1 -> red.png;  color=c=0x00FF00:s=320x240 -frames:v 1 -> green.png (pure #00FF00, the key colour the test uses)
+sine=f=1000:r=48000:d=10 -> tone.wav;  aevalsrc='sin(2*PI*440*t)|sin(2*PI*1000*t)':c=stereo:s=48000:d=4 -> stereo_tones.wav (440 Hz left, 1 kHz right: the mono downmix oracle)
+color=c=red:s=320x240 -frames:v 1 -> red.png;  color=c=0x00FF00:s=320x240 -frames:v 1 -> green.png (pure #00FF00, the key colour the test uses)
 probe and process media (M2), testsrc2=s=320x180 + sine, mpeg4 video:
    -> cfr25_av.mp4 (r=25, aac 48 kHz stereo); cfr2997_av.mkv (r=30000/1001, pcm_s16le 44.1 kHz mono)
    -> offset_start.mov (-output_ts_offset 2.5, so format.start_time is 2.5)
@@ -1119,6 +1139,7 @@ oracle source, -c:v mpeg4 -bf 2 -q:v 2                            -> oracle25_bf
 - **Inputs:** a clip used twice 10 s apart gets two inputs and shows the right oracle frames, flashes and impulses in both places (`InputSharingTests`).
 - **Frame index:** the B-frame AVI gets no index, and the CFR fallback shows what the decoder shows.
 - **Levels:** envelope RMS within 1 dB. The limiter leaves unclipped levels alone.
+- **Audio effects (`AudioEffectsTests`, effects batch 3):** the 1 kHz sine oracle (-21.07 dBFS mono, -24.08 dBFS per channel after the aformat upmix) is exported as WAV twice over 150 frames, plain and with one effect, and the per-channel RMS over the middle (0.5 s skipped at each end) is compared: low-pass 200 Hz at least 20 dB down; high-pass 200 Hz within 0.5 dB; high-pass 2 kHz at least 10 dB down; bass -12 dB within 0.5 dB (1 kHz is above the 100 Hz shelf); treble -12 dB takes between 0.1 and 2 dB off (1 kHz sits on the skirt of the 3 kHz shelf: an RBJ high shelf takes 0.19 dB there at Q 0.707, the convention this ffmpeg follows, and 1.24 dB at Q 0.5); compressor threshold -30 dB at 4:1 takes between 4.2 and 7 dB (the RMS law gives (30 - 24.08) * 0.75 = 4.4 dB, the peak law (30 - 21.07) * 0.75 = 6.7 dB, and ffmpeg's "rms" detector with a 5 ms attack rides between them on a steady sine; 6.0 dB measured) and threshold -10 dB changes nothing within 0.2 dB; gate threshold -10 dB closes to below -55 dBFS and -40 dB changes nothing within 0.2 dB; pan hard right leaves the left channel at least 40 dB below the reference and the right within 1 dB of the pan law; the mono sum of `stereo_tones.wav` makes both channels equal within 1 LSB where they differed before. Every export decodes to exactly `SamplesAt(frames)` samples. `FeatureCoverageTests` puts a high-pass and the compressor on the envelope clip, so the exact sample counts cover effects in both layouts, and `AtempoAlignmentTests` shows a high-pass on a 150 percent clip adds no latency The mono case runs 100 frames (3.33 s) because `stereo_tones.wav` is 4 s long, and asserts `SamplesAt(100)`.
 - **Formats and previews:** BT.709 tags are present. Every available preset decodes. PerTrack audio has 2N channels and the expected bytes.
 - **Proxies:** the mapping is `exact` for the CFR oracles.
 - **Robustness:**

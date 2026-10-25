@@ -26,6 +26,9 @@ public sealed class ClipPropsRequest : MutationRequest
     /// <summary>Gain in dB (audio).</summary>
     public double? GainDb { get; set; }
 
+    /// <summary>Audio effect fields (audio).</summary>
+    public AudioEffectsDto? AudioEffects { get; set; }
+
     /// <summary>Fade-in frames.</summary>
     public long? FadeInFrames { get; set; }
 

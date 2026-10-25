@@ -96,6 +96,10 @@ public sealed partial class EffectsViewModel : ObservableObject
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FlipH", "Flip Horizontal", EffectCategory.Adjustment, "⇋", string.Empty, "Mirrors the selected video clips horizontally (again to undo)."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FlipV", "Flip Vertical", EffectCategory.Adjustment, "⇅", string.Empty, "Mirrors the selected video clips vertically (again to undo)."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "ResetEffects", "Reset Effects", EffectCategory.Adjustment, "E0", string.Empty, "Removes every video effect (flips, rotation, colour effects, blur, sharpen, vignette, chroma key) of the selected clips."));
+        // Effects batch 3: the audio presets, applied to the selected or dropped-on audio clips.
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "Mono", "Mono", EffectCategory.Adjustment, "MO", string.Empty, "Sums the selected audio clips to mono (again to undo)."));
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "Voice", "Voice (high-pass 80 Hz)", EffectCategory.Adjustment, "HP", string.Empty, "An 80 Hz high-pass on the selected audio clips to take rumble out of speech."));
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "ResetAudioEffects", "Reset Audio Effects", EffectCategory.Adjustment, "A0", string.Empty, "Removes every audio effect (filters, bass, treble, compressor, gate, pan, mono) of the selected clips."));
 
         DefaultTransitionKind = TransitionKind.Crossfade;
         MarkDefault(DefaultTransitionKind);
@@ -564,6 +568,9 @@ public sealed partial class EffectsViewModel : ObservableObject
             "FlipH" => (c => WithEffects(c, e => e with { FlipH = !e.FlipH }), "Flip Horizontal"),
             "FlipV" => (c => WithEffects(c, e => e with { FlipV = !e.FlipV }), "Flip Vertical"),
             "ResetEffects" => (c => WithEffects(c, _ => VideoEffects.None), "Reset Effects"),
+            "Mono" => (c => WithAudioEffects(c, e => e with { Mono = !e.Mono }), "Mono"),
+            "Voice" => (c => WithAudioEffects(c, e => e with { HighPassHz = 80 }), "Voice High-pass"),
+            "ResetAudioEffects" => (c => WithAudioEffects(c, _ => AudioEffects.None), "Reset Audio Effects"),
             _ => (null, string.Empty),
         };
         if (spec.Change is null)
@@ -578,6 +585,9 @@ public sealed partial class EffectsViewModel : ObservableObject
 
     private static Clip WithEffects(Clip clip, Func<VideoEffects, VideoEffects> change) =>
         clip is MediaClip { Stream: StreamKind.Video } m ? m with { Video = m.Video with { Effects = change(m.Video.Effects) } } : clip;
+
+    private static Clip WithAudioEffects(Clip clip, Func<AudioEffects, AudioEffects> change) =>
+        clip is MediaClip { Stream: StreamKind.Audio } m ? m with { Audio = m.Audio with { Effects = change(m.Audio.Effects) } } : clip;
 
     private static Clip WithFades(Clip clip, long? fadeIn, long? fadeOut) => clip switch
     {

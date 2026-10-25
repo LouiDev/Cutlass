@@ -193,7 +193,11 @@ internal static class AudioEmitter
                 .Then("asetpts=PTS-STARTPTS");
         }
 
-        chain.Then(Aformat).Then("apad=whole_len=" + samples).Then("atrim=end_sample=" + samples);
+        // TECH_BRIEF 7.3 step 3a: the per-clip effects run on the 48 kHz stereo fltp stream, before apad/atrim seal the
+        // segment (every effect is 1:1 in samples) and before the pts-based offset, envelope and fades. Neutral emits nothing.
+        chain.Then(Aformat);
+        AudioEffectFilters.Append(chain, clip.Audio.Effects);
+        chain.Then("apad=whole_len=" + samples).Then("atrim=end_sample=" + samples);
         var offsetSamples = ctx.SamplesAt(segment.Start) - ctx.SamplesAt(e0);
         if (offsetSamples > 0)
         {

@@ -66,7 +66,7 @@ public sealed class SplitDeleteTests
     {
         var clip = A("a1", 0, 40) with
         {
-            Audio = new AudioProps(0, 5, 6, [new VolumeKey(0, 0), new VolumeKey(30, -12)]),
+            Audio = new AudioProps(0, 5, 6, [new VolumeKey(0, 0), new VolumeKey(30, -12)], AudioEffects.None),
         };
         var p = new ProjectBuilder().With(A1, clip).Build();
         var q = ModelAssert.Changed(p, TimelineEdits.Split(_ids, p, [A1], 21));

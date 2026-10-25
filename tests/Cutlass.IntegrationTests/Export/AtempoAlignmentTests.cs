@@ -54,6 +54,26 @@ public sealed class AtempoAlignmentTests
         AssertAligned(Left(samples, 2), speed);
     }
 
+    [FfmpegFact]
+    public async Task AnAudioEffectAddsNoLatencyToASpeedChangedClip()
+    {
+        // Effects batch 3: the per-clip filters are 1:1 in samples, so a high-pass after the atempo block leaves the bursts in place.
+        const int Speed = 150;
+        await using var kit = await ExportKit.CreateAsync();
+        var asset = await kit.AssetAsync("m_b", _media.Bursts);
+        var catalog = await kit.CatalogAsync([asset]);
+        var frames = ClipFrames(Speed);
+        var audio = AudioProps.Default with { Effects = AudioEffects.None with { HighPassHz = 50 } };
+        var project = Project(320, 180, FrameRate.Fps30, [asset], Track("tr_a1", TrackKind.Audio, [A("c_a", 0, frames, "m_b", Micros(SourceInMicros), Speed, audio)]));
+
+        var job = await kit.ExportAsync(kit.Request(project, catalog, ExportPresets.Wav, "atempo_hp150", 0, frames));
+
+        ExportKit.AssertCompleted(job);
+        var samples = await ExportKit.DecodeAudioAsync(job.OutputPath);
+        Assert.Equal(TimeMath.SamplesAt(frames, FrameRate.Fps30), samples.Length / 2);
+        AssertAligned(Left(samples, 2), Speed);
+    }
+
     [FfmpegTheory]
     [InlineData(50)]
     [InlineData(200)]

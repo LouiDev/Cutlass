@@ -13,6 +13,7 @@ Cutlass is a small, fast non-linear video editor for Windows and Linux, built wi
 - **Speed.** Constant speed from 25% to 400% with the pitch kept.
 - **Volume keyframes.** Clip gain and a keyframed volume envelope drawn on audio clips.
 - **Picture in picture and color.** Position, scale, crop, opacity, brightness, contrast, saturation and gamma.
+- **Clip effects.** Static per-clip video effects (flip, rotation, hue, temperature and tint, blur, sharpen, vignette, grayscale, chroma key) and audio effects (high-pass, low-pass, bass and treble shelves, compressor, gate, constant-power pan, mono), set in the Inspector or dropped from the Effects tab.
 - **Proxies.** Created automatically for heavy media (Auto policy) or on request, used for preview only.
 - **Playback with audio.** Frame accurate scrub and step, real-time playback through OpenAL with J/K/L shuttle at 1x, 2x and 4x, loop In to Out, a master meter and a dropped-frame indicator.
 - **Export presets.** H.264, H.265, VP9, AV1, ProRes 422 HQ, GIF, MP3, AAC, WAV and FLAC, for the whole sequence or In to Out, with quality and resolution options, a job queue with progress and cancel, and "Show ffmpeg command". Presets the ffmpeg build cannot encode are greyed out with the reason.

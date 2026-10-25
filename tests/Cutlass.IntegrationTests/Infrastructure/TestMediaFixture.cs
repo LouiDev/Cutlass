@@ -11,7 +11,7 @@ namespace Cutlass.IntegrationTests.Infrastructure;
 public sealed class TestMediaFixture : IAsyncLifetime
 {
     /// <summary>Bump when a recipe changes so stale media in the temp folder is not reused.</summary>
-    public const int RecipeVersion = 3;
+    public const int RecipeVersion = 4;
 
     /// <summary>Oracle frame width in pixels.</summary>
     public const int OracleWidth = 320;
@@ -65,6 +65,9 @@ public sealed class TestMediaFixture : IAsyncLifetime
     /// <summary>10 s 1 kHz sine at 48 kHz.</summary>
     public string Tone => PathOf("tone.wav");
 
+    /// <summary>4 s of 48 kHz stereo with a 440 Hz sine left and a 1 kHz sine right (the mono downmix oracle).</summary>
+    public string StereoTones => PathOf("stereo_tones.wav");
+
     /// <summary>A single 320x240 red PNG.</summary>
     public string RedPng => PathOf("red.png");
 
@@ -110,7 +113,7 @@ public sealed class TestMediaFixture : IAsyncLifetime
     /// <summary>Every generated file.</summary>
     public IReadOnlyList<string> AllFiles =>
     [
-        Oracle25Intra, Oracle25LongGop, Oracle2997, OracleVfr, Impulse, DelayedAudio, Sync, Tone, RedPng, GreenPng,
+        Oracle25Intra, Oracle25LongGop, Oracle2997, OracleVfr, Impulse, DelayedAudio, Sync, Tone, StereoTones, RedPng, GreenPng,
         Cfr25Av, Cfr2997Av, OffsetStart, VfrMixed, RotatedSource, Rotated90, OddPathClip, Bursts, Oracle25AviBFrames,
     ];
 
@@ -172,6 +175,9 @@ public sealed class TestMediaFixture : IAsyncLifetime
             ]).ConfigureAwait(false);
 
         await GenerateAsync(Tone, ["-f", "lavfi", "-i", "sine=f=1000:r=48000:d=10", "-c:a", "pcm_s16le"]).ConfigureAwait(false);
+        await GenerateAsync(
+            StereoTones,
+            ["-f", "lavfi", "-i", "aevalsrc='sin(2*PI*440*t)|sin(2*PI*1000*t)':c=stereo:s=48000:d=4", "-c:a", "pcm_s16le"]).ConfigureAwait(false);
         await GenerateAsync(RedPng, ["-f", "lavfi", "-i", "color=c=red:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
         await GenerateAsync(GreenPng, ["-f", "lavfi", "-i", "color=c=0x00FF00:s=320x240", "-frames:v", "1"]).ConfigureAwait(false);
 

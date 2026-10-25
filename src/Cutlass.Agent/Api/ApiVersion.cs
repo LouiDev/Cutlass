@@ -11,9 +11,11 @@ public static class ApiVersion
     /// routes and MCP names in <c>/v1/call</c> (AGENT_INTEGRATION 9.2). 3 added the extra xfade transition kinds
     /// (<c>wipeUp</c> to <c>zoomIn</c>) to <c>capabilities.transitionKinds</c> and the <c>kind</c> enums. 4 added the
     /// <c>effects</c> object (flips, rotation, hue, temperature, tint, blur, sharpen, vignette, grayscale, chroma key)
-    /// to <c>edit.clip-props</c> and to the <c>video</c> block of every video clip in the project summary.
+    /// to <c>edit.clip-props</c> and to the <c>video</c> block of every video clip in the project summary. 5 added the
+    /// <c>audioEffects</c> object (high-pass, low-pass, bass, treble, compressor, gate, pan, mono) to <c>edit.clip-props</c>
+    /// and <c>effects</c> to the <c>audio</c> block of every audio clip in the project summary.
     /// </summary>
-    public const int Revision = 4;
+    public const int Revision = 5;
 
     /// <summary>The route prefix of this version.</summary>
     public const string Prefix = "/v1";

@@ -136,6 +136,24 @@ public sealed class PropsTests
     }
 
     [Fact]
+    public void AudioEffectRangesClampAndLowCutOffsSnapToOff()
+    {
+        var p = new ProjectBuilder().With(A1, A("a1", 0, 10)).Build();
+        var wild = new AudioEffects(5000, 30000, -40, 25, true, -90, 50, true, 5, -3, true);
+        var q = ModelAssert.Changed(p, TimelineEdits.UpdateClips(p, ["a1"], c => c is MediaClip m ? m with { Audio = m.Audio with { Effects = wild } } : c, "Effects"));
+        Assert.Equal(new AudioEffects(2000, 20000, -20, 20, true, -60, 20, true, 0, -1, true), ModelAssert.Media(q, "a1").Audio.Effects);
+
+        // A cut-off below its lowest audible value means off: 10 Hz high-pass and 150 Hz low-pass both snap to 0.
+        var low = new AudioEffects(10, 150, 0, 0, false, -20, 4, false, -40, 0, false);
+        var r = ModelAssert.Changed(q, TimelineEdits.UpdateClips(q, ["a1"], c => c is MediaClip m ? m with { Audio = m.Audio with { Effects = low } } : c, "Effects"));
+        Assert.Equal(AudioEffects.None, ModelAssert.Media(r, "a1").Audio.Effects);
+
+        var nan = new AudioEffects(double.NaN, double.NaN, double.NaN, double.NaN, false, double.NaN, double.NaN, false, double.NaN, double.NaN, false);
+        ModelAssert.Unchanged(r, TimelineEdits.UpdateClips(r, ["a1"], c => c is MediaClip m ? m with { Audio = m.Audio with { Effects = nan } } : c, "Effects"));
+        Assert.Same(ModelAssert.Media(r, "a1").Audio, ModelAssert.Media(TimelineEdits.UpdateClips(r, ["a1"], c => c, "Noop").Project, "a1").Audio);
+    }
+
+    [Fact]
     public void EnableAndDisable()
     {
         var p = new ProjectBuilder().With(V1, V("c1", 0, 50)).Build();
@@ -238,7 +256,7 @@ public sealed class PropsTests
     [Fact]
     public void SequenceSettingsConvertPositionsByTime()
     {
-        var clip = A("a1", 25, 50) with { Audio = new AudioProps(0, 5, 10, [new VolumeKey(10, -3)]) };
+        var clip = A("a1", 25, 50) with { Audio = new AudioProps(0, 5, 10, [new VolumeKey(10, -3)], AudioEffects.None) };
         var p = new ProjectBuilder()
             .With(V1, V("c1", 0, 25, sourceFrame: 100), V("c2", 25, 25, sourceFrame: 300))
             .With(A1, clip)

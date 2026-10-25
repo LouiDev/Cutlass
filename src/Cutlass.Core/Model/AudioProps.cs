@@ -7,8 +7,9 @@ namespace Cutlass.Core.Model;
 /// <param name="FadeInFrames">Fade-in length in frames.</param>
 /// <param name="FadeOutFrames">Fade-out length in frames.</param>
 /// <param name="Keys">Volume keyframes sorted by frame, each in <c>[0, Duration)</c>.</param>
-public sealed record AudioProps(double GainDb, long FadeInFrames, long FadeOutFrames, ImmutableArray<VolumeKey> Keys)
+/// <param name="Effects">Static audio effects (filters, shelves, compressor, gate, pan, mono).</param>
+public sealed record AudioProps(double GainDb, long FadeInFrames, long FadeOutFrames, ImmutableArray<VolumeKey> Keys, AudioEffects Effects)
 {
-    /// <summary>0 dB, no fades and no keyframes.</summary>
-    public static AudioProps Default { get; } = new(0, 0, 0, ImmutableArray<VolumeKey>.Empty);
+    /// <summary>0 dB, no fades, no keyframes and no effects.</summary>
+    public static AudioProps Default { get; } = new(0, 0, 0, ImmutableArray<VolumeKey>.Empty, AudioEffects.None);
 }

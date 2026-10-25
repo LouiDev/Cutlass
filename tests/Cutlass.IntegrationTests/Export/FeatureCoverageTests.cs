@@ -137,7 +137,8 @@ public sealed class FeatureCoverageTests
             FadeOutFrames = 6,
         };
         var title = TitleSpec.Default with { Text = "Coverage: 100%, it's \"fine\"", Size = 20, Box = true, Anchor = TitleAnchor.Top };
-        var keys = new AudioProps(-2, 10, 10, [new VolumeKey(5, -18), new VolumeKey(40, 0), new VolumeKey(80, -9)]);
+        // Effects batch 3: a high-pass and the compressor on the envelope clip, so the exact sample counts cover effects in both layouts.
+        var keys = new AudioProps(-2, 10, 10, [new VolumeKey(5, -18), new VolumeKey(40, 0), new VolumeKey(80, -9)], AudioEffects.None with { HighPassHz = 80, Compressor = true });
 
         var project = Project(
             W,

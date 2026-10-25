@@ -22,7 +22,7 @@ public sealed class ProjectSummaryMapperTests
 
     private static Project Sample()
     {
-        var music = A("c_music", 0, 300, media: Music) with { Audio = AudioProps.Default with { GainDb = -6, FadeOutFrames = 12, Keys = [new VolumeKey(90, -3)] } };
+        var music = A("c_music", 0, 300, media: Music) with { Audio = AudioProps.Default with { GainDb = -6, FadeOutFrames = 12, Keys = [new VolumeKey(90, -3)], Effects = AudioEffects.None with { HighPassHz = 80, Compressor = true, Pan = -0.3 } } };
         return new ProjectBuilder()
             .With(
                 V1,
@@ -100,6 +100,17 @@ public sealed class ProjectSummaryMapperTests
         Assert.Equal(["c_05"], track.Clips.Select(c => c.Id));
         Assert.Equal(["x_01"], track.Transitions.Select(t => t.Id));
         Assert.Empty(dto.Markers);
+    }
+
+    [Fact]
+    public void EveryAudioEffectTokenIsDescribed()
+    {
+        var effects = AudioEffects.None with { LowPassHz = 8000, BassDb = 3, TrebleDb = -2, Gate = true, Pan = 0.5, Mono = true };
+        var p = new ProjectBuilder().With(A1, A("c_fx", 0, 60) with { Audio = AudioProps.Default with { Effects = effects } }).Build();
+
+        var text = ProjectDescriber.Describe(p, null, false, 1, 0, AgentLockState.Free, _ => true);
+
+        Assert.Contains(" lp 8000Hz bass +3dB treble -2dB gate pan R50 mono", text, StringComparison.Ordinal);
     }
 
     [Fact]

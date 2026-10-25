@@ -19,6 +19,8 @@ public sealed class ModelRecordTests
         Assert.Equal(VideoEffects.None, VideoProps.Default.Effects);
         Assert.Equal(0, AudioProps.Default.GainDb);
         Assert.True(AudioProps.Default.Keys.IsEmpty);
+        Assert.Equal(new AudioEffects(0, 0, 0, 0, false, -20, 4, false, -40, 0, false), AudioEffects.None);
+        Assert.Equal(AudioEffects.None, AudioProps.Default.Effects);
     }
 
     [Fact]

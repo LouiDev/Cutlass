@@ -871,7 +871,7 @@
   },
   {
     "name": "cutlass_set_clip_props",
-    "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, fades, enable.",
+    "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -1012,6 +1012,56 @@
         "gainDb": {
           "type": "number",
           "description": "Clip gain in dB (audio)."
+        },
+        "audioEffects": {
+          "description": "Audio filters (fields optional).",
+          "type": "object",
+          "properties": {
+            "highPassHz": {
+              "type": "number",
+              "description": "0 or 20 to 2000 (0 = off)."
+            },
+            "lowPassHz": {
+              "type": "number",
+              "description": "0 or 200 to 20000 (0 = off)."
+            },
+            "bassDb": {
+              "type": "number",
+              "description": "-20 to 20 (0), shelf at 100 Hz."
+            },
+            "trebleDb": {
+              "type": "number",
+              "description": "-20 to 20 (0), shelf at 3 kHz."
+            },
+            "compressor": {
+              "type": "boolean",
+              "description": "Compressor on (false)."
+            },
+            "compressorThresholdDb": {
+              "type": "number",
+              "description": "-60 to 0 (-20)."
+            },
+            "compressorRatio": {
+              "type": "number",
+              "description": "1 to 20 (4)."
+            },
+            "gate": {
+              "type": "boolean",
+              "description": "Noise gate on (false)."
+            },
+            "gateThresholdDb": {
+              "type": "number",
+              "description": "-80 to 0 (-40)."
+            },
+            "pan": {
+              "type": "number",
+              "description": "-1 left to 1 right (0)."
+            },
+            "mono": {
+              "type": "boolean",
+              "description": "Sum to mono, stays stereo (false)."
+            }
+          }
         },
         "fadeInFrames": {
           "type": "integer",

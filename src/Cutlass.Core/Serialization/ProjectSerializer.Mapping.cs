@@ -176,6 +176,20 @@ public static partial class ProjectSerializer
                             FadeIn = m.Audio.FadeInFrames,
                             FadeOut = m.Audio.FadeOutFrames,
                             Keys = [.. m.Audio.Keys.Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
+                            Effects = new AudioEffectsDto
+                            {
+                                HighPassHz = m.Audio.Effects.HighPassHz,
+                                LowPassHz = m.Audio.Effects.LowPassHz,
+                                BassDb = m.Audio.Effects.BassDb,
+                                TrebleDb = m.Audio.Effects.TrebleDb,
+                                Compressor = m.Audio.Effects.Compressor,
+                                CompressorThresholdDb = m.Audio.Effects.CompressorThresholdDb,
+                                CompressorRatio = m.Audio.Effects.CompressorRatio,
+                                Gate = m.Audio.Effects.Gate,
+                                GateThresholdDb = m.Audio.Effects.GateThresholdDb,
+                                Pan = m.Audio.Effects.Pan,
+                                Mono = m.Audio.Effects.Mono,
+                            },
                         },
                 };
             case TitleClip t:
@@ -301,6 +315,7 @@ public static partial class ProjectSerializer
                 var crop = t.Crop ?? [];
                 var c = v.Color ?? new ColorAdjustDto();
                 var fx = v.Effects ?? new VideoEffectsDto();
+                var afx = a.Effects ?? new AudioEffectsDto();
                 return new MediaClip(
                     dto.Id ?? string.Empty,
                     dto.Start,
@@ -336,7 +351,19 @@ public static partial class ProjectSerializer
                         a.GainDb,
                         a.FadeIn,
                         a.FadeOut,
-                        [.. Items(a.Keys, "volume key").Select(k => new VolumeKey(k.Frame, k.Db))]));
+                        [.. Items(a.Keys, "volume key").Select(k => new VolumeKey(k.Frame, k.Db))],
+                        new AudioEffects(
+                            afx.HighPassHz,
+                            afx.LowPassHz,
+                            afx.BassDb,
+                            afx.TrebleDb,
+                            afx.Compressor,
+                            afx.CompressorThresholdDb,
+                            afx.CompressorRatio,
+                            afx.Gate,
+                            afx.GateThresholdDb,
+                            afx.Pan,
+                            afx.Mono)));
             case "title":
                 var title = dto.Title ?? new TitleSpecDto();
                 return new TitleClip(

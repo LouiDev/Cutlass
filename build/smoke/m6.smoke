@@ -121,6 +121,15 @@ wait 500
 screenshot shots/13-effects.png
 deselect
 
+# Effects batch 3: a 120 Hz high-pass and a 30% left pan typed into the AUDIO EFFECTS rows of the clipB audio at 150,
+# and the Mono preset dropped on the clipA audio at 30. The export renders them through highpass, pan and the mono
+# downmix, so its probe also proves the audio effect filters run on this ffmpeg.
+clip-prop A1 150 high-pass=120 pan=-30
+effect-drop adjust:Mono A1 30
+expect-section clip
+screenshot shots/14-audio-effects.png
+deselect
+
 # Export through the export dialog and check the frame count with ffprobe.
 export h264 out/m6.mp4 quality=draft
 probe out/m6.mp4 frames=440 vcodec=h264 acodec=aac size=1280x720 bt709

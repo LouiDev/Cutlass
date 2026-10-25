@@ -270,9 +270,9 @@ internal sealed partial class EditTools
         switch (clip)
         {
             case MediaClip { Stream: StreamKind.Video } m:
-                if (req.GainDb is not null)
+                if (req.GainDb is not null || req.AudioEffects is not null)
                 {
-                    warnings.Add("gainDb applies to audio clips only; it was ignored for video clips.");
+                    warnings.Add("gainDb and audioEffects apply to audio clips only; they were ignored for video clips.");
                 }
 
                 var t = m.Video.Transform;
@@ -314,6 +314,8 @@ internal sealed partial class EditTools
                     warnings.Add("opacity, transform, color and effects apply to video clips only; they were ignored for audio clips.");
                 }
 
+                var ao = m.Audio.Effects;
+                var ar = req.AudioEffects;
                 return m with
                 {
                     Enabled = enabled,
@@ -322,10 +324,22 @@ internal sealed partial class EditTools
                         GainDb = req.GainDb ?? m.Audio.GainDb,
                         FadeInFrames = req.FadeInFrames ?? m.Audio.FadeInFrames,
                         FadeOutFrames = req.FadeOutFrames ?? m.Audio.FadeOutFrames,
+                        Effects = ar is null ? ao : new AudioEffects(
+                            ar.HighPassHz ?? ao.HighPassHz,
+                            ar.LowPassHz ?? ao.LowPassHz,
+                            ar.BassDb ?? ao.BassDb,
+                            ar.TrebleDb ?? ao.TrebleDb,
+                            ar.Compressor ?? ao.Compressor,
+                            ar.CompressorThresholdDb ?? ao.CompressorThresholdDb,
+                            ar.CompressorRatio ?? ao.CompressorRatio,
+                            ar.Gate ?? ao.Gate,
+                            ar.GateThresholdDb ?? ao.GateThresholdDb,
+                            ar.Pan ?? ao.Pan,
+                            ar.Mono ?? ao.Mono),
                     },
                 };
             case TitleClip title:
-                if (req.GainDb is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
+                if (req.GainDb is not null || req.AudioEffects is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
                 {
                     warnings.Add("Titles take opacity, fades and enabled only; use update_title for their style and position.");
                 }

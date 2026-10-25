@@ -305,6 +305,37 @@ public sealed class TimelineCompilerTests
     }
 
     [Fact]
+    public void NeutralAudioEffectsKeepTheHistoricalAudioChain()
+    {
+        var project = Project(Hd30, [AudioAsset("m_music", "D:/Audio/music.wav")], AudioTrack("tr_a1", [A("c_1", 0, 30, "m_music", 0)]));
+
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, video: false));
+
+        Assert.Equal(AudioEffects.None, ModelAssert.Media(project, "c_1").Audio.Effects);
+        Assert.Contains("channel_layouts=stereo,apad=whole_len=", render.GraphText, StringComparison.Ordinal);
+        Assert.All(["highpass", "lowpass", "bass=", "treble=", "agate", "acompressor", "pan="], name => Assert.DoesNotContain(name, render.GraphText, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EveryAudioEffectSitsBetweenAformatAndApadInTheDocumentedOrder()
+    {
+        var audio = AudioProps.Default with { Effects = GoldenCases.AllAudioEffects };
+        var project = Project(Hd30, [AudioAsset("m_music", "D:/Audio/music.wav")], AudioTrack("tr_a1", [A("c_1", 0, 30, "m_music", 0, audio: audio)]));
+
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, video: false));
+
+        Assert.Contains(
+            ",aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,"
+            + "highpass=f=80.000000,lowpass=f=12000.000000,bass=g=3.000000:f=100,treble=g=-2.000000:f=3000,"
+            + "agate=threshold=0.003162:ratio=4:attack=5:release=100:range=0.001000,"
+            + "acompressor=threshold=0.063096:ratio=3.000000:attack=5:release=50:knee=1:makeup=1,"
+            + "pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1,apad=whole_len=",
+            render.GraphText,
+            StringComparison.Ordinal);
+        Assert.Empty(render.Warnings);
+    }
+
+    [Fact]
     public void XfadeNamesCoverEveryVideoKind()
     {
         Assert.Equal("fadeblack", VideoEmitter.XfadeName(TransitionKind.DipToBlack));

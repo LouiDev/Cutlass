@@ -283,6 +283,12 @@ public sealed partial class TimelineControl
                 badges.Add(("fx", _palette.Bg0));
             }
 
+            // Effects batch 3: an audio clip with any audio effect also shows "fx" (gain, fades and keys draw as the volume line).
+            if (m.Stream == StreamKind.Audio && m.Audio.Effects != AudioEffects.None)
+            {
+                badges.Add(("fx", _palette.Bg0));
+            }
+
             if (TimelineQuery.SyncOffset(project, clip.Id) is { } offset && offset != 0)
             {
                 badges.Add(((offset > 0 ? "+" : string.Empty) + offset.ToString(CultureInfo.InvariantCulture), _palette.Danger));

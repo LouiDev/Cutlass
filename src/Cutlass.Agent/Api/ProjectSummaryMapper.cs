@@ -275,6 +275,20 @@ public static class ProjectSummaryMapper
                         FadeInFrames = a.FadeInFrames,
                         FadeOutFrames = a.FadeOutFrames,
                         Keys = [.. (a.Keys.IsDefault ? [] : a.Keys).Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
+                        Effects = new AudioEffectsDto
+                        {
+                            HighPassHz = a.Effects.HighPassHz,
+                            LowPassHz = a.Effects.LowPassHz,
+                            BassDb = a.Effects.BassDb,
+                            TrebleDb = a.Effects.TrebleDb,
+                            Compressor = a.Effects.Compressor,
+                            CompressorThresholdDb = a.Effects.CompressorThresholdDb,
+                            CompressorRatio = a.Effects.CompressorRatio,
+                            Gate = a.Effects.Gate,
+                            GateThresholdDb = a.Effects.GateThresholdDb,
+                            Pan = a.Effects.Pan,
+                            Mono = a.Effects.Mono,
+                        },
                     };
                 }
 

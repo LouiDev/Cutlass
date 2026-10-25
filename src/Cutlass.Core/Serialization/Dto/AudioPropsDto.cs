@@ -10,4 +10,6 @@ internal sealed class AudioPropsDto
     public long FadeOut { get; set; }
 
     public List<VolumeKeyDto> Keys { get; set; } = [];
+
+    public AudioEffectsDto Effects { get; set; } = new();
 }

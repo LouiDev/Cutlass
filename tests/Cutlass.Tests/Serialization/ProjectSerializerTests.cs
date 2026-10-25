@@ -40,7 +40,7 @@ public sealed class ProjectSerializerTests
         };
         var a1 = A("a1", 0, 50, link: "l1", sourceFrame: 100) with
         {
-            Audio = new AudioProps(-3.25, 0, 12, [new VolumeKey(10, 0), new VolumeKey(30, -12.5)]),
+            Audio = new AudioProps(-3.25, 0, 12, [new VolumeKey(10, 0), new VolumeKey(30, -12.5)], new AudioEffects(80, 12000, 2.5, -1.5, true, -24, 3, true, -50, -0.4, true)),
         };
         var p = new ProjectBuilder()
             .With(V1, c1, c2, t1)
@@ -193,6 +193,7 @@ public sealed class ProjectSerializerTests
         var c11 = Assert.IsType<MediaClip>(Assert.Single(a1.Clips));
         Assert.Equal((StreamKind.Audio, 12L, 0.0), (c11.Stream, c11.Audio.FadeOutFrames, c11.Audio.GainDb));
         Assert.Equal([new VolumeKey(90, 0), new VolumeKey(120, -12)], c11.Audio.Keys.ToArray());
+        Assert.Equal(AudioEffects.None, c11.Audio.Effects);
 
         // The example's transition names c_05, which is not on the track: the only invariant it breaks.
         var error = Assert.Single(TimelineValidator.Check(p));

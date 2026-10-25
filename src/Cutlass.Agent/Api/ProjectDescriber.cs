@@ -256,6 +256,8 @@ public static class ProjectDescriber
                     {
                         sb.Append(c, $" keys {m.Audio.Keys.Length}");
                     }
+
+                    AppendAudioEffects(sb, m.Audio.Effects);
                 }
                 else
                 {
@@ -354,6 +356,53 @@ public static class ProjectDescriber
             sb.Append(" key");
         }
     }
+
+    // Effects batch 3: compact tokens for the active audio effects (" hp 80Hz", " lp 8000Hz", " bass +3dB", " comp", " gate", " pan L30", " mono").
+    private static void AppendAudioEffects(StringBuilder sb, AudioEffects e)
+    {
+        var c = CultureInfo.InvariantCulture;
+        if (e.HighPassHz > 0)
+        {
+            sb.Append(c, $" hp {Num(e.HighPassHz)}Hz");
+        }
+
+        if (e.LowPassHz > 0)
+        {
+            sb.Append(c, $" lp {Num(e.LowPassHz)}Hz");
+        }
+
+        if (e.BassDb != 0)
+        {
+            sb.Append(c, $" bass {Signed(e.BassDb)}dB");
+        }
+
+        if (e.TrebleDb != 0)
+        {
+            sb.Append(c, $" treble {Signed(e.TrebleDb)}dB");
+        }
+
+        if (e.Compressor)
+        {
+            sb.Append(" comp");
+        }
+
+        if (e.Gate)
+        {
+            sb.Append(" gate");
+        }
+
+        if (e.Pan != 0)
+        {
+            sb.Append(c, $" pan {(e.Pan < 0 ? "L" : "R")}{Num(Math.Abs(e.Pan) * 100)}");
+        }
+
+        if (e.Mono)
+        {
+            sb.Append(" mono");
+        }
+    }
+
+    private static string Signed(double value) => (value > 0 ? "+" : string.Empty) + Num(value);
 
     private static string Num(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 }

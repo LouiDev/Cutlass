@@ -36,7 +36,7 @@ public sealed class EffectsViewModelTests
         var vm = Vm(Cuts(), out _);
         Assert.Equal(Enum.GetValues<TransitionKind>().Length, vm.Transitions.Count);
         Assert.Equal(["Centered", "Lower Third", "Top Caption"], vm.Titles.Select(t => t.Name));
-        Assert.Equal(8, vm.Adjustments.Count);
+        Assert.Equal(11, vm.Adjustments.Count);
         Assert.All(vm.Transitions, t => Assert.Equal("1 s", t.Detail));
         Assert.True(vm.Transitions.Single(t => t.TransitionKind == TransitionKind.Crossfade).IsDefault);
         Assert.Equal("cutlass/effect-id", EffectItem.DragFormat);
@@ -268,6 +268,54 @@ public sealed class EffectsViewModelTests
 
         var before = timeline.Session.UndoCount;
         vm.Apply(vm.Find("adjust:ResetEffects")!);
+        Assert.Equal("Nothing to change.", vm.StatusText);
+        Assert.Equal(before, timeline.Session.UndoCount);
+    }
+
+    [Fact]
+    public void MonoPresetTogglesTheSelectedAudioClips()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        timeline.Select(["v1", "a1"], false);
+        vm.Apply(vm.Find("adjust:Mono")!);
+        Assert.True(Clip<MediaClip>(timeline, "a1").Audio.Effects.Mono);
+        Assert.Equal(AudioProps.Default, Clip<MediaClip>(timeline, "v1").Audio);
+        Assert.Equal("Mono applied.", vm.StatusText);
+        Assert.Equal(1, timeline.Session.UndoCount);
+
+        vm.Apply(vm.Find("adjust:Mono")!);
+        Assert.Equal(AudioEffects.None, Clip<MediaClip>(timeline, "a1").Audio.Effects);
+    }
+
+    [Fact]
+    public void VoicePresetSetsAnEightyHertzHighPassAsADrop()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        vm.ApplyAt("adjust:Voice", A1, 10);
+        Assert.Equal(80, Clip<MediaClip>(timeline, "a1").Audio.Effects.HighPassHz);
+        Assert.Equal("Voice High-pass", timeline.Session.UndoLabel);
+        Assert.Equal(new EffectDropPreview(A1, 0, 50, EffectCategory.Adjustment), vm.PreviewAt("adjust:Voice", A1, 10));
+
+        // Dropped on a video clip it changes nothing (the audio partner is unlinked here).
+        var before = timeline.Session.UndoCount;
+        vm.ApplyAt("adjust:Voice", V1, 10);
+        Assert.Equal(AudioProps.Default, Clip<MediaClip>(timeline, "v1").Audio);
+        Assert.Equal(before, timeline.Session.UndoCount);
+    }
+
+    [Fact]
+    public void ResetAudioEffectsPresetRestoresNone()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        timeline.Session.Execute(p => TimelineEdits.UpdateClips(p, ["a1"], c => ((MediaClip)c) with { Audio = ((MediaClip)c).Audio with { GainDb = -6, Effects = AudioEffects.None with { HighPassHz = 120, Gate = true, Pan = -0.5 } } }, "Effects"));
+        timeline.Select(["a1"], false);
+        vm.Apply(vm.Find("adjust:ResetAudioEffects")!);
+        Assert.Equal(AudioEffects.None, Clip<MediaClip>(timeline, "a1").Audio.Effects);
+        Assert.Equal(-6, Clip<MediaClip>(timeline, "a1").Audio.GainDb);
+        Assert.Equal("Reset Audio Effects applied.", vm.StatusText);
+
+        var before = timeline.Session.UndoCount;
+        vm.Apply(vm.Find("adjust:ResetAudioEffects")!);
         Assert.Equal("Nothing to change.", vm.StatusText);
         Assert.Equal(before, timeline.Session.UndoCount);
     }

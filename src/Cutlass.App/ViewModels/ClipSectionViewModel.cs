@@ -10,8 +10,8 @@ namespace Cutlass.App.ViewModels;
 
 /// <summary>
 /// The inspector for media clips (DESIGN 4.4): Clip (name, file, enabled, start, duration, source in and out, speed),
-/// Transform, Color, Effects, Chroma Key, Fades and Audio. With several clips selected only fields they share show, and an edit applies to
-/// all of them as one undo step: the video groups act on the selected video clips and the audio group on the selected
+/// Transform, Color, Effects, Chroma Key, Fades, Audio and Audio Effects. With several clips selected only fields they share show, and an edit applies to
+/// all of them as one undo step: the video groups act on the selected video clips and the audio groups on the selected
 /// audio clips, so a linked video and audio pair shows both. Selected titles take part in the Clip rows only.
 /// </summary>
 public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
@@ -22,6 +22,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private readonly List<InspectorNumberField> _videoFields = [];
     private readonly List<InspectorNumberField> _audioFields = [];
     private readonly List<(InspectorToggleRow Row, Func<VideoProps, bool> Read)> _videoToggles = [];
+    private readonly List<(InspectorToggleRow Row, Func<AudioProps, bool> Read)> _audioToggles = [];
     private readonly InspectorGroup _clipGroup;
     private readonly InspectorGroup _transformGroup;
     private readonly InspectorGroup _colorGroup;
@@ -30,6 +31,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private readonly InspectorColorField _keyColorRow;
     private readonly InspectorGroup _fadesGroup;
     private readonly InspectorGroup _audioGroup;
+    private readonly InspectorGroup _audioFxGroup;
     private readonly InspectorInfoRow _fileRow;
     private readonly InspectorTimecodeField _sourceInRow;
     private readonly InspectorTimecodeField _sourceOutRow;
@@ -114,7 +116,8 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         Video(_fadesGroup, "Fade in", "video.fadeIn", "Fade", c => c.FadeInFrames, (m, v) => m with { Video = m.Video with { FadeInFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
         Video(_fadesGroup, "Fade out", "video.fadeOut", "Fade", c => c.FadeOutFrames, (m, v) => m with { Video = m.Video with { FadeOutFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
 
-        _audioGroup = AddGroup("AUDIO", () => Run(UpdateAudio("Reset Audio", m => m with { Audio = AudioProps.Default })));
+        // The AUDIO EFFECTS group has its own Reset, so this one keeps the effects (gain, fades and keyframes reset).
+        _audioGroup = AddGroup("AUDIO", () => Run(UpdateAudio("Reset Audio", m => m with { Audio = AudioProps.Default with { Effects = m.Audio.Effects } })));
         Audio("Gain", "audio.gain", "Gain", a => a.GainDb, (m, v) => m with { Audio = m.Audio with { GainDb = v } }, 0, TimelineEdits.MinGainDb, TimelineEdits.MaxGainDb, 0.1, 1, "dB");
         Audio("Fade in", "audio.fadeIn", "Fade", a => a.FadeInFrames, (m, v) => m with { Audio = m.Audio with { FadeInFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
         Audio("Fade out", "audio.fadeOut", "Fade", a => a.FadeOutFrames, (m, v) => m with { Audio = m.Audio with { FadeOutFrames = (long)v } }, 0, 0, 1_000_000, 0.25, 0, "f");
@@ -123,12 +126,28 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             ToolTip = "Adds a volume keyframe at the playhead (Ctrl+click on the volume line does the same)",
         });
 
+        // Effects batch 3 (DESIGN 4.4): the static audio effects in their own group, after AUDIO so the keyframe button
+        // stays the last AUDIO row. Thresholds are dBFS, the pan row is percent over the model's -1..1.
+        _audioFxGroup = AddGroup("AUDIO EFFECTS", () => Run(UpdateAudio("Reset Audio Effects", m => m with { Audio = m.Audio with { Effects = AudioEffects.None } })));
+        Audio(_audioFxGroup, "High-pass", "audio.effects.highPass", "High-pass", a => a.Effects.HighPassHz, (m, v) => AE(m, e => e with { HighPassHz = v }), 0, 0, 2000, 10, 0, "Hz");
+        Audio(_audioFxGroup, "Low-pass", "audio.effects.lowPass", "Low-pass", a => a.Effects.LowPassHz, (m, v) => AE(m, e => e with { LowPassHz = v }), 0, 0, 20000, 100, 0, "Hz");
+        Audio(_audioFxGroup, "Bass", "audio.effects.bass", "Bass", a => a.Effects.BassDb, (m, v) => AE(m, e => e with { BassDb = v }), 0, -20, 20, 0.1, 1, "dB");
+        Audio(_audioFxGroup, "Treble", "audio.effects.treble", "Treble", a => a.Effects.TrebleDb, (m, v) => AE(m, e => e with { TrebleDb = v }), 0, -20, 20, 0.1, 1, "dB");
+        CompressorRow = AudioToggle(_audioFxGroup, "Compressor", "audio.effects.compressor", "Compressor", a => a.Effects.Compressor, (m, on) => AE(m, e => e with { Compressor = on }));
+        Audio(_audioFxGroup, "Threshold", "audio.effects.compressorThreshold", "Compressor Threshold", a => a.Effects.CompressorThresholdDb, (m, v) => AE(m, e => e with { CompressorThresholdDb = v }), -20, -60, 0, 0.5, 1, "dB");
+        Audio(_audioFxGroup, "Ratio", "audio.effects.compressorRatio", "Compressor Ratio", a => a.Effects.CompressorRatio, (m, v) => AE(m, e => e with { CompressorRatio = v }), 4, 1, 20, 0.1, 1, ":1");
+        GateRow = AudioToggle(_audioFxGroup, "Gate", "audio.effects.gate", "Gate", a => a.Effects.Gate, (m, on) => AE(m, e => e with { Gate = on }));
+        Audio(_audioFxGroup, "Gate threshold", "audio.effects.gateThreshold", "Gate Threshold", a => a.Effects.GateThresholdDb, (m, v) => AE(m, e => e with { GateThresholdDb = v }), -40, -80, 0, 0.5, 1, "dB");
+        Audio(_audioFxGroup, "Pan", "audio.effects.pan", "Pan", a => a.Effects.Pan * 100, (m, v) => AE(m, e => e with { Pan = v / 100 }), 0, -100, 100, 1, 0, "%");
+        MonoRow = AudioToggle(_audioFxGroup, "Mono", "audio.effects.mono", "Mono", a => a.Effects.Mono, (m, on) => AE(m, e => e with { Mono = on }));
+
         _transformGroup.IsVisible = !_videoIds.IsEmpty;
         _colorGroup.IsVisible = !_videoIds.IsEmpty;
         _effectsGroup.IsVisible = !_videoIds.IsEmpty;
         _keyGroup.IsVisible = !_videoIds.IsEmpty;
         _fadesGroup.IsVisible = !_videoIds.IsEmpty;
         _audioGroup.IsVisible = !_audioIds.IsEmpty;
+        _audioFxGroup.IsVisible = !_audioIds.IsEmpty;
         _sourceInRow.IsVisible = !_sourceIds.IsEmpty;
         _sourceOutRow.IsVisible = !_sourceIds.IsEmpty;
         _speedRow.IsVisible = clips.OfType<MediaClip>().Any(m => !IsStill(project, m));
@@ -145,8 +164,20 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     /// <summary>Every numeric field of the video groups.</summary>
     public IReadOnlyList<InspectorNumberField> VideoFields => _videoFields;
 
-    /// <summary>Every numeric field of the audio group (keyframe rows excluded).</summary>
+    /// <summary>Every numeric field of the audio groups (keyframe rows excluded).</summary>
     public IReadOnlyList<InspectorNumberField> AudioFields => _audioFields;
+
+    /// <summary>Every toggle row of the Audio Effects group (compressor, gate, mono).</summary>
+    public IReadOnlyList<InspectorToggleRow> AudioToggles => [.. _audioToggles.Select(t => t.Row)];
+
+    /// <summary>The Compressor toggle.</summary>
+    public InspectorToggleRow CompressorRow { get; }
+
+    /// <summary>The Gate toggle.</summary>
+    public InspectorToggleRow GateRow { get; }
+
+    /// <summary>The Mono toggle.</summary>
+    public InspectorToggleRow MonoRow { get; }
 
     /// <summary>Every toggle row of the video groups (flips, grayscale, chroma key enabled).</summary>
     public IReadOnlyList<InspectorToggleRow> VideoToggles => [.. _videoToggles.Select(t => t.Row)];
@@ -196,9 +227,12 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     /// <summary>The Audio group.</summary>
     public InspectorGroup AudioGroup => _audioGroup;
 
+    /// <summary>The Audio Effects group.</summary>
+    public InspectorGroup AudioEffectsGroup => _audioFxGroup;
+
     /// <summary>Finds a numeric field by label in the video or audio groups.</summary>
     /// <param name="label">The label, for example "Saturation".</param>
-    /// <param name="audio">True to search the audio group.</param>
+    /// <param name="audio">True to search the audio groups.</param>
     /// <returns>The field.</returns>
     public InspectorNumberField Field(string label, bool audio = false) =>
         (audio ? _audioFields : _videoFields).First(f => f.Label == label);
@@ -243,6 +277,12 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             field.LoadFrom(audios);
         }
 
+        var audioProps = audios.OfType<MediaClip>().Select(m => m.Audio).ToList();
+        foreach (var (row, read) in _audioToggles)
+        {
+            row.LoadMany(audioProps.Select(read));
+        }
+
         RefreshKeyframes(audios.Count == 1 ? audios[0] as MediaClip : null, rate);
     }
 
@@ -282,6 +322,9 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
 
     private static MediaClip E(MediaClip m, Func<VideoEffects, VideoEffects> change) =>
         m with { Video = m.Video with { Effects = change(m.Video.Effects) } };
+
+    private static MediaClip AE(MediaClip m, Func<AudioEffects, AudioEffects> change) =>
+        m with { Audio = m.Audio with { Effects = change(m.Audio.Effects) } };
 
     private Func<Project, EditResult> UpdateVideo(string label, Func<MediaClip, MediaClip> change) =>
         p => TimelineEdits.UpdateClips(p, _videoIds, c => c is MediaClip m ? change(m) : c, label);
@@ -340,6 +383,21 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         double max,
         double step,
         int decimals,
+        string? unit) =>
+        Audio(_audioGroup, label, field, undoLabel, read, write, defaultValue, min, max, step, decimals, unit);
+
+    private void Audio(
+        InspectorGroup group,
+        string label,
+        string field,
+        string undoLabel,
+        Func<AudioProps, double> read,
+        Func<MediaClip, double, MediaClip> write,
+        double defaultValue,
+        double min,
+        double max,
+        double step,
+        int decimals,
         string? unit)
     {
         var number = new InspectorNumberField(Editor, label, Key2(_audioIds, field), undoLabel, v => UpdateAudio(undoLabel, m => write(m, v)))
@@ -352,7 +410,20 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             Decimals = decimals,
             Unit = unit,
         };
-        _audioFields.Add(_audioGroup.Add(number));
+        _audioFields.Add(group.Add(number));
+    }
+
+    private InspectorToggleRow AudioToggle(
+        InspectorGroup group,
+        string label,
+        string field,
+        string undoLabel,
+        Func<AudioProps, bool> read,
+        Func<MediaClip, bool, MediaClip> write)
+    {
+        var row = group.Add(new InspectorToggleRow(Editor, label, Key2(_audioIds, field), on => UpdateAudio(undoLabel, m => write(m, on))));
+        _audioToggles.Add((row, read));
+        return row;
     }
 
     private Func<Project, EditResult>? SourceInEdit(long frame) => frame < 0 ? null : p =>
