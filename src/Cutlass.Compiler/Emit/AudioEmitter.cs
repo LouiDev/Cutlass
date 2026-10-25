@@ -138,6 +138,11 @@ internal static class AudioEmitter
 
     private static GraphChain? EmitSegment(EmitContext ctx, PlannedSegment segment)
     {
+        if (segment.Clip is GeneratorClip { Kind: GeneratorKind.Tone } tone)
+        {
+            return Seal(ctx, ToneSource(ctx, tone, segment), segment, tone.Audio);
+        }
+
         if (segment.Clip is not MediaClip { Stream: StreamKind.Audio } clip)
         {
             ctx.Warn($"Clip {segment.Clip.Id} cannot be heard on an audio track and is skipped.");
@@ -173,8 +178,6 @@ internal static class AudioEmitter
         var input = ctx.Inputs.Add(
             info.Original.Path, seek, TimeMath.FloorMicrosFromFlicks(span), false, null, segment.Start, speed);
 
-        var e0 = segment.ExtentStart;
-        var samples = FfNum.Integer(ctx.SamplesAt(segment.End) - ctx.SamplesAt(segment.Start));
         var chain = ctx.Graph.StartInput(input, audio.StreamIndex).Then("aresample=48000:async=1:first_pts=0");
         if (factors.Count > 0)
         {
@@ -193,10 +196,40 @@ internal static class AudioEmitter
                 .Then("asetpts=PTS-STARTPTS");
         }
 
+        return Seal(ctx, chain, segment, clip.Audio);
+    }
+
+    // Effects batch 5 (TECH_BRIEF 7.3, generators): a stereo sine of amplitude 1/8 per channel (peak -18.06 dBFS, RMS
+    // -21.07 dBFS) whose phase counts from timeline sample 0: sample n of the segment is absolute sample N0 + n with
+    // N0 = SamplesAt(segment.Start). Renders of any window, chunk or split half therefore join without a phase jump, and
+    // no samples before the window are generated. aevalsrc evaluates in double precision, so the absolute index stays
+    // exact for hours of timeline.
+    private static GraphChain ToneSource(EmitContext ctx, GeneratorClip tone, PlannedSegment segment)
+    {
+        var hz = tone.ToneHz;
+        if (double.IsNaN(hz) || hz < GeneratorClip.MinToneHz || hz > GeneratorClip.MaxToneHz)
+        {
+            // A hand-edited project can hold any number; the render clamps instead of failing (like a bad matte colour).
+            var used = double.IsNaN(hz) ? GeneratorClip.DefaultToneHz : Math.Clamp(hz, GeneratorClip.MinToneHz, GeneratorClip.MaxToneHz);
+            ctx.Warn($"The tone frequency of clip {tone.Id} is not between 20 and 20000 Hz; {FfNum.Decimal(used)} Hz is used.");
+            hz = used;
+        }
+
+        var wave = "0.125*sin(2*PI*" + FfNum.Decimal(hz) + "*(n+" + FfNum.Integer(ctx.SamplesAt(segment.Start)) + ")/48000)";
+        return ctx.Graph.StartSource("aevalsrc=" + wave + "|" + wave + ":s=48000:c=stereo");
+    }
+
+    // The tail shared by media segments and tones, from the format onwards.
+    private static GraphChain Seal(EmitContext ctx, GraphChain chain, PlannedSegment segment, AudioProps props)
+    {
+        var clip = segment.Clip;
+        var e0 = segment.ExtentStart;
+        var samples = FfNum.Integer(ctx.SamplesAt(segment.End) - ctx.SamplesAt(segment.Start));
+
         // TECH_BRIEF 7.3 step 3a: the per-clip effects run on the 48 kHz stereo fltp stream, before apad/atrim seal the
         // segment (every effect is 1:1 in samples) and before the pts-based offset, envelope and fades. Neutral emits nothing.
         chain.Then(Aformat);
-        AudioEffectFilters.Append(chain, clip.Audio.Effects);
+        AudioEffectFilters.Append(chain, props.Effects);
         chain.Then("apad=whole_len=" + samples).Then("atrim=end_sample=" + samples);
         var offsetSamples = ctx.SamplesAt(segment.Start) - ctx.SamplesAt(e0);
         if (offsetSamples > 0)
@@ -204,13 +237,13 @@ internal static class AudioEmitter
             chain.Then("asetpts=PTS-STARTPTS+" + FfNum.Integer(offsetSamples));
         }
 
-        if (!clip.Audio.Keys.IsDefaultOrEmpty)
+        if (!props.Keys.IsDefaultOrEmpty)
         {
-            chain.Then(VolumeEnvelope.Filter(clip.Audio.Keys, clip.Start - e0, clip.Audio.GainDb, ctx.Rate));
+            chain.Then(VolumeEnvelope.Filter(props.Keys, clip.Start - e0, props.GainDb, ctx.Rate));
         }
-        else if (clip.Audio.GainDb != 0)
+        else if (props.GainDb != 0)
         {
-            chain.Then("volume=" + FfNum.Decimal(clip.Audio.GainDb) + "dB");
+            chain.Then("volume=" + FfNum.Decimal(props.GainDb) + "dB");
         }
 
         if (segment.Head is { } head)
@@ -218,9 +251,9 @@ internal static class AudioEmitter
             var (start, end) = RenderPlanner.TransitionRegion(head, clip.Start);
             chain.Then(Afade(ctx, "in", start, end, e0));
         }
-        else if (clip.Audio.FadeInFrames > 0)
+        else if (props.FadeInFrames > 0)
         {
-            chain.Then(Afade(ctx, "in", clip.Start, clip.Start + Math.Min(clip.Audio.FadeInFrames, clip.Duration), e0));
+            chain.Then(Afade(ctx, "in", clip.Start, clip.Start + Math.Min(props.FadeInFrames, clip.Duration), e0));
         }
 
         if (segment.Tail is { } tail)
@@ -228,9 +261,9 @@ internal static class AudioEmitter
             var (start, end) = RenderPlanner.TransitionRegion(tail, clip.End);
             chain.Then(Afade(ctx, "out", start, end, e0));
         }
-        else if (clip.Audio.FadeOutFrames > 0)
+        else if (props.FadeOutFrames > 0)
         {
-            chain.Then(Afade(ctx, "out", clip.End - Math.Min(clip.Audio.FadeOutFrames, clip.Duration), clip.End, e0));
+            chain.Then(Afade(ctx, "out", clip.End - Math.Min(props.FadeOutFrames, clip.Duration), clip.End, e0));
         }
 
         var delay = ctx.SamplesAt(segment.Start) - ctx.SamplesAt(ctx.Request.StartFrame);

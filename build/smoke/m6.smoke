@@ -1,7 +1,8 @@
 # Cutlass M6 smoke test (TECH_BRIEF 12, M6). Run it with build/smoke.ps1 -Script m6, which generates clipA.mp4 and
 # clipB.mp4 (6 s, 1280x720, 30 fps, 180 frames each) next to a copy of this file. Paths are relative to the script.
 # Commands: SmokeScript.Commands. Keys go through the real keymap (key <chord>), menu commands through the registry.
-# The effects batches add their rows, presets and the freeze frame before the export, so the export renders them.
+# The effects batches add their rows, presets, the freeze frame and the generators before the export, so the export
+# renders them.
 import clipA.mp4 clipB.mp4
 wait 1000
 
@@ -144,6 +145,26 @@ playhead 215
 frame
 wait 500
 screenshot shots/15-freeze-frame.png
+deselect
+
+# Effects batch 5: a Color Matte dropped on V3 and a Tone on a new A3 at 300 (the default still length, 5 s = 150
+# frames, so both end at 450 inside the 470-frame sequence; V2 and A2 stay free for the Source drops below). The matte
+# colour and opacity and the tone frequency and gain are typed into the Generator section of the Inspector. The export
+# renders them through the color and aevalsrc source chains, so its probe also proves the generators run on this ffmpeg.
+effect-drop generator:ColorMatte V3 300
+expect-clips V3 1
+clip-prop V3 310 color=#FF8000 opacity=50
+expect-section generator header=GENERATOR
+add-track audio
+effect-drop generator:Tone A3 300
+expect-clips A3 1
+clip-prop A3 310 frequency=440 gain=-12
+expect-section generator header=GENERATOR
+expect-duration 470
+playhead 320
+frame
+wait 500
+screenshot shots/16-generators.png
 deselect
 
 # Export through the export dialog and check the frame count with ffprobe.

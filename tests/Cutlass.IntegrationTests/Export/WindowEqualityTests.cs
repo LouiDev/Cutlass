@@ -8,7 +8,8 @@ namespace Cutlass.IntegrationTests.Export;
 
 /// <summary>
 /// Range independence (TECH_BRIEF 7.5 and 11.2): a one-frame window is byte-identical to the same frame of the full
-/// render, including frames inside a crossfade, inside title fades and on a transformed picture-in-picture clip.
+/// render, including frames inside a crossfade, inside title fades, on a transformed picture-in-picture clip and on
+/// generator clips.
 /// </summary>
 [Collection(TestMediaCollection.Name)]
 public sealed class WindowEqualityTests
@@ -86,6 +87,51 @@ public sealed class WindowEqualityTests
                 single.AsSpan().SequenceEqual(full.AsSpan((int)(frame * FrameBytes), FrameBytes)),
                 $"Frame {frame} of a one-frame window differs from the full render.");
         }
+    }
+
+    [FfmpegFact]
+    public async Task WindowsOfAColourMatteInARunEqualTheFullRender()
+    {
+        // Effects batch 5: a matte joined to a media clip by a crossfade, with opacity and a fade-out, over transformed
+        // bars on V2. One-frame and short windows must match the full render byte for byte.
+        await using var kit = await ExportKit.CreateAsync();
+        var cfr = await kit.AssetAsync("m_cfr", _media.Cfr25Av);
+        MediaAsset[] media = [cfr];
+        var catalog = await kit.CatalogAsync(media);
+        var matte = GeneratorClip.Create("c_g", 60, 60, GeneratorKind.ColorMatte) with
+        {
+            Color = "#3366CC",
+            Video = VideoProps.Default with { Opacity = 0.8, FadeOutFrames = 10 },
+        };
+        var bars = GeneratorClip.Create("c_b", 20, 70, GeneratorKind.Bars) with
+        {
+            Video = VideoProps.Default with { Transform = Transform.Identity with { X = 40, Y = 20, Scale = 0.4 } },
+        };
+        var project = Project(
+            W,
+            H,
+            FrameRate.Fps30,
+            media,
+            Track(
+                "tr_v1",
+                TrackKind.Video,
+                [V("c_a", 0, 60, "m_cfr", Micros(400_000)), matte],
+                [new Transition("x_1", TransitionKind.Crossfade, "c_a", "c_g", 20)]),
+            Track("tr_v2", TrackKind.Video, [bars]));
+
+        var full = await kit.RenderBgraAsync(project, catalog, Preview(0, 120, W, H));
+
+        long[] probes = [0, 25, 49, 50, 55, 60, 65, 69, 70, 89, 90, 100, 112, 119];
+        foreach (var frame in probes)
+        {
+            var single = await kit.RenderBgraAsync(project, catalog, Preview(frame, frame + 1, W, H, RenderPurpose.PreviewFrame));
+            Assert.True(
+                single.AsSpan().SequenceEqual(full.AsSpan((int)(frame * FrameBytes), FrameBytes)),
+                $"Frame {frame} of a one-frame window differs from the full render.");
+        }
+
+        var part = await kit.RenderBgraAsync(project, catalog, Preview(55, 75, W, H));
+        Assert.True(part.AsSpan().SequenceEqual(full.AsSpan(55 * FrameBytes, 20 * FrameBytes)), "Window [55, 75) differs from the full render.");
     }
 
     [FfmpegFact]

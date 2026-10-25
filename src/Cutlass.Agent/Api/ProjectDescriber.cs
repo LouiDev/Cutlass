@@ -281,6 +281,46 @@ public static class ProjectDescriber
                 }
 
                 break;
+            case GeneratorClip g:
+                // Effects batch 5: "c_x generator colorMatte #FF0000 0+60", "c_y generator tone 440 Hz 0+60 gain -6 dB".
+                sb.Append(c, $"{clip.Id} generator {EnumWire.Name(g.Kind)}");
+                if (g.Kind == GeneratorKind.ColorMatte)
+                {
+                    sb.Append(' ').Append(g.Color);
+                }
+                else if (g.Kind == GeneratorKind.Tone)
+                {
+                    sb.Append(c, $" {Num(g.ToneHz)} Hz");
+                }
+
+                sb.Append(c, $" {clip.Start}+{clip.Duration}");
+                if (g.Kind.IsAudio())
+                {
+                    if (g.Audio.GainDb != 0)
+                    {
+                        sb.Append(c, $" gain {Num(g.Audio.GainDb)} dB");
+                    }
+
+                    AppendFades(sb, g.Audio.FadeInFrames, g.Audio.FadeOutFrames);
+                    if (!g.Audio.Keys.IsDefaultOrEmpty)
+                    {
+                        sb.Append(c, $" keys {g.Audio.Keys.Length}");
+                    }
+
+                    AppendAudioEffects(sb, g.Audio.Effects);
+                }
+                else
+                {
+                    if (g.Video.Opacity < 1)
+                    {
+                        sb.Append(c, $" opacity {Num(g.Video.Opacity)}");
+                    }
+
+                    AppendFades(sb, g.Video.FadeInFrames, g.Video.FadeOutFrames);
+                    AppendEffects(sb, g.Video.Effects);
+                }
+
+                break;
             default:
                 sb.Append(c, $"{clip.Id} {clip.Start}+{clip.Duration}");
                 break;

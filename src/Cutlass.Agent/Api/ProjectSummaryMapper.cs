@@ -231,66 +231,11 @@ public static class ProjectSummaryMapper
                 dto.Freeze = m.Freeze ? true : null;
                 if (m.Stream == StreamKind.Video)
                 {
-                    var v = m.Video;
-                    dto.Video = new ClipVideoDto
-                    {
-                        Transform = new TransformDto
-                        {
-                            X = v.Transform.X,
-                            Y = v.Transform.Y,
-                            Scale = v.Transform.Scale,
-                            CropLeft = v.Transform.CropLeft,
-                            CropTop = v.Transform.CropTop,
-                            CropRight = v.Transform.CropRight,
-                            CropBottom = v.Transform.CropBottom,
-                        },
-                        Opacity = v.Opacity,
-                        Color = new ColorDto { Brightness = v.Color.Brightness, Contrast = v.Color.Contrast, Saturation = v.Color.Saturation, Gamma = v.Color.Gamma },
-                        FadeInFrames = v.FadeInFrames,
-                        FadeOutFrames = v.FadeOutFrames,
-                        Effects = new VideoEffectsDto
-                        {
-                            FlipH = v.Effects.FlipH,
-                            FlipV = v.Effects.FlipV,
-                            RotationDegrees = v.Effects.RotationDegrees,
-                            HueDegrees = v.Effects.HueDegrees,
-                            TemperatureKelvin = v.Effects.TemperatureKelvin,
-                            Tint = v.Effects.Tint,
-                            Blur = v.Effects.Blur,
-                            Sharpen = v.Effects.Sharpen,
-                            Vignette = v.Effects.Vignette,
-                            Grayscale = v.Effects.Grayscale,
-                            KeyEnabled = v.Effects.KeyEnabled,
-                            KeyColor = v.Effects.KeyColor,
-                            KeySimilarity = v.Effects.KeySimilarity,
-                            KeyBlend = v.Effects.KeyBlend,
-                        },
-                    };
+                    dto.Video = MapVideo(m.Video);
                 }
                 else
                 {
-                    var a = m.Audio;
-                    dto.Audio = new ClipAudioDto
-                    {
-                        GainDb = a.GainDb,
-                        FadeInFrames = a.FadeInFrames,
-                        FadeOutFrames = a.FadeOutFrames,
-                        Keys = [.. (a.Keys.IsDefault ? [] : a.Keys).Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
-                        Effects = new AudioEffectsDto
-                        {
-                            HighPassHz = a.Effects.HighPassHz,
-                            LowPassHz = a.Effects.LowPassHz,
-                            BassDb = a.Effects.BassDb,
-                            TrebleDb = a.Effects.TrebleDb,
-                            Compressor = a.Effects.Compressor,
-                            CompressorThresholdDb = a.Effects.CompressorThresholdDb,
-                            CompressorRatio = a.Effects.CompressorRatio,
-                            Gate = a.Effects.Gate,
-                            GateThresholdDb = a.Effects.GateThresholdDb,
-                            Pan = a.Effects.Pan,
-                            Mono = a.Effects.Mono,
-                        },
-                    };
+                    dto.Audio = MapAudio(m.Audio);
                 }
 
                 break;
@@ -301,10 +246,80 @@ public static class ProjectSummaryMapper
                 dto.FadeInFrames = t.FadeInFrames;
                 dto.FadeOutFrames = t.FadeOutFrames;
                 break;
+            case GeneratorClip g:
+                dto.Type = "generator";
+                dto.Generator = new GeneratorDto { Kind = EnumWire.Name(g.Kind), Color = g.Color, ToneHz = g.ToneHz };
+                if (g.Kind.IsVideo())
+                {
+                    dto.Video = MapVideo(g.Video);
+                }
+                else
+                {
+                    dto.Audio = MapAudio(g.Audio);
+                }
+
+                break;
         }
 
         return dto;
     }
+
+    private static ClipVideoDto MapVideo(VideoProps v) => new()
+    {
+        Transform = new TransformDto
+        {
+            X = v.Transform.X,
+            Y = v.Transform.Y,
+            Scale = v.Transform.Scale,
+            CropLeft = v.Transform.CropLeft,
+            CropTop = v.Transform.CropTop,
+            CropRight = v.Transform.CropRight,
+            CropBottom = v.Transform.CropBottom,
+        },
+        Opacity = v.Opacity,
+        Color = new ColorDto { Brightness = v.Color.Brightness, Contrast = v.Color.Contrast, Saturation = v.Color.Saturation, Gamma = v.Color.Gamma },
+        FadeInFrames = v.FadeInFrames,
+        FadeOutFrames = v.FadeOutFrames,
+        Effects = new VideoEffectsDto
+        {
+            FlipH = v.Effects.FlipH,
+            FlipV = v.Effects.FlipV,
+            RotationDegrees = v.Effects.RotationDegrees,
+            HueDegrees = v.Effects.HueDegrees,
+            TemperatureKelvin = v.Effects.TemperatureKelvin,
+            Tint = v.Effects.Tint,
+            Blur = v.Effects.Blur,
+            Sharpen = v.Effects.Sharpen,
+            Vignette = v.Effects.Vignette,
+            Grayscale = v.Effects.Grayscale,
+            KeyEnabled = v.Effects.KeyEnabled,
+            KeyColor = v.Effects.KeyColor,
+            KeySimilarity = v.Effects.KeySimilarity,
+            KeyBlend = v.Effects.KeyBlend,
+        },
+    };
+
+    private static ClipAudioDto MapAudio(AudioProps a) => new()
+    {
+        GainDb = a.GainDb,
+        FadeInFrames = a.FadeInFrames,
+        FadeOutFrames = a.FadeOutFrames,
+        Keys = [.. (a.Keys.IsDefault ? [] : a.Keys).Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
+        Effects = new AudioEffectsDto
+        {
+            HighPassHz = a.Effects.HighPassHz,
+            LowPassHz = a.Effects.LowPassHz,
+            BassDb = a.Effects.BassDb,
+            TrebleDb = a.Effects.TrebleDb,
+            Compressor = a.Effects.Compressor,
+            CompressorThresholdDb = a.Effects.CompressorThresholdDb,
+            CompressorRatio = a.Effects.CompressorRatio,
+            Gate = a.Effects.Gate,
+            GateThresholdDb = a.Effects.GateThresholdDb,
+            Pan = a.Effects.Pan,
+            Mono = a.Effects.Mono,
+        },
+    };
 
     private static TitleDto MapTitle(TitleSpec s) => new()
     {

@@ -501,6 +501,18 @@ public sealed class AgentClient : IDisposable
     /// <returns>The mutation result.</returns>
     public Task<ApiResult> UpdateTitleAsync(TitleUpdateRequest r, CancellationToken ct = default) => MutateAsync("edit.title.update", r, AgentJsonContext.Relaxed.TitleUpdateRequest, ct);
 
+    /// <summary><c>edit.generator.add</c>.</summary>
+    /// <param name="r">The request.</param>
+    /// <param name="ct">Cancels the call.</param>
+    /// <returns>The mutation result.</returns>
+    public Task<ApiResult> AddGeneratorAsync(GeneratorAddRequest r, CancellationToken ct = default) => MutateAsync("edit.generator.add", r, AgentJsonContext.Relaxed.GeneratorAddRequest, ct);
+
+    /// <summary><c>edit.generator.update</c>.</summary>
+    /// <param name="r">The request.</param>
+    /// <param name="ct">Cancels the call.</param>
+    /// <returns>The mutation result.</returns>
+    public Task<ApiResult> UpdateGeneratorAsync(GeneratorUpdateRequest r, CancellationToken ct = default) => MutateAsync("edit.generator.update", r, AgentJsonContext.Relaxed.GeneratorUpdateRequest, ct);
+
     /// <summary><c>edit.marker.add</c>.</summary>
     /// <param name="r">The request.</param>
     /// <param name="ct">Cancels the call.</param>

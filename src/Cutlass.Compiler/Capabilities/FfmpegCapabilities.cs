@@ -31,6 +31,7 @@ public sealed record FfmpegCapabilities(
         "fade", "volume", "amix", "amerge", "adelay", "eq", "lut", "framestep", "alimiter", "split", "palettegen",
         "paletteuse", "tile", "settb", "anull", "hflip", "vflip", "rotate", "hue", "colortemperature", "colorbalance",
         "gblur", "unsharp", "vignette", "chromakey", "highpass", "lowpass", "bass", "treble", "agate", "acompressor", "pan",
+        "smptehdbars", "aevalsrc",
     ];
 
     /// <summary>The required filters this build lacks, in <see cref="RequiredFilters"/> order.</summary>

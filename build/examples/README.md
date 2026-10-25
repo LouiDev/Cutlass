@@ -36,7 +36,7 @@ python -m venv .venv
 pip install openai anthropic
 ```
 
-**Ollama** (default `--base-url http://localhost:11434/v1`, `--api-key ollama`). Use a model whose `ollama show <model>` lists the `tools` capability, for example `gpt-oss:20b`, `qwen3`, `llama3.1` or `mistral-small`. The first request (58 tool definitions plus the instructions) is roughly 5.5k tokens, more than the 4096-token context Ollama gives many models by default (it answers `exceed_context_size_error`), so raise it before `ollama serve`, for example `OLLAMA_CONTEXT_LENGTH=32768` (Windows: `set OLLAMA_CONTEXT_LENGTH=32768`).
+**Ollama** (default `--base-url http://localhost:11434/v1`, `--api-key ollama`). Use a model whose `ollama show <model>` lists the `tools` capability, for example `gpt-oss:20b`, `qwen3`, `llama3.1` or `mistral-small`. The first request (60 tool definitions plus the instructions) is about 6k tokens, more than the 4096-token context Ollama gives many models by default (it answers `exceed_context_size_error`), so raise it before `ollama serve`, for example `OLLAMA_CONTEXT_LENGTH=32768` (Windows: `set OLLAMA_CONTEXT_LENGTH=32768`).
 
 ```
 python build/examples/agent-openai-compatible.py --model gpt-oss:20b --task "Import D:\Footage\a.mp4 and D:\Footage\b.mp4, place them end to end, add a centred title 'Hello' over the first second, render frame 15 and release the lock."

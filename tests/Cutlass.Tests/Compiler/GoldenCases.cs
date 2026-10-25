@@ -46,6 +46,8 @@ internal static class GoldenCases
         VideoEffects(),
         VideoEffectsInRun(),
         AudioEffects(),
+        Generators(),
+        GeneratorInRun(),
         MuteSolo(),
         PerTrackAudio(),
         EmptyAudio(),
@@ -247,6 +249,41 @@ internal static class GoldenCases
         var frozen = V("c_f", 0, 30, "m_a", 2 * F) with { Freeze = true };
         var p = Project(Hd30, Hd(), VideoTrack("tr_v1", [frozen]), VideoTrack("tr_v2", [V("c_m", 0, 30, "m_a", 2 * F)]));
         return Make("freeze_frame", p, Export(0, 30, audio: false));
+    }
+
+    /// <summary>
+    /// Effects batch 5: a colour matte with opacity and fades on V1, bars with a transform on V2 (placed like a
+    /// media clip whose source is the canvas) and a tone with gain and a fade-in on A1. No inputs at all.
+    /// </summary>
+    private static Case Generators()
+    {
+        var matte = GeneratorClip.Create("c_m", 0, 60, GeneratorKind.ColorMatte) with
+        {
+            Color = "#3366CC",
+            Video = VideoProps.Default with { Opacity = 0.8, FadeInFrames = 10, FadeOutFrames = 10 },
+        };
+        var bars = GeneratorClip.Create("c_b", 0, 60, GeneratorKind.Bars) with
+        {
+            Video = VideoProps.Default with { Transform = Transform.Identity with { X = 100, Y = -50, Scale = 0.5 } },
+        };
+        var tone = GeneratorClip.Create("c_t", 0, 60, GeneratorKind.Tone) with
+        {
+            ToneHz = 440,
+            Audio = AudioProps.Default with { GainDb = -6, FadeInFrames = 15 },
+        };
+        var p = Project(Hd30, Hd(), VideoTrack("tr_v1", [matte]), VideoTrack("tr_v2", [bars]), AudioTrack("tr_a1", [tone]));
+        return Make("generators", p, Export(0, 60));
+    }
+
+    // A matte joined to a media clip by a crossfade: the generator segment is canvas sized like a title.
+    private static Case GeneratorInRun()
+    {
+        var matte = GeneratorClip.Create("c_g", 60, 60, GeneratorKind.ColorMatte) with { Color = "#FF8000" };
+        var p = Project(
+            Hd30,
+            Hd(),
+            VideoTrack("tr_v1", [V("c_1", 0, 60, "m_a", F), matte], [new Transition("x_1", TransitionKind.Crossfade, "c_1", "c_g", 20)]));
+        return Make("generator_in_run", p, Export(0, 120, audio: false));
     }
 
     private static Case ColorAdjust()

@@ -4,7 +4,7 @@ using Cutlass.Core.Model;
 namespace Cutlass.App.ViewModels;
 
 /// <summary>
-/// One entry of the Effects tab (DESIGN 4.2): a transition kind, a title template or a fade preset. Dragging an item
+/// One entry of the Effects tab (DESIGN 4.2): a transition kind, a title template, a fade preset or a generator. Dragging an item
 /// out publishes its <see cref="Id"/> under <see cref="DragFormat"/>, so the timeline can accept drops later.
 /// </summary>
 public sealed partial class EffectItem : ObservableObject
@@ -20,6 +20,9 @@ public sealed partial class EffectItem : ObservableObject
 
     /// <summary>The id prefix of adjustments; the rest is FadeIn, FadeOut, FadeInOut or RemoveFades.</summary>
     public const string AdjustmentPrefix = "adjust:";
+
+    /// <summary>The id prefix of generators (effects batch 5); the rest is the <see cref="Core.Model.GeneratorKind"/> name.</summary>
+    public const string GeneratorPrefix = "generator:";
 
     /// <summary>Creates the item.</summary>
     /// <param name="id">The effect id, for example <c>transition:DipToBlack</c>.</param>
@@ -50,8 +53,9 @@ public sealed partial class EffectItem : ObservableObject
     /// <summary>The badge text.</summary>
     public string Badge { get; }
 
-    /// <summary>The secondary text (default duration).</summary>
-    public string Detail { get; }
+    /// <summary>The secondary text (default duration); generators follow the still duration setting.</summary>
+    [ObservableProperty]
+    public partial string Detail { get; set; }
 
     /// <summary>The tooltip.</summary>
     public string Description { get; }
@@ -61,6 +65,12 @@ public sealed partial class EffectItem : ObservableObject
 
     /// <summary>True for a title template (the badge is tinted like title clips).</summary>
     public bool IsTitle => Category == EffectCategory.Title;
+
+    /// <summary>True for a generator (the badge is tinted like generator clips).</summary>
+    public bool IsGenerator => Category == EffectCategory.Generator;
+
+    /// <summary>The generator kind, or null for other effects.</summary>
+    public GeneratorKind? GeneratorKind { get; init; }
 
     /// <summary>The transition kind, or null for other effects.</summary>
     public TransitionKind? TransitionKind { get; init; }

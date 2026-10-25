@@ -82,7 +82,7 @@ public static partial class TimelineEdits
             items = [.. items.Select(i => (i.Track, i.Clip with { Start = i.Clip.Start - minStart }))];
         }
 
-        var linkCounts = items.Where(i => i.Clip.LinkId is not null && i.Clip is not TitleClip)
+        var linkCounts = items.Where(i => i.Clip.LinkId is not null && i.Clip is MediaClip)
             .GroupBy(i => i.Clip.LinkId!, StringComparer.Ordinal)
             .ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
         var links = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -96,7 +96,7 @@ public static partial class TimelineEdits
             }
 
             string? link = null;
-            if (clip is not TitleClip && clip.LinkId is { } placeholder && linkCounts.GetValueOrDefault(placeholder) >= 2)
+            if (clip is MediaClip && clip.LinkId is { } placeholder && linkCounts.GetValueOrDefault(placeholder) >= 2)
             {
                 if (!links.TryGetValue(placeholder, out link))
                 {
@@ -434,6 +434,9 @@ public static partial class TimelineEdits
         {
             case TitleClip when track.Kind != TrackKind.Video:
                 why = "Titles go on video tracks.";
+                return false;
+            case GeneratorClip g when g.Kind.TrackKindOf() != track.Kind:
+                why = $"{g.Kind.DisplayName()} goes on {(g.Kind.IsAudio() ? "audio" : "video")} tracks.";
                 return false;
             case MediaClip m:
                 var expected = track.Kind == TrackKind.Video ? StreamKind.Video : StreamKind.Audio;

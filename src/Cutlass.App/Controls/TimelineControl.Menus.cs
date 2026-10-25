@@ -37,9 +37,10 @@ public sealed partial class TimelineControl
             items.Add(Item("Delete marker", () => vm.RemoveMarker(markerId), edit));
         }
         else if (hit.Zone == HitZone.Keyframe && hit.ClipId is { } keyClip
-            && TimelineQuery.FindClip(project, keyClip)?.Clip is MediaClip keyed && hit.KeyIndex >= 0 && hit.KeyIndex < keyed.Audio.Keys.Length)
+            && TimelineQuery.FindClip(project, keyClip)?.Clip is { } keyed && ClipAudio.Keys(keyed) is var keyedKeys
+            && hit.KeyIndex >= 0 && hit.KeyIndex < keyedKeys.Length)
         {
-            var frame = keyed.Audio.Keys[hit.KeyIndex].Frame;
+            var frame = keyedKeys[hit.KeyIndex].Frame;
             items.Add(Item("Delete keyframe", () => vm.RemoveVolumeKey(keyClip, frame), edit));
         }
         else if (hit.IsTransition && hit.TransitionId is { } transitionId)

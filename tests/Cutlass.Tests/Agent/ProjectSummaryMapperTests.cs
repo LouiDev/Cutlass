@@ -30,8 +30,8 @@ public sealed class ProjectSummaryMapperTests
                 V("c_05", 150, 300, sourceFrame: 400, speed: 200) with { Video = VideoProps.Default with { Effects = VideoEffects.None with { FlipH = true, HueDegrees = 20, Blur = 4, KeyEnabled = true } } },
                 V("c_08", 450, 60, sourceFrame: 700, freeze: true))
             .With(A1, A("c_11", 0, 150, sourceFrame: 50, link: "l_01"))
-            .With(A2, music)
-            .With(V2, Title("c_02", 0, 120, "Meet Ana"))
+            .With(A2, music, Generator("c_04", 300, 48, GeneratorKind.Tone, toneHz: 440) with { Audio = AudioProps.Default with { GainDb = -6, Keys = [new VolumeKey(0, -12), new VolumeKey(24, 0)] } })
+            .With(V2, Title("c_02", 0, 120, "Meet Ana"), Generator("c_03", 120, 60, color: "#3366CC") with { Video = VideoProps.Default with { Opacity = 0.5, FadeInFrames = 10 } })
             .Transition(V1, "x_01", "c_01", "c_05", 30)
             .Marker("k_3m9q0aa1", 300, "Drop")
             .InOut(10, null)

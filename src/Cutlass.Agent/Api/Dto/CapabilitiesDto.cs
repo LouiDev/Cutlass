@@ -21,6 +21,9 @@ public sealed class CapabilitiesDto
     /// <summary>The title template names accepted by <c>edit.title.add</c> (effects batch 4).</summary>
     public List<string> TitleTemplates { get; set; } = [];
 
+    /// <summary>The generator kinds accepted by <c>edit.generator.add</c> (effects batch 5).</summary>
+    public List<string> GeneratorKinds { get; set; } = [];
+
     /// <summary>The edit modes.</summary>
     public List<string> EditModes { get; set; } = [];
 

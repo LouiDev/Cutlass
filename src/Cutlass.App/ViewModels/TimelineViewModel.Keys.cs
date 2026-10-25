@@ -87,19 +87,20 @@ public sealed partial class TimelineViewModel
     public void AddVolumeKey(string clipId, long frame)
     {
         ArgumentNullException.ThrowIfNull(clipId);
-        if (TimelineQuery.FindClip(Session.Current, clipId)?.Clip is not MediaClip { Stream: StreamKind.Audio } clip)
+        if (TimelineQuery.FindClip(Session.Current, clipId)?.Clip is not { } clip || ClipAudio.Of(clip) is null)
         {
             return;
         }
 
+        var keys = ClipAudio.Keys(clip);
         var at = Math.Clamp(frame, 0, clip.Duration - 1);
-        if (clip.Audio.Keys.Any(k => k.Frame == at))
+        if (keys.Any(k => k.Frame == at))
         {
             SelectVolumeKey(clipId, at);
             return;
         }
 
-        var db = TimelineEdits.EnvelopeAt(clip.Audio.Keys, at);
+        var db = TimelineEdits.EnvelopeAt(keys, at);
         Run(p => TimelineEdits.UpdateClips(p, [clipId], c => WithKeys(c, k => k.Add(new VolumeKey(at, db)).Sort(KeyOrder)), "Add Keyframe"));
         if (FindKey(Session.Current, clipId, at) is not null)
         {
@@ -120,28 +121,20 @@ public sealed partial class TimelineViewModel
         }
     }
 
-    /// <summary>Replaces the keyframes of an audio clip through a transform (other clips are returned unchanged).</summary>
+    /// <summary>Replaces the keyframes of an audio clip or tone through a transform (other clips are returned unchanged).</summary>
     /// <param name="clip">The clip.</param>
     /// <param name="change">Transforms the keyframes.</param>
     /// <returns>The clip with new keyframes.</returns>
     public static Clip WithKeys(Clip clip, Func<ImmutableArray<VolumeKey>, ImmutableArray<VolumeKey>> change)
     {
         ArgumentNullException.ThrowIfNull(change);
-        if (clip is not MediaClip { Stream: StreamKind.Audio } m)
-        {
-            return clip;
-        }
-
-        var keys = m.Audio.Keys.IsDefault ? ImmutableArray<VolumeKey>.Empty : m.Audio.Keys;
-        return m with { Audio = m.Audio with { Keys = change(keys) } };
+        return ClipAudio.Of(clip) is { } audio ? ClipAudio.With(clip, audio with { Keys = change(ClipAudio.Keys(clip)) }) : clip;
     }
 
     private static readonly Comparer<VolumeKey> KeyOrder = Comparer<VolumeKey>.Create((a, b) => a.Frame.CompareTo(b.Frame));
 
     private static VolumeKey? FindKey(Project project, string clipId, long frame) =>
-        TimelineQuery.FindClip(project, clipId)?.Clip is MediaClip { Stream: StreamKind.Audio } clip && !clip.Audio.Keys.IsDefault
-            ? clip.Audio.Keys.FirstOrDefault(k => k.Frame == frame)
-            : null;
+        TimelineQuery.FindClip(project, clipId)?.Clip is { } clip ? ClipAudio.Keys(clip).FirstOrDefault(k => k.Frame == frame) : null;
 
     private void FilterVolumeKey()
     {

@@ -76,4 +76,14 @@ internal static class TestMedia
     /// <summary>A title clip.</summary>
     public static TitleClip Title(string id, long start, long duration, string text = "Hello") =>
         new(id, start, duration, true, TitleSpec.Default with { Text = text }, 1, 0, 0);
+
+    /// <summary>A generator clip (effects batch 5) with neutral props; the colour and frequency are optional.</summary>
+    public static GeneratorClip Generator(
+        string id,
+        long start,
+        long duration,
+        GeneratorKind kind = GeneratorKind.ColorMatte,
+        string color = GeneratorClip.DefaultColor,
+        double toneHz = GeneratorClip.DefaultToneHz) =>
+        GeneratorClip.Create(id, start, duration, kind) with { Color = color, ToneHz = toneHz };
 }

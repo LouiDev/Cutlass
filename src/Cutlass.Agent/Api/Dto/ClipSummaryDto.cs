@@ -4,14 +4,15 @@ namespace Cutlass.Agent.Api.Dto;
 
 /// <summary>
 /// One clip of the project summary. Media clips carry the media fields and <c>video</c> or <c>audio</c>; titles carry
-/// <c>title</c>, <c>opacity</c> and their fades.
+/// <c>title</c>, <c>opacity</c> and their fades; generators carry <c>generator</c> and <c>video</c> (matte and bars)
+/// or <c>audio</c> (tone).
 /// </summary>
 public sealed class ClipSummaryDto
 {
     /// <summary>The id.</summary>
     public string Id { get; set; } = string.Empty;
 
-    /// <summary><c>media</c> or <c>title</c>.</summary>
+    /// <summary><c>media</c>, <c>title</c> or <c>generator</c>.</summary>
     public string Type { get; set; } = "media";
 
     /// <summary>First frame.</summary>
@@ -37,7 +38,7 @@ public sealed class ClipSummaryDto
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Stream { get; set; }
 
-    /// <summary>The media file name or the title's first line.</summary>
+    /// <summary>The media file name, the title's first line or the generator name.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>Media clips: true when the file is missing.</summary>
@@ -68,13 +69,17 @@ public sealed class ClipSummaryDto
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Freeze { get; set; }
 
-    /// <summary>Video media clips: the video properties.</summary>
+    /// <summary>Video media clips and video generators: the video properties.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ClipVideoDto? Video { get; set; }
 
-    /// <summary>Audio media clips: the audio properties.</summary>
+    /// <summary>Audio media clips and tones: the audio properties.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ClipAudioDto? Audio { get; set; }
+
+    /// <summary>Generators (effects batch 5): the kind, the matte colour and the tone frequency.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public GeneratorDto? Generator { get; set; }
 
     /// <summary>Titles: text and style.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

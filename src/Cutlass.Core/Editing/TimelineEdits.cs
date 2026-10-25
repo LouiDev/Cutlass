@@ -55,8 +55,8 @@ public static partial class TimelineEdits
 
     /// <summary>
     /// Clamps every property of a clip to its legal range (speed, opacity, transform, colour, gain, fades within the
-    /// duration, keyframes inside <c>[0, Duration)</c> and sorted, <see cref="MediaClip.Freeze"/> only on video clips).
-    /// Returns the same instance when nothing changes.
+    /// duration, keyframes inside <c>[0, Duration)</c> and sorted, <see cref="MediaClip.Freeze"/> only on video clips,
+    /// a generator's colour as <c>#RRGGBB</c> and its tone frequency). Returns the same instance when nothing changes.
     /// </summary>
     /// <param name="clip">The clip.</param>
     /// <returns>The sanitized clip.</returns>
@@ -82,10 +82,42 @@ public static partial class TimelineEdits
                     && fadeOut == t.FadeOutFrames && t.LinkId is null
                     ? t
                     : t with { Title = title, Opacity = opacity, FadeInFrames = fadeIn, FadeOutFrames = fadeOut, LinkId = null };
+            case GeneratorClip g:
+                return SanitizeGenerator(g);
             default:
                 return clip;
         }
     }
+
+    // Effects batch 5: both props are kept in range whatever the kind, so a later kind change or a copy never carries
+    // an invalid value; the colour falls back to black and the frequency to 1 kHz.
+    private static GeneratorClip SanitizeGenerator(GeneratorClip g)
+    {
+        var video = SanitizeVideo(g.Video, g.Duration);
+        var audio = SanitizeAudio(g.Audio, g.Duration);
+        var color = ValidColor(g.Color) ? g.Color : GeneratorClip.DefaultColor;
+        var hz = Clamp(g.ToneHz, GeneratorClip.MinToneHz, GeneratorClip.MaxToneHz, GeneratorClip.DefaultToneHz);
+        return ReferenceEquals(video, g.Video) && ReferenceEquals(audio, g.Audio) && color == g.Color && hz.Equals(g.ToneHz)
+            && g.LinkId is null
+            ? g
+            : g with { Video = video, Audio = audio, Color = color, ToneHz = hz, LinkId = null };
+    }
+
+    /// <summary>The volume keyframes of a clip that carries audio props (media clips and generators), or default.</summary>
+    private static ImmutableArray<VolumeKey> KeysOf(Clip clip) => clip switch
+    {
+        MediaClip m => m.Audio.Keys,
+        GeneratorClip g => g.Audio.Keys,
+        _ => default,
+    };
+
+    /// <summary>The clip with new volume keyframes (unchanged for clips without audio props).</summary>
+    private static Clip WithKeys(Clip clip, ImmutableArray<VolumeKey> keys) => clip switch
+    {
+        MediaClip m => m with { Audio = m.Audio with { Keys = keys } },
+        GeneratorClip g => g with { Audio = g.Audio with { Keys = keys } },
+        _ => clip,
+    };
 
     /// <summary>The volume envelope of keyframes at a clip-relative frame: linear between keys, constant outside them.</summary>
     /// <param name="keys">The keyframes, sorted by frame.</param>
@@ -262,6 +294,11 @@ public static partial class TimelineEdits
             Audio = m.Audio with { FadeInFrames = fadeIn ?? m.Audio.FadeInFrames, FadeOutFrames = fadeOut ?? m.Audio.FadeOutFrames },
         },
         TitleClip t => t with { FadeInFrames = fadeIn ?? t.FadeInFrames, FadeOutFrames = fadeOut ?? t.FadeOutFrames },
+        GeneratorClip g => g with
+        {
+            Video = g.Video with { FadeInFrames = fadeIn ?? g.Video.FadeInFrames, FadeOutFrames = fadeOut ?? g.Video.FadeOutFrames },
+            Audio = g.Audio with { FadeInFrames = fadeIn ?? g.Audio.FadeInFrames, FadeOutFrames = fadeOut ?? g.Audio.FadeOutFrames },
+        },
         _ => clip,
     };
 
@@ -507,7 +544,12 @@ public static partial class TimelineEdits
                 return slash >= 0 ? path[(slash + 1)..] : path;
             }
 
-            return clip is TitleClip t ? (t.Title.Text.Split('\n')[0].Trim() is { Length: > 0 } line ? line : "Title") : clip.Id;
+            return clip switch
+            {
+                TitleClip t => t.Title.Text.Split('\n')[0].Trim() is { Length: > 0 } line ? line : "Title",
+                GeneratorClip g => g.Kind.DisplayName(),
+                _ => clip.Id,
+            };
         }
 
         public string NewId(string prefix) =>
@@ -549,7 +591,10 @@ public static partial class TimelineEdits
                 return SanitizeClip(m with { Start = newStart, Duration = duration, SourceInFlicks = source, Audio = audio });
             }
 
-            return SanitizeClip(clip with { Start = newStart, Duration = duration });
+            // A generator has no source; only its volume keyframes (clip-relative) follow the new start.
+            var keys = KeysOf(clip);
+            var moved = keys.IsDefaultOrEmpty ? clip : WithKeys(clip, [.. keys.Select(k => k with { Frame = k.Frame - shift })]);
+            return SanitizeClip(moved with { Start = newStart, Duration = duration });
         }
 
         /// <summary>Moves a clip's end to <paramref name="newEnd"/> keeping its start.</summary>
@@ -568,22 +613,22 @@ public static partial class TimelineEdits
             var rightId = NewId(IIdGenerator.ClipPrefix);
             var left = WithFades(TrimTailTo(clip, frame), null, 0);
             var right = WithFades(TrimHeadTo(clip, frame), 0, null) with { Id = rightId, LinkId = RightLink(clip.LinkId) };
-            if (clip is MediaClip m && !m.Audio.Keys.IsDefaultOrEmpty)
+            // Media clips and tone generators carry volume keyframes; both halves get a boundary key.
+            var keys = KeysOf(clip);
+            if (!keys.IsDefaultOrEmpty)
             {
                 var offset = frame - clip.Start;
-                var lm = (MediaClip)left;
-                var rm = (MediaClip)right;
+                var leftKeys = KeysOf(left);
+                var rightKeys = KeysOf(right);
                 var lastLeft = offset - 1;
-                if (!lm.Audio.Keys.Any(k => k.Frame == lastLeft))
+                if (!leftKeys.Any(k => k.Frame == lastLeft))
                 {
-                    var db = EnvelopeAt(m.Audio.Keys, lastLeft);
-                    left = lm with { Audio = lm.Audio with { Keys = [.. lm.Audio.Keys, new VolumeKey(lastLeft, db)] } };
+                    left = WithKeys(left, [.. leftKeys, new VolumeKey(lastLeft, EnvelopeAt(keys, lastLeft))]);
                 }
 
-                if (!rm.Audio.Keys.Any(k => k.Frame == 0))
+                if (!rightKeys.Any(k => k.Frame == 0))
                 {
-                    var db = EnvelopeAt(m.Audio.Keys, offset);
-                    right = rm with { Audio = rm.Audio with { Keys = [new VolumeKey(0, db), .. rm.Audio.Keys] } };
+                    right = WithKeys(right, [new VolumeKey(0, EnvelopeAt(keys, offset)), .. rightKeys]);
                 }
             }
 
@@ -854,7 +899,10 @@ public static partial class TimelineEdits
                 }
 
                 NormalizeTransitions(track);
-                if (track.Clips.Count > 0)
+
+                // Only media marks the sequence as used (effects batch 5): titles and generators have no size or rate
+                // of their own, so the first media clip placed after them still sets the sequence (DESIGN 2.1).
+                if (track.Clips.Any(c => c is MediaClip))
                 {
                     HasHadClips = true;
                 }

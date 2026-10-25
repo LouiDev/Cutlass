@@ -266,6 +266,11 @@ public static partial class TimelineEdits
         }
 
         var primary = found.Track.Clips[found.Index];
+        if (primary is GeneratorClip)
+        {
+            return EditResult.Unchanged(project, label, "Generators have no source to slip.");
+        }
+
         if (primary is not MediaClip || w.IsStill(primary))
         {
             return EditResult.Unchanged(project, label, "Titles and stills have no source to slip.");

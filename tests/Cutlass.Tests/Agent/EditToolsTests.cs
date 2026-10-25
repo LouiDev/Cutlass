@@ -276,6 +276,64 @@ public sealed class EditToolsTests : IDisposable
     }
 
     [Fact]
+    public async Task GeneratorsAddUpdateAndTakeClipProps()
+    {
+        // Effects batch 5: a matte on V2 and a tone on A2; the track kind must match the generator kind.
+        var id = await _host.AcquireAsync();
+        var matteResult = await Ok("edit.generator.add", """{"trackId":"tr_v2","at":60,"durationFrames":40,"kind":"colorMatte","color":"#ff8000","opacity":0.5,"fadeInFrames":5,"gainDb":-3}""", id);
+        Assert.Equal("Agent: Add Generator", matteResult.UndoLabel);
+        Assert.Contains("gainDb applies to tone only; it was ignored.", matteResult.Warnings);
+        var matte = ModelAssert.Track(Current, V2).Clips.OfType<GeneratorClip>().Single();
+        Assert.Equal((GeneratorKind.ColorMatte, "#FF8000", 60L, 40L, 0.5, 5L, 0.0), (matte.Kind, matte.Color, matte.Start, matte.Duration, matte.Video.Opacity, matte.Video.FadeInFrames, matte.Audio.GainDb));
+
+        await Ok("edit.generator.add", """{"trackId":"tr_a2","at":10,"durationFrames":50,"kind":"tone","toneHz":440,"gainDb":-6,"fadeOutFrames":10}""", id);
+        var tone = ModelAssert.Track(Current, A2).Clips.OfType<GeneratorClip>().Single();
+        Assert.Equal((GeneratorKind.Tone, 440.0, -6.0, 10L), (tone.Kind, tone.ToneHz, tone.Audio.GainDb, tone.Audio.FadeOutFrames));
+
+        Assert.Equal("trackId", (await Fails("edit.generator.add", """{"trackId":"tr_a2","at":0,"durationFrames":5,"kind":"bars"}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        Assert.Equal("trackId", (await Fails("edit.generator.add", """{"trackId":"tr_v2","at":0,"durationFrames":5,"kind":"tone"}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        Assert.Equal("kind", (await Fails("edit.generator.add", """{"trackId":"tr_v2","at":0,"durationFrames":5,"kind":"plasma"}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        Assert.Equal("kind", (await Fails("edit.generator.add", """{"trackId":"tr_v2","at":0,"durationFrames":5}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        Assert.Equal("color", (await Fails("edit.generator.add", """{"trackId":"tr_v2","at":0,"durationFrames":5,"kind":"colorMatte","color":"#FF000080"}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        Assert.Equal("toneHz", (await Fails("edit.generator.add", """{"trackId":"tr_a2","at":0,"durationFrames":5,"kind":"tone","toneHz":5}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+
+        var update = await Ok("edit.generator.update", $$"""{"clipId":"{{matte.Id}}","kind":"bars","fadeOutFrames":7,"toneHz":300}""", id);
+        Assert.Equal("Agent: Edit Generator", update.UndoLabel);
+        Assert.Contains("toneHz applies to tone only; it was ignored.", update.Warnings);
+        var bars = Assert.IsType<GeneratorClip>(ModelAssert.Clip(Current, matte.Id));
+        Assert.Equal((GeneratorKind.Bars, "#FF8000", 7L, GeneratorClip.DefaultToneHz), (bars.Kind, bars.Color, bars.Video.FadeOutFrames, bars.ToneHz));
+        await Ok("edit.generator.update", $$"""{"clipId":"{{tone.Id}}","toneHz":880.5}""", id);
+        Assert.Equal(880.5, Assert.IsType<GeneratorClip>(ModelAssert.Clip(Current, tone.Id)).ToneHz);
+        Assert.Equal("kind", (await Fails("edit.generator.update", $$"""{"clipId":"{{tone.Id}}","kind":"colorMatte"}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        await Fails("edit.generator.update", """{"clipId":"t1","color":"#000000"}""", id, ErrorCode.InvalidArgument);
+
+        // clip-props reach the side of the kind; the other side's fields are reported.
+        var props = await Ok("edit.clip-props", $$$"""{"clipIds":["{{{matte.Id}}}","{{{tone.Id}}}"],"opacity":0.25,"gainDb":-12,"effects":{"grayscale":true},"audioEffects":{"pan":-0.5}}""", id);
+        var propsBars = Assert.IsType<GeneratorClip>(ModelAssert.Clip(Current, matte.Id));
+        var propsTone = Assert.IsType<GeneratorClip>(ModelAssert.Clip(Current, tone.Id));
+        Assert.Equal((0.25, true, 0.0), (propsBars.Video.Opacity, propsBars.Video.Effects.Grayscale, propsBars.Audio.GainDb));
+        Assert.Equal((-12.0, -0.5, 1.0), (propsTone.Audio.GainDb, propsTone.Audio.Effects.Pan, propsTone.Video.Opacity));
+        Assert.Contains(props.Warnings, w => w.StartsWith("Video generators take", StringComparison.Ordinal));
+        Assert.Contains(props.Warnings, w => w.StartsWith("Tones take", StringComparison.Ordinal));
+
+        // A tone takes volume keys like an audio clip; a matte or bars does not.
+        await Ok("edit.volume-keys", $$"""{"clipId":"{{tone.Id}}","keys":[{"frame":5,"db":-3},{"frame":20,"db":0}]}""", id);
+        Assert.Equal(new[] { new VolumeKey(5, -3), new VolumeKey(20, 0) }, Assert.IsType<GeneratorClip>(ModelAssert.Clip(Current, tone.Id)).Audio.Keys);
+        Assert.Equal("clipId", (await Fails("edit.volume-keys", $$"""{"clipId":"{{matte.Id}}","keys":[]}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+
+        var caps = await _host.CallAsync("capabilities");
+        Assert.Equal(["colorMatte", "bars", "tone"], caps.Result!.Value.GetProperty("generatorKinds").EnumerateArray().Select(e => e.GetString()));
+        var summary = await _host.CallAsync("project.get");
+        var a2 = summary.Result!.Value.GetProperty("tracks").EnumerateArray().Single(t => t.GetProperty("id").GetString() == A2).GetProperty("clips")[0];
+        Assert.Equal(("generator", "tone", 880.5, "Tone"), (a2.GetProperty("type").GetString(), a2.GetProperty("generator").GetProperty("kind").GetString(), a2.GetProperty("generator").GetProperty("toneHz").GetDouble(), a2.GetProperty("displayName").GetString()));
+        Assert.Equal(-12, a2.GetProperty("audio").GetProperty("gainDb").GetDouble());
+        Assert.False(a2.TryGetProperty("video", out _));
+        var described = await _host.CallAsync("project.describe");
+        Assert.Contains(tone.Id + " generator tone 880.5 Hz 10+50 gain -12 dB fade 0/10 keys 2", described.Text, StringComparison.Ordinal);
+        ModelAssert.Valid(Current);
+    }
+
+    [Fact]
     public async Task OnlyATemplateIsScaledToTheSequenceHeight()
     {
         var id = await _host.AcquireAsync();

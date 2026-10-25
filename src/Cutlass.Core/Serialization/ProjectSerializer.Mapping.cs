@@ -130,68 +130,8 @@ public static partial class ProjectSerializer
                     SourceInFlicks = m.SourceInFlicks,
                     SpeedPercent = m.SpeedPercent,
                     Freeze = m.Freeze ? true : null,
-                    Video = isVideo
-                        ? new VideoPropsDto
-                        {
-                            Transform = new TransformDto
-                            {
-                                X = m.Video.Transform.X,
-                                Y = m.Video.Transform.Y,
-                                Scale = m.Video.Transform.Scale,
-                                Crop = [m.Video.Transform.CropLeft, m.Video.Transform.CropTop, m.Video.Transform.CropRight, m.Video.Transform.CropBottom],
-                            },
-                            Opacity = m.Video.Opacity,
-                            Color = new ColorAdjustDto
-                            {
-                                Brightness = m.Video.Color.Brightness,
-                                Contrast = m.Video.Color.Contrast,
-                                Saturation = m.Video.Color.Saturation,
-                                Gamma = m.Video.Color.Gamma,
-                            },
-                            FadeIn = m.Video.FadeInFrames,
-                            FadeOut = m.Video.FadeOutFrames,
-                            Effects = new VideoEffectsDto
-                            {
-                                FlipH = m.Video.Effects.FlipH,
-                                FlipV = m.Video.Effects.FlipV,
-                                RotationDegrees = m.Video.Effects.RotationDegrees,
-                                HueDegrees = m.Video.Effects.HueDegrees,
-                                TemperatureKelvin = m.Video.Effects.TemperatureKelvin,
-                                Tint = m.Video.Effects.Tint,
-                                Blur = m.Video.Effects.Blur,
-                                Sharpen = m.Video.Effects.Sharpen,
-                                Vignette = m.Video.Effects.Vignette,
-                                Grayscale = m.Video.Effects.Grayscale,
-                                KeyEnabled = m.Video.Effects.KeyEnabled,
-                                KeyColor = m.Video.Effects.KeyColor,
-                                KeySimilarity = m.Video.Effects.KeySimilarity,
-                                KeyBlend = m.Video.Effects.KeyBlend,
-                            },
-                        }
-                        : null,
-                    Audio = isVideo
-                        ? null
-                        : new AudioPropsDto
-                        {
-                            GainDb = m.Audio.GainDb,
-                            FadeIn = m.Audio.FadeInFrames,
-                            FadeOut = m.Audio.FadeOutFrames,
-                            Keys = [.. m.Audio.Keys.Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
-                            Effects = new AudioEffectsDto
-                            {
-                                HighPassHz = m.Audio.Effects.HighPassHz,
-                                LowPassHz = m.Audio.Effects.LowPassHz,
-                                BassDb = m.Audio.Effects.BassDb,
-                                TrebleDb = m.Audio.Effects.TrebleDb,
-                                Compressor = m.Audio.Effects.Compressor,
-                                CompressorThresholdDb = m.Audio.Effects.CompressorThresholdDb,
-                                CompressorRatio = m.Audio.Effects.CompressorRatio,
-                                Gate = m.Audio.Effects.Gate,
-                                GateThresholdDb = m.Audio.Effects.GateThresholdDb,
-                                Pan = m.Audio.Effects.Pan,
-                                Mono = m.Audio.Effects.Mono,
-                            },
-                        },
+                    Video = isVideo ? ToDto(m.Video) : null,
+                    Audio = isVideo ? null : ToDto(m.Audio),
                 };
             case TitleClip t:
                 return new ClipDto
@@ -220,10 +160,85 @@ public static partial class ProjectSerializer
                     FadeIn = t.FadeInFrames,
                     FadeOut = t.FadeOutFrames,
                 };
+            case GeneratorClip g:
+                var videoKind = g.Kind.IsVideo();
+                return new ClipDto
+                {
+                    Type = "generator",
+                    Id = g.Id,
+                    Start = g.Start,
+                    Duration = g.Duration,
+                    Enabled = g.Enabled,
+                    Generator = EnumText(g.Kind),
+                    Color = g.Kind == GeneratorKind.ColorMatte ? g.Color : null,
+                    ToneHz = g.Kind == GeneratorKind.Tone ? g.ToneHz : null,
+                    Video = videoKind ? ToDto(g.Video) : null,
+                    Audio = videoKind ? null : ToDto(g.Audio),
+                };
             default:
                 throw new InvalidOperationException($"Unknown clip type {clip.GetType().Name}.");
         }
     }
+
+    private static VideoPropsDto ToDto(VideoProps v) => new()
+    {
+        Transform = new TransformDto
+        {
+            X = v.Transform.X,
+            Y = v.Transform.Y,
+            Scale = v.Transform.Scale,
+            Crop = [v.Transform.CropLeft, v.Transform.CropTop, v.Transform.CropRight, v.Transform.CropBottom],
+        },
+        Opacity = v.Opacity,
+        Color = new ColorAdjustDto
+        {
+            Brightness = v.Color.Brightness,
+            Contrast = v.Color.Contrast,
+            Saturation = v.Color.Saturation,
+            Gamma = v.Color.Gamma,
+        },
+        FadeIn = v.FadeInFrames,
+        FadeOut = v.FadeOutFrames,
+        Effects = new VideoEffectsDto
+        {
+            FlipH = v.Effects.FlipH,
+            FlipV = v.Effects.FlipV,
+            RotationDegrees = v.Effects.RotationDegrees,
+            HueDegrees = v.Effects.HueDegrees,
+            TemperatureKelvin = v.Effects.TemperatureKelvin,
+            Tint = v.Effects.Tint,
+            Blur = v.Effects.Blur,
+            Sharpen = v.Effects.Sharpen,
+            Vignette = v.Effects.Vignette,
+            Grayscale = v.Effects.Grayscale,
+            KeyEnabled = v.Effects.KeyEnabled,
+            KeyColor = v.Effects.KeyColor,
+            KeySimilarity = v.Effects.KeySimilarity,
+            KeyBlend = v.Effects.KeyBlend,
+        },
+    };
+
+    private static AudioPropsDto ToDto(AudioProps a) => new()
+    {
+        GainDb = a.GainDb,
+        FadeIn = a.FadeInFrames,
+        FadeOut = a.FadeOutFrames,
+        Keys = [.. a.Keys.Select(k => new VolumeKeyDto { Frame = k.Frame, Db = k.Db })],
+        Effects = new AudioEffectsDto
+        {
+            HighPassHz = a.Effects.HighPassHz,
+            LowPassHz = a.Effects.LowPassHz,
+            BassDb = a.Effects.BassDb,
+            TrebleDb = a.Effects.TrebleDb,
+            Compressor = a.Effects.Compressor,
+            CompressorThresholdDb = a.Effects.CompressorThresholdDb,
+            CompressorRatio = a.Effects.CompressorRatio,
+            Gate = a.Effects.Gate,
+            GateThresholdDb = a.Effects.GateThresholdDb,
+            Pan = a.Effects.Pan,
+            Mono = a.Effects.Mono,
+        },
+    };
 
     private static Project FromDto(ProjectFileDto dto)
     {
@@ -310,13 +325,6 @@ public static partial class ProjectSerializer
         {
             case "media":
                 var stream = ParseEnum<StreamKind>(dto.Stream, "clip stream");
-                var v = dto.Video ?? new VideoPropsDto();
-                var a = dto.Audio ?? new AudioPropsDto();
-                var t = v.Transform ?? new TransformDto();
-                var crop = t.Crop ?? [];
-                var c = v.Color ?? new ColorAdjustDto();
-                var fx = v.Effects ?? new VideoEffectsDto();
-                var afx = a.Effects ?? new AudioEffectsDto();
                 return new MediaClip(
                     dto.Id ?? string.Empty,
                     dto.Start,
@@ -327,44 +335,8 @@ public static partial class ProjectSerializer
                     stream,
                     dto.SourceInFlicks ?? 0,
                     dto.SpeedPercent ?? 100,
-                    new VideoProps(
-                        new Transform(t.X, t.Y, t.Scale, CropAt(crop, 0), CropAt(crop, 1), CropAt(crop, 2), CropAt(crop, 3)),
-                        v.Opacity,
-                        new ColorAdjust(c.Brightness, c.Contrast, c.Saturation, c.Gamma),
-                        v.FadeIn,
-                        v.FadeOut,
-                        new VideoEffects(
-                            fx.FlipH,
-                            fx.FlipV,
-                            fx.RotationDegrees,
-                            fx.HueDegrees,
-                            fx.TemperatureKelvin,
-                            fx.Tint,
-                            fx.Blur,
-                            fx.Sharpen,
-                            fx.Vignette,
-                            fx.Grayscale,
-                            fx.KeyEnabled,
-                            fx.KeyColor ?? VideoEffects.None.KeyColor,
-                            fx.KeySimilarity,
-                            fx.KeyBlend)),
-                    new AudioProps(
-                        a.GainDb,
-                        a.FadeIn,
-                        a.FadeOut,
-                        [.. Items(a.Keys, "volume key").Select(k => new VolumeKey(k.Frame, k.Db))],
-                        new AudioEffects(
-                            afx.HighPassHz,
-                            afx.LowPassHz,
-                            afx.BassDb,
-                            afx.TrebleDb,
-                            afx.Compressor,
-                            afx.CompressorThresholdDb,
-                            afx.CompressorRatio,
-                            afx.Gate,
-                            afx.GateThresholdDb,
-                            afx.Pan,
-                            afx.Mono)))
+                    FromDto(dto.Video),
+                    FromDto(dto.Audio))
                 {
                     // Freeze frames are video only (TECH_BRIEF 3.5); the key on an audio clip is ignored.
                     Freeze = dto.Freeze == true && stream == StreamKind.Video,
@@ -392,9 +364,75 @@ public static partial class ProjectSerializer
                     dto.Opacity ?? 1,
                     dto.FadeIn ?? 0,
                     dto.FadeOut ?? 0);
+            case "generator":
+                // An unknown kind (a file from a newer build) falls back to a matte, like transition kinds fall back
+                // to a crossfade; SanitizeClip repairs the colour and the frequency on the first edit.
+                return new GeneratorClip(
+                    dto.Id ?? string.Empty,
+                    dto.Start,
+                    dto.Duration,
+                    dto.Enabled,
+                    TryParseEnum(dto.Generator, out GeneratorKind kind) ? kind : GeneratorKind.ColorMatte,
+                    dto.Color ?? GeneratorClip.DefaultColor,
+                    dto.ToneHz ?? GeneratorClip.DefaultToneHz,
+                    FromDto(dto.Video),
+                    FromDto(dto.Audio));
             default:
                 throw new InvalidDataException($"Unknown clip type '{dto.Type}'.");
         }
+    }
+
+    private static VideoProps FromDto(VideoPropsDto? dto)
+    {
+        var v = dto ?? new VideoPropsDto();
+        var t = v.Transform ?? new TransformDto();
+        var crop = t.Crop ?? [];
+        var c = v.Color ?? new ColorAdjustDto();
+        var fx = v.Effects ?? new VideoEffectsDto();
+        return new VideoProps(
+            new Transform(t.X, t.Y, t.Scale, CropAt(crop, 0), CropAt(crop, 1), CropAt(crop, 2), CropAt(crop, 3)),
+            v.Opacity,
+            new ColorAdjust(c.Brightness, c.Contrast, c.Saturation, c.Gamma),
+            v.FadeIn,
+            v.FadeOut,
+            new VideoEffects(
+                fx.FlipH,
+                fx.FlipV,
+                fx.RotationDegrees,
+                fx.HueDegrees,
+                fx.TemperatureKelvin,
+                fx.Tint,
+                fx.Blur,
+                fx.Sharpen,
+                fx.Vignette,
+                fx.Grayscale,
+                fx.KeyEnabled,
+                fx.KeyColor ?? VideoEffects.None.KeyColor,
+                fx.KeySimilarity,
+                fx.KeyBlend));
+    }
+
+    private static AudioProps FromDto(AudioPropsDto? dto)
+    {
+        var a = dto ?? new AudioPropsDto();
+        var afx = a.Effects ?? new AudioEffectsDto();
+        return new AudioProps(
+            a.GainDb,
+            a.FadeIn,
+            a.FadeOut,
+            [.. Items(a.Keys, "volume key").Select(k => new VolumeKey(k.Frame, k.Db))],
+            new AudioEffects(
+                afx.HighPassHz,
+                afx.LowPassHz,
+                afx.BassDb,
+                afx.TrebleDb,
+                afx.Compressor,
+                afx.CompressorThresholdDb,
+                afx.CompressorRatio,
+                afx.Gate,
+                afx.GateThresholdDb,
+                afx.Pan,
+                afx.Mono));
     }
 
     private static double CropAt(double[] crop, int index) => index < crop.Length ? crop[index] : 0;

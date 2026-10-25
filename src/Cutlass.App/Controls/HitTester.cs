@@ -69,12 +69,14 @@ public static class HitTester
     /// <returns>The buttons.</returns>
     public static IReadOnlyList<HeaderButton> HeaderButtons(TrackKind kind) => kind == TrackKind.Video ? VideoButtons : AudioButtons;
 
-    /// <summary>The fade lengths of a clip (title fades, or the video or audio fades of a media clip).</summary>
+    /// <summary>The fade lengths of a clip (title fades, or the video or audio fades of a media clip or a generator).</summary>
     /// <param name="clip">The clip.</param>
     /// <returns>The fade-in and fade-out lengths in frames.</returns>
     public static (long In, long Out) Fades(Clip clip) => clip switch
     {
         TitleClip t => (t.FadeInFrames, t.FadeOutFrames),
+        GeneratorClip { Kind: GeneratorKind.Tone } g => (g.Audio.FadeInFrames, g.Audio.FadeOutFrames),
+        GeneratorClip g => (g.Video.FadeInFrames, g.Video.FadeOutFrames),
         MediaClip { Stream: StreamKind.Video } m => (m.Video.FadeInFrames, m.Video.FadeOutFrames),
         MediaClip m => (m.Audio.FadeInFrames, m.Audio.FadeOutFrames),
         _ => (0, 0),
@@ -141,8 +143,8 @@ public static class HitTester
     }
 
     /// <summary>
-    /// True when a clip shows its keyframe dots and volume line as interactive: a selected audio media clip on an
-    /// unlocked track.
+    /// True when a clip shows its keyframe dots and volume line as interactive: a selected audio media clip or tone
+    /// (<see cref="ClipAudio"/>) on an unlocked track.
     /// </summary>
     /// <param name="track">The clip's track.</param>
     /// <param name="clip">The clip.</param>
@@ -151,7 +153,7 @@ public static class HitTester
     public static bool HasEditableVolume(Track track, Clip clip, IReadOnlySet<string>? selectedClipIds)
     {
         ArgumentNullException.ThrowIfNull(track);
-        return clip is MediaClip { Stream: StreamKind.Audio } && !track.Locked && selectedClipIds is not null && selectedClipIds.Contains(clip.Id);
+        return ClipAudio.Of(clip) is not null && !track.Locked && selectedClipIds is not null && selectedClipIds.Contains(clip.Id);
     }
 
     /// <summary>Hit tests a point of the control.</summary>
@@ -239,17 +241,17 @@ public static class HitTester
         var editableVolume = clip is not null && HasEditableVolume(track, clip, selectedClipIds);
         var clipHeight = row.Height - 2;
 
-        // 1. Keyframe dots (selected audio clips).
-        if (editableVolume && clip is MediaClip audio && !audio.Audio.Keys.IsDefaultOrEmpty)
+        // 1. Keyframe dots (selected audio clips and tones).
+        if (editableVolume && clip is not null && ClipAudio.Of(clip) is { Keys.IsDefaultOrEmpty: false } audio)
         {
-            for (var i = 0; i < audio.Audio.Keys.Length; i++)
+            for (var i = 0; i < audio.Keys.Length; i++)
             {
-                var key = audio.Audio.Keys[i];
-                var kx = KeyX(view, audio, key);
-                var ky = VolumeScale.DbToY(audio.Audio.GainDb + key.Db, 1, clipHeight);
+                var key = audio.Keys[i];
+                var kx = KeyX(view, clip, key);
+                var ky = VolumeScale.DbToY(audio.GainDb + key.Db, 1, clipHeight);
                 if (Math.Abs(lx - kx) <= VolumeScale.DotRadius + 1 && Math.Abs(yInRow - ky) <= VolumeScale.DotRadius + 1)
                 {
-                    return new HitResult(HitZone.Keyframe, track.Id, audio.Id, null, frame, KeyIndex: i);
+                    return new HitResult(HitZone.Keyframe, track.Id, clip.Id, null, frame, KeyIndex: i);
                 }
             }
         }
@@ -305,10 +307,10 @@ public static class HitTester
             var edge = width < NarrowClipWidth ? width / 3 : EdgeWidth;
             var zone = lx < left + edge ? HitZone.ClipStart : lx >= right - edge ? HitZone.ClipEnd : HitZone.ClipBody;
 
-            // 5. The volume line (selected audio clips).
-            if (zone == HitZone.ClipBody && editableVolume && clip is MediaClip lineClip)
+            // 5. The volume line (selected audio clips and tones).
+            if (zone == HitZone.ClipBody && editableVolume)
             {
-                var lineY = VolumeScale.DbToY(VolumeScale.LevelAt(lineClip, frame - clip.Start), 1, clipHeight);
+                var lineY = VolumeScale.DbToY(VolumeScale.LevelAt(clip, frame - clip.Start), 1, clipHeight);
                 if (Math.Abs(yInRow - lineY) <= VolumeScale.LineGrab)
                 {
                     zone = HitZone.VolumeLine;

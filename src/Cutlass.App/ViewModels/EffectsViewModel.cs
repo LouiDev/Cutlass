@@ -21,6 +21,10 @@ namespace Cutlass.App.ViewModels;
 /// the playhead that is free for those 5 s; without one a new video track is added on top (or, at 8 video tracks, the
 /// topmost unlocked track is overwritten).</item>
 /// <item>A fade preset sets 1 s video and audio fades on the selected clips.</item>
+/// <item>A generator (effects batch 5: Color Matte, Bars, Tone) is placed at the playhead for the default still
+/// duration without overwriting anything: the matte and the bars go to a video track chosen like a title's, the tone to
+/// the first targeted unlocked audio track that is free over that range, else the first free unlocked audio track;
+/// without one a track of the kind is added. A drop overwrites on the track it lands on.</item>
 /// </list>
 /// Double-clicking a video transition makes it the default (star) used by Ctrl+D (DESIGN 4.2); double-clicking any other
 /// item applies it.
@@ -91,6 +95,18 @@ public sealed partial class EffectsViewModel : ObservableObject
         // Effects batch 4: a freeze frame of the selected (or dropped-on) video clip at the playhead (or the drop frame).
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FreezeFrame", "Freeze Frame", EffectCategory.Adjustment, "FRZ", string.Empty, "Holds the frame of the selected video clip at the playhead for the default still duration; dropped on a clip, the frame under the pointer (Shift+F)."));
 
+        // Effects batch 5: the generators, as long as a still. Their detail follows the still duration setting.
+        Generators.Add(GeneratorItem(GeneratorKind.ColorMatte, "CM", "A black colour matte at the playhead on a free video track above the clips there; pick its colour in the Inspector."));
+        Generators.Add(GeneratorItem(GeneratorKind.Bars, "BAR", "SMPTE HD colour bars at the playhead on a free video track above the clips there."));
+        Generators.Add(GeneratorItem(GeneratorKind.Tone, "TN", "A 1 kHz tone at -18 dBFS peak per channel at the playhead on a free audio track (targeted ones first)."));
+        _timeline.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(TimelineViewModel.StillDurationSeconds))
+            {
+                UpdateGeneratorDetails();
+            }
+        };
+
         DefaultTransitionKind = TransitionKind.Crossfade;
         MarkDefault(DefaultTransitionKind);
         StatusText = string.Empty;
@@ -135,8 +151,11 @@ public sealed partial class EffectsViewModel : ObservableObject
     /// <summary>The adjustments (fade presets).</summary>
     public ObservableCollection<EffectItem> Adjustments { get; } = [];
 
+    /// <summary>The generators (effects batch 5): Color Matte, Bars and Tone.</summary>
+    public ObservableCollection<EffectItem> Generators { get; } = [];
+
     /// <summary>Every item.</summary>
-    public IEnumerable<EffectItem> All => Transitions.Concat(Titles).Concat(Adjustments);
+    public IEnumerable<EffectItem> All => Transitions.Concat(Titles).Concat(Generators).Concat(Adjustments);
 
     /// <summary>The default video transition (Ctrl+D). Crossfade is the factory default.</summary>
     [ObservableProperty]
@@ -259,6 +278,7 @@ public sealed partial class EffectsViewModel : ObservableObject
             EffectCategory.Transition when item.TransitionKind is { } kind => ApplyTransition(kind),
             EffectCategory.Title when item.Title is { } spec => AddTitle(spec, _timeline.Playhead, null),
             EffectCategory.Adjustment => ApplyAdjustment(item.Id),
+            EffectCategory.Generator when item.GeneratorKind is { } kind => AddGenerator(kind, _timeline.Playhead, null),
             _ => null,
         };
     }
@@ -308,6 +328,14 @@ public sealed partial class EffectsViewModel : ObservableObject
                 return AddTransitions(kind, [(track.Id, cuts.MinBy(c => Math.Abs(c - frame)))]);
             case EffectCategory.Title when item.Title is { } spec:
                 return track.Kind == TrackKind.Video ? AddTitle(spec, frame, track.Id) : null;
+            case EffectCategory.Generator when item.GeneratorKind is { } kind:
+                if (track.Kind != kind.TrackKindOf())
+                {
+                    StatusText = kind.IsAudio() ? "Drop Tone on an audio track." : "Drop " + kind.DisplayName() + " on a video track.";
+                    return null;
+                }
+
+                return AddGenerator(kind, frame, track.Id);
             case EffectCategory.Adjustment when TimelineQuery.ClipAt(track, frame) is { } clip:
                 // Like a click, a drop on a clip also reaches its linked partners while linked selection is on.
                 return Adjust(item.Id, _timeline.LinkedSelection ? TimelineQuery.WithLinkedPartners(project, [clip.Id]) : [clip.Id], frame);
@@ -349,6 +377,8 @@ public sealed partial class EffectsViewModel : ObservableObject
                 return new EffectDropPreview(track.Id, cut - (length / 2), length, EffectCategory.Transition);
             case EffectCategory.Title when item.Title is not null && track.Kind == TrackKind.Video:
                 return new EffectDropPreview(track.Id, Math.Max(0, frame), FramesFor(TitleLengthSeconds, rate), EffectCategory.Title);
+            case EffectCategory.Generator when item.GeneratorKind is { } kind && track.Kind == kind.TrackKindOf():
+                return new EffectDropPreview(track.Id, Math.Max(0, frame), _timeline.StillDurationFrames, EffectCategory.Generator);
             case EffectCategory.Adjustment when TimelineQuery.ClipAt(track, frame) is { } clip:
                 return new EffectDropPreview(track.Id, clip.Start, clip.Duration, EffectCategory.Adjustment);
             default:
@@ -393,6 +423,22 @@ public sealed partial class EffectsViewModel : ObservableObject
             }
         }
     }
+
+    private EffectItem GeneratorItem(GeneratorKind kind, string badge, string description) =>
+        new(EffectItem.GeneratorPrefix + kind, kind.DisplayName(), EffectCategory.Generator, badge, SecondsText(_timeline.StillDurationSeconds), description + " Dropped, it goes where it lands.")
+        {
+            GeneratorKind = kind,
+        };
+
+    private void UpdateGeneratorDetails()
+    {
+        foreach (var item in Generators)
+        {
+            item.Detail = SecondsText(_timeline.StillDurationSeconds);
+        }
+    }
+
+    private static string SecondsText(double seconds) => seconds.ToString("0.##", CultureInfo.InvariantCulture) + " s";
 
     private static EffectItem TitleItem(string key, string name, string description, TitleSpec spec) =>
         new(EffectItem.TitlePrefix + key, name, EffectCategory.Title, "T", "5 s", description + " Places a 5 s title at the playhead (Ctrl+T adds Lower Third).")
@@ -591,11 +637,20 @@ public sealed partial class EffectsViewModel : ObservableObject
         return result;
     }
 
-    private static Clip WithEffects(Clip clip, Func<VideoEffects, VideoEffects> change) =>
-        clip is MediaClip { Stream: StreamKind.Video } m ? m with { Video = m.Video with { Effects = change(m.Video.Effects) } } : clip;
+    // The effect presets reach video generators and tones like media clips of their side (effects batch 5).
+    private static Clip WithEffects(Clip clip, Func<VideoEffects, VideoEffects> change) => clip switch
+    {
+        MediaClip { Stream: StreamKind.Video } m => m with { Video = m.Video with { Effects = change(m.Video.Effects) } },
+        GeneratorClip g when g.Kind.IsVideo() => g with { Video = g.Video with { Effects = change(g.Video.Effects) } },
+        _ => clip,
+    };
 
-    private static Clip WithAudioEffects(Clip clip, Func<AudioEffects, AudioEffects> change) =>
-        clip is MediaClip { Stream: StreamKind.Audio } m ? m with { Audio = m.Audio with { Effects = change(m.Audio.Effects) } } : clip;
+    private static Clip WithAudioEffects(Clip clip, Func<AudioEffects, AudioEffects> change) => clip switch
+    {
+        MediaClip { Stream: StreamKind.Audio } m => m with { Audio = m.Audio with { Effects = change(m.Audio.Effects) } },
+        GeneratorClip g when g.Kind.IsAudio() => g with { Audio = g.Audio with { Effects = change(g.Audio.Effects) } },
+        _ => clip,
+    };
 
     private static Clip WithFades(Clip clip, long? fadeIn, long? fadeOut) => clip switch
     {
@@ -606,6 +661,11 @@ public sealed partial class EffectsViewModel : ObservableObject
             Audio = m.Audio with { FadeInFrames = Limit(fadeIn, m.Duration) ?? m.Audio.FadeInFrames, FadeOutFrames = Limit(fadeOut, m.Duration) ?? m.Audio.FadeOutFrames },
         },
         TitleClip t => t with { FadeInFrames = Limit(fadeIn, t.Duration) ?? t.FadeInFrames, FadeOutFrames = Limit(fadeOut, t.Duration) ?? t.FadeOutFrames },
+        GeneratorClip g => g with
+        {
+            Video = g.Video with { FadeInFrames = Limit(fadeIn, g.Duration) ?? g.Video.FadeInFrames, FadeOutFrames = Limit(fadeOut, g.Duration) ?? g.Video.FadeOutFrames },
+            Audio = g.Audio with { FadeInFrames = Limit(fadeIn, g.Duration) ?? g.Audio.FadeInFrames, FadeOutFrames = Limit(fadeOut, g.Duration) ?? g.Audio.FadeOutFrames },
+        },
         _ => clip,
     };
 
@@ -616,46 +676,11 @@ public sealed partial class EffectsViewModel : ObservableObject
         var project = _timeline.Session.Current;
         var duration = FramesFor(TitleLengthSeconds, project.Sequence.Settings.Rate);
         var at = Math.Max(0, frame);
-        var ids = _timeline.Ids;
         // The template sizes are for a 1080-line canvas, so they scale with the sequence height (TitleTemplates.Scale,
         // shared with the agent's add_title).
         var scaled = TitleTemplates.Scale(spec, project.Sequence.Settings.Height);
         var title = new TitleClip("c_title", 0, duration, true, scaled, 1, 0, 0);
-        var result = _timeline.Run(p =>
-        {
-            var target = trackId;
-            var start = p;
-            if (target is null)
-            {
-                target = TitleTrack(p, at, duration);
-                if (target is null)
-                {
-                    var added = TimelineEdits.AddTrack(ids, p, TrackKind.Video);
-                    if (added.Changed(p))
-                    {
-                        start = added.Project;
-                        target = added.Select[0];
-                    }
-                    else
-                    {
-                        target = TimelineQuery.TracksOfKind(p, TrackKind.Video).LastOrDefault(t => !t.Locked)?.Id;
-                    }
-                }
-            }
-
-            if (target is null)
-            {
-                return EditResult.Unchanged(p, "Add Title", "Every video track is locked.");
-            }
-
-            var placed = TimelineEdits.Place(ids, start, [new ClipPlacement(target, title)], at, EditMode.Overwrite);
-            if (!placed.Changed(start))
-            {
-                return EditResult.Unchanged(p, "Add Title", [.. placed.Warnings]);
-            }
-
-            return placed with { Label = "Add Title" };
-        });
+        var result = PlaceOnFreeTrack(title, TrackKind.Video, at, trackId, "Add Title");
         if (!result.Select.IsDefaultOrEmpty)
         {
             _timeline.Select(result.Select, false);
@@ -668,6 +693,98 @@ public sealed partial class EffectsViewModel : ObservableObject
 
         return result;
     }
+
+    /// <summary>
+    /// Places a generator (effects batch 5) at <paramref name="frame"/> for the default still duration. A drop
+    /// (<paramref name="trackId"/> set) overwrites on that track. Apply never overwrites: a video generator goes to the
+    /// title track (<see cref="TitleTrack"/>), the tone to the first targeted unlocked audio track that is free over the
+    /// range, else the first free unlocked audio track; without one a track of the kind is added. The new clip is
+    /// selected so the Inspector shows its colour or frequency.
+    /// </summary>
+    private EditResult? AddGenerator(GeneratorKind kind, long frame, string? trackId)
+    {
+        var project = _timeline.Session.Current;
+        var at = Math.Max(0, frame);
+        var clip = GeneratorClip.Create("c_generator", 0, _timeline.StillDurationFrames, kind);
+        var result = PlaceOnFreeTrack(clip, kind.TrackKindOf(), at, trackId, "Add " + kind.DisplayName());
+        if (!result.Select.IsDefaultOrEmpty)
+        {
+            _timeline.Select(result.Select, false);
+            StatusText = "Added " + kind.DisplayName() + " at " + Timecode.Format(at, project.Sequence.Settings.Rate) + ".";
+        }
+        else
+        {
+            StatusText = result.Warnings.IsDefaultOrEmpty ? "No generator added." : result.Warnings[0];
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Places <paramref name="clip"/> at <paramref name="at"/> with <see cref="EditMode.Overwrite"/> as one undo step. On
+    /// <paramref name="trackId"/> when it is set (a drop); otherwise on a track of <paramref name="kind"/> that is free
+    /// over the clip's range (<see cref="TitleTrack"/> for video, <see cref="FreeAudioTrack"/> for audio), else on a new
+    /// track of the kind, else (every track of the kind exists) on the topmost unlocked video track or the first
+    /// targeted unlocked audio track.
+    /// </summary>
+    private EditResult PlaceOnFreeTrack(Clip clip, TrackKind kind, long at, string? trackId, string label)
+    {
+        var ids = _timeline.Ids;
+        return _timeline.Run(p =>
+        {
+            var target = trackId;
+            var start = p;
+            if (target is null)
+            {
+                target = kind == TrackKind.Video ? TitleTrack(p, at, clip.Duration) : FreeAudioTrack(p, at, clip.Duration);
+                if (target is null)
+                {
+                    var added = TimelineEdits.AddTrack(ids, p, kind);
+                    if (added.Changed(p))
+                    {
+                        start = added.Project;
+                        target = added.Select[0];
+                    }
+                    else
+                    {
+                        var unlocked = TimelineQuery.TracksOfKind(p, kind).Where(t => !t.Locked).ToList();
+                        target = kind == TrackKind.Video
+                            ? unlocked.LastOrDefault()?.Id
+                            : (unlocked.FirstOrDefault(t => t.Targeted) ?? unlocked.FirstOrDefault())?.Id;
+                    }
+                }
+            }
+
+            if (target is null)
+            {
+                return EditResult.Unchanged(p, label, "Every " + (kind == TrackKind.Audio ? "audio" : "video") + " track is locked.");
+            }
+
+            var placed = TimelineEdits.Place(ids, start, [new ClipPlacement(target, clip)], at, EditMode.Overwrite);
+            if (!placed.Changed(start))
+            {
+                return EditResult.Unchanged(p, label, [.. placed.Warnings]);
+            }
+
+            return placed with { Label = label };
+        });
+    }
+
+    /// <summary>
+    /// The audio track a tone goes to on Apply: the first targeted unlocked audio track that is free over
+    /// [<paramref name="at"/>, <paramref name="at"/> + <paramref name="duration"/>), else the first free unlocked one.
+    /// Null when there is none.
+    /// </summary>
+    private static string? FreeAudioTrack(Project project, long at, long duration)
+    {
+        var free = TimelineQuery.TracksOfKind(project, TrackKind.Audio)
+            .Where(t => !t.Locked && IsFree(t, at, duration))
+            .ToList();
+        return (free.FirstOrDefault(t => t.Targeted) ?? free.FirstOrDefault())?.Id;
+    }
+
+    private static bool IsFree(Track track, long at, long duration) =>
+        track.Clips.All(c => c.End <= at || c.Start >= at + duration);
 
     /// <summary>
     /// The track a new title goes to: the lowest unlocked video track that sits above every video track with a clip
@@ -688,7 +805,7 @@ public sealed partial class EffectsViewModel : ObservableObject
         for (var i = highestBusy + 1; i < videos.Length; i++)
         {
             var track = videos[i];
-            if (!track.Locked && track.Clips.All(c => c.End <= at || c.Start >= at + duration))
+            if (!track.Locked && IsFree(track, at, duration))
             {
                 return track.Id;
             }

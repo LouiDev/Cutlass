@@ -15,9 +15,12 @@ public static class ApiVersion
     /// <c>audioEffects</c> object (high-pass, low-pass, bass, treble, compressor, gate, pan, mono) to <c>edit.clip-props</c>
     /// and <c>effects</c> to the <c>audio</c> block of every audio clip in the project summary. 6 added <c>edit.freeze</c>
     /// (<c>cutlass_freeze_frame</c>), the <c>freeze</c> flag of <c>edit.clip-props</c> and of frozen media clips in the
-    /// project summary, the <c>template</c> of <c>edit.title.add</c> and <c>capabilities.titleTemplates</c>.
+    /// project summary, the <c>template</c> of <c>edit.title.add</c> and <c>capabilities.titleTemplates</c>. 7 added
+    /// generator clips: <c>edit.generator.add</c> and <c>edit.generator.update</c> (<c>cutlass_add_generator</c>,
+    /// <c>cutlass_update_generator</c>), <c>capabilities.generatorKinds</c>, the <c>generator</c> clip type with its
+    /// <c>generator</c> object in the project summary, and generator arms in <c>edit.clip-props</c>.
     /// </summary>
-    public const int Revision = 6;
+    public const int Revision = 7;
 
     /// <summary>The route prefix of this version.</summary>
     public const string Prefix = "/v1";

@@ -18,6 +18,7 @@ internal sealed partial class EditTools(ToolDispatcher d)
         RegisterClips();
         RegisterTransitions();
         RegisterTitles();
+        RegisterGenerators();
         RegisterMarkers();
         RegisterTracks();
         RegisterSequence();

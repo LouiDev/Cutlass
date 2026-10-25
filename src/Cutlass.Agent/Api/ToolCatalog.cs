@@ -258,8 +258,8 @@ public static class ToolCatalog
             S().Str("clipId", "The video clip.", true).Int("frame", "Timeline frame to hold (inside the clip).", true, 0).Int("durationFrames", "Hold length in frames.", true, 1).Bool("rippleFollowing", "Shift later clips (true)."));
         Edit("edit.link", "cutlass_link_clips", "/v1/edit/link", "Link clips so they select and move together.", S().StrArray("clipIds", "Clip ids.", true, 1000));
         Edit("edit.unlink", "cutlass_unlink_clips", "/v1/edit/unlink", "Unlink clips.", S().StrArray("clipIds", "Clip ids.", true, 1000));
-        Edit("edit.volume-keys", "cutlass_set_volume_keys", "/v1/edit/volume-keys", "Replace an audio clip's volume envelope (empty clears).",
-            S().Str("clipId", "The audio clip.", true).ObjArray("keys", "Keys relative to the clip start.", S().Int("frame", "Frame from the clip start.", true, 0).Num("db", "Level in dB.", true), true, 1000));
+        Edit("edit.volume-keys", "cutlass_set_volume_keys", "/v1/edit/volume-keys", "Replace the volume envelope of an audio clip or a tone (empty clears).",
+            S().Str("clipId", "The audio clip or tone.", true).ObjArray("keys", "Keys relative to the clip start.", S().Int("frame", "Frame from the clip start.", true, 0).Num("db", "Level in dB.", true), true, 1000));
         // The enum of "kind" is the wire spelling of every TransitionKind, so the schema cannot drift from the model.
         var kinds = EnumWire.Names<Cutlass.Core.Model.TransitionKind>().ToArray();
         Edit("edit.transition.add", "cutlass_add_transition", "/v1/edit/transition/add", "Add a transition on the cut between two butting clips.",
@@ -278,6 +278,16 @@ public static class ToolCatalog
                 .Obj("title", "Text and style (only text is required).", Title(true), true).Num("opacity", "0 to 1.").Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
         Edit("edit.title.update", "cutlass_update_title", "/v1/edit/title/update", "Change a title's text, style, opacity or fades.",
             S().Str("clipId", "The title clip.", true).Obj("title", "Fields to change.", Title(false)).Num("opacity", "0 to 1.")
+                .Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
+        var generatorKinds = EnumWire.Names<Cutlass.Core.Model.GeneratorKind>().ToArray();
+        Edit("edit.generator.add", "cutlass_add_generator", "/v1/edit/generator/add", "Add a colour matte or colour bars on a video track, or a sine tone on an audio track.",
+            S().Str("trackId", "A video track (colorMatte, bars) or an audio track (tone).", true).Int("at", "Timeline frame.", true, 0).Int("durationFrames", "Length in frames.", true, 1)
+                .Str("mode", "overwrite (default) or insert.", false, modes).Str("kind", "What to generate.", true, generatorKinds).Str("color", "Matte colour #RRGGBB (#000000).")
+                .Num("toneHz", "Tone frequency, 20 to 20000 Hz (1000).").Num("opacity", "Video kinds: 0 to 1 (1).").Num("gainDb", "Tone: gain in dB over the sine level of -18 dBFS peak per channel (0).")
+                .Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
+        Edit("edit.generator.update", "cutlass_update_generator", "/v1/edit/generator/update", "Change a generator's kind (on the same kind of track), colour, frequency, opacity, gain or fades.",
+            S().Str("clipId", "The generator clip.", true).Str("kind", "New kind: colorMatte and bars swap, a tone stays a tone.", false, generatorKinds).Str("color", "Matte colour #RRGGBB.")
+                .Num("toneHz", "Tone frequency, 20 to 20000 Hz.").Num("opacity", "Video kinds: 0 to 1.").Num("gainDb", "Tone: gain in dB.")
                 .Int("fadeInFrames", "Fade-in frames.", false, 0).Int("fadeOutFrames", "Fade-out frames.", false, 0));
         Edit("edit.marker.add", "cutlass_add_marker", "/v1/edit/marker/add", "Add a marker.",
             S().Int("frame", "Timeline frame.", true, 0).Str("name", "Label.").Str("color", "#RRGGBB."));

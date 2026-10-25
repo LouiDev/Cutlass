@@ -6,7 +6,7 @@
     "summary": "Drive the Cutlass video editor from any agent or script over loopback HTTP.",
     "description": "Every route needs the bearer token from the token file that endpoint.json names. Changes need the edit lock: call POST /v1/lock/acquire, then send its lockId as X-Cutlass-Lock. Replies are the envelope {revision, warnings, result} or {revision, error}. POST /v1/call runs any tool by name and is the simplest entry point for a harness. Timeline positions are integer frames; source times are flicks (705600000 per second).",
     "x-cutlass-api-version": 1,
-    "x-cutlass-api-revision": 6
+    "x-cutlass-api-revision": 7
   },
   "servers": [
     {
@@ -2244,7 +2244,7 @@
       "post": {
         "operationId": "cutlass_set_volume_keys",
         "summary": "cutlass_set_volume_keys",
-        "description": "Replace an audio clip's volume envelope (empty clears).",
+        "description": "Replace the volume envelope of an audio clip or a tone (empty clears).",
         "tags": [
           "edit"
         ],
@@ -2541,6 +2541,108 @@
         },
         "x-cutlass-tool": "edit.title.update",
         "x-cutlass-mcp-name": "cutlass_update_title",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/generator/add": {
+      "post": {
+        "operationId": "cutlass_add_generator",
+        "summary": "cutlass_add_generator",
+        "description": "Add a colour matte or colour bars on a video track, or a sine tone on an audio track.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditGeneratorAddArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.generator.add",
+        "x-cutlass-mcp-name": "cutlass_add_generator",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/generator/update": {
+      "post": {
+        "operationId": "cutlass_update_generator",
+        "summary": "cutlass_update_generator",
+        "description": "Change a generator's kind (on the same kind of track), colour, frequency, opacity, gain or fades.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditGeneratorUpdateArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.generator.update",
+        "x-cutlass-mcp-name": "cutlass_update_generator",
         "x-cutlass-needs-lock": true,
         "x-cutlass-mutating": true,
         "x-cutlass-heavy": false
@@ -4618,7 +4720,7 @@
         "properties": {
           "clipId": {
             "type": "string",
-            "description": "The audio clip."
+            "description": "The audio clip or tone."
           },
           "keys": {
             "type": "array",
@@ -5032,6 +5134,137 @@
           "opacity": {
             "type": "number",
             "description": "0 to 1."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId"
+        ]
+      },
+      "EditGeneratorAddArgs": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "A video track (colorMatte, bars) or an audio track (tone)."
+          },
+          "at": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Length in frames.",
+            "minimum": 1
+          },
+          "mode": {
+            "type": "string",
+            "description": "overwrite (default) or insert.",
+            "enum": [
+              "overwrite",
+              "insert"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "description": "What to generate.",
+            "enum": [
+              "colorMatte",
+              "bars",
+              "tone"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Matte colour #RRGGBB (#000000)."
+          },
+          "toneHz": {
+            "type": "number",
+            "description": "Tone frequency, 20 to 20000 Hz (1000)."
+          },
+          "opacity": {
+            "type": "number",
+            "description": "Video kinds: 0 to 1 (1)."
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Tone: gain in dB over the sine level of -18 dBFS peak per channel (0)."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId",
+          "at",
+          "durationFrames",
+          "kind"
+        ]
+      },
+      "EditGeneratorUpdateArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The generator clip."
+          },
+          "kind": {
+            "type": "string",
+            "description": "New kind: colorMatte and bars swap, a tone stays a tone.",
+            "enum": [
+              "colorMatte",
+              "bars",
+              "tone"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Matte colour #RRGGBB."
+          },
+          "toneHz": {
+            "type": "number",
+            "description": "Tone frequency, 20 to 20000 Hz."
+          },
+          "opacity": {
+            "type": "number",
+            "description": "Video kinds: 0 to 1."
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Tone: gain in dB."
           },
           "fadeInFrames": {
             "type": "integer",

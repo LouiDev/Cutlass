@@ -914,14 +914,14 @@ Example call:
 
 ## cutlass_set_volume_keys
 
-Replace an audio clip's volume envelope (empty clears).
+Replace the volume envelope of an audio clip or a tone (empty clears).
 
 - Catalog name `edit.volume-keys`, route `POST /v1/edit/volume-keys`.
 - Needs the lock; changes the project (one undo step); returns JSON.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `clipId` | string | yes | The audio clip. |
+| `clipId` | string | yes | The audio clip or tone. |
 | `keys` | array of object, at most 1000 items | yes | Keys relative to the clip start. |
 | `keys[].frame` | integer, at least 0 | yes | Frame from the clip start. |
 | `keys[].db` | number | yes | Level in dB. |
@@ -1109,6 +1109,74 @@ Example call:
 ```json
 {
   "tool": "cutlass_update_title",
+  "args": {
+    "clipId": "<clipId>"
+  }
+}
+```
+
+## cutlass_add_generator
+
+Add a colour matte or colour bars on a video track, or a sine tone on an audio track.
+
+- Catalog name `edit.generator.add`, route `POST /v1/edit/generator/add`.
+- Needs the lock; changes the project (one undo step); returns JSON.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `trackId` | string | yes | A video track (colorMatte, bars) or an audio track (tone). |
+| `at` | integer, at least 0 | yes | Timeline frame. |
+| `durationFrames` | integer, at least 1 | yes | Length in frames. |
+| `mode` | string: overwrite, insert | no | overwrite (default) or insert. |
+| `kind` | string: colorMatte, bars, tone | yes | What to generate. |
+| `color` | string | no | Matte colour #RRGGBB (#000000). |
+| `toneHz` | number | no | Tone frequency, 20 to 20000 Hz (1000). |
+| `opacity` | number | no | Video kinds: 0 to 1 (1). |
+| `gainDb` | number | no | Tone: gain in dB over the sine level of -18 dBFS peak per channel (0). |
+| `fadeInFrames` | integer, at least 0 | no | Fade-in frames. |
+| `fadeOutFrames` | integer, at least 0 | no | Fade-out frames. |
+| `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |
+| `returnProject` | boolean | no | Also return the project summary. |
+
+Example call:
+
+```json
+{
+  "tool": "cutlass_add_generator",
+  "args": {
+    "trackId": "<trackId>",
+    "at": 0,
+    "durationFrames": 1,
+    "kind": "colorMatte"
+  }
+}
+```
+
+## cutlass_update_generator
+
+Change a generator's kind (on the same kind of track), colour, frequency, opacity, gain or fades.
+
+- Catalog name `edit.generator.update`, route `POST /v1/edit/generator/update`.
+- Needs the lock; changes the project (one undo step); returns JSON.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `clipId` | string | yes | The generator clip. |
+| `kind` | string: colorMatte, bars, tone | no | New kind: colorMatte and bars swap, a tone stays a tone. |
+| `color` | string | no | Matte colour #RRGGBB. |
+| `toneHz` | number | no | Tone frequency, 20 to 20000 Hz. |
+| `opacity` | number | no | Video kinds: 0 to 1. |
+| `gainDb` | number | no | Tone: gain in dB. |
+| `fadeInFrames` | integer, at least 0 | no | Fade-in frames. |
+| `fadeOutFrames` | integer, at least 0 | no | Fade-out frames. |
+| `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |
+| `returnProject` | boolean | no | Also return the project summary. |
+
+Example call:
+
+```json
+{
+  "tool": "cutlass_update_generator",
   "args": {
     "clipId": "<clipId>"
   }

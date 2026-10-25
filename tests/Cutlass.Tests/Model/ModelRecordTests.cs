@@ -79,6 +79,10 @@ public sealed class ModelRecordTests
         Assert.Equal(["Video", "Audio"], Enum.GetNames<TrackKind>());
         Assert.Equal(["Video", "Audio"], Enum.GetNames<StreamKind>());
         Assert.Equal(["Center", "LowerThird", "Top"], Enum.GetNames<TitleAnchor>());
+        Assert.Equal(["ColorMatte", "Bars", "Tone"], Enum.GetNames<GeneratorKind>());
+        Assert.Equal(
+            [(true, false, TrackKind.Video, "Color Matte"), (true, false, TrackKind.Video, "Bars"), (false, true, TrackKind.Audio, "Tone")],
+            Enum.GetValues<GeneratorKind>().Select(k => (k.IsVideo(), k.IsAudio(), k.TrackKindOf(), k.DisplayName())));
         Assert.Equal(
             [
                 "Crossfade", "DipToBlack", "DipToWhite", "WipeLeft", "WipeRight", "SlideLeft", "SlideRight", "CircleOpen",

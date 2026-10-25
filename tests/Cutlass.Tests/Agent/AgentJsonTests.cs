@@ -28,7 +28,8 @@ public sealed class AgentJsonTests
         RoundTrip(new StatusDto { Version = "1.2.3", Project = new ProjectStatusDto { Path = "D:/a.cutlass", OfflineMediaIds = ["m_1"] }, Playhead = 12, Batch = "Cut" }, c.StatusDto);
         RoundTrip(new LockStateDto { Phase = "held", AgentName = "A", Since = DateTimeOffset.FromUnixTimeMilliseconds(1_700_000_000_123), LeaseSeconds = 90 }, c.LockStateDto);
         RoundTrip(new LockGrantDto { LockId = "abc", LeaseSeconds = 90, LeaseExpiresAt = DateTimeOffset.FromUnixTimeMilliseconds(1_700_000_000_000) }, c.LockGrantDto);
-        RoundTrip(new CapabilitiesDto { Presets = [new PresetDto { Id = "h264", Name = "H.264", Available = true }], Qualities = ["high"], TitleTemplates = ["Subtitle"] }, c.CapabilitiesDto);
+        RoundTrip(new CapabilitiesDto { Presets = [new PresetDto { Id = "h264", Name = "H.264", Available = true }], Qualities = ["high"], TitleTemplates = ["Subtitle"], GeneratorKinds = ["colorMatte", "tone"] }, c.CapabilitiesDto);
+        RoundTrip(new ClipSummaryDto { Type = "generator", Generator = new GeneratorDto { Kind = "tone", Color = "#000000", ToneHz = 440.5 }, Audio = new ClipAudioDto { GainDb = -6.5 } }, c.ClipSummaryDto);
         RoundTrip(new LevelsDto { StartFrame = 3, IntervalMs = 50, RmsDb = [-3.01, -120], PeakDb = [0.5, -120] }, c.LevelsDto);
         RoundTrip(new SilencesDto { Ranges = [new SilenceRangeDto { Start = 10, End = 20, Seconds = 0.4 }] }, c.SilencesDto);
         RoundTrip(new PeaksDto { PeaksPerSecond = 12.5, Min = [-0.25], Max = [0.75] }, c.PeaksDto);
@@ -60,6 +61,8 @@ public sealed class AgentJsonTests
         RoundTrip(new FreezeRequest { ClipId = "c", Frame = 40, DurationFrames = 25, RippleFollowing = false }, c.FreezeRequest);
         RoundTrip(new VolumeKeysRequest { ClipId = "c", Keys = [new VolumeKeyDto { Frame = 1, Db = -6.5 }] }, c.VolumeKeysRequest);
         RoundTrip(new TitleAddRequest { TrackId = "t", At = 0, DurationFrames = 5, Template = "Quote", Title = new TitleDto { Text = "Hi", Anchor = "lowerThird" } }, c.TitleAddRequest);
+        RoundTrip(new GeneratorAddRequest { TrackId = "t", At = 3, DurationFrames = 5, Mode = "insert", Kind = "colorMatte", Color = "#FF0000", ToneHz = 440.5, Opacity = 0.5, GainDb = -6.5, FadeInFrames = 2, FadeOutFrames = 3 }, c.GeneratorAddRequest);
+        RoundTrip(new GeneratorUpdateRequest { ClipId = "c", Kind = "bars", Color = "#00FF00", ToneHz = 250.25, Opacity = 0.75, GainDb = 1.5, FadeInFrames = 4, FadeOutFrames = 6 }, c.GeneratorUpdateRequest);
         RoundTrip(new TrackUpdateRequest { TrackId = "t", GainDb = -3.5 }, c.TrackUpdateRequest);
         RoundTrip(new SequenceRequest { FrameRate = "30000/1001" }, c.SequenceRequest);
         RoundTrip(new ExportStartRequest { Preset = "h264", OutputPath = "D:/x.mp4" }, c.ExportStartRequest);
@@ -74,6 +77,8 @@ public sealed class AgentJsonTests
         Assert.Equal("lowerThird", EnumWire.Name(TitleAnchor.LowerThird));
         Assert.Equal("audioCrossfade", EnumWire.Name(TransitionKind.AudioCrossfade));
         Assert.Equal("diagonalTopLeft", EnumWire.Name(TransitionKind.DiagonalTopLeft));
+        Assert.Equal(["colorMatte", "bars", "tone"], EnumWire.Names<GeneratorKind>());
+        Assert.Equal(GeneratorKind.ColorMatte, EnumWire.Parse("colorMatte", "kind", GeneratorKind.Tone));
         Assert.Equal(TransitionKind.SqueezeHorizontal, EnumWire.Parse("squeezeHorizontal", "kind", TransitionKind.Crossfade));
         Assert.Equal(TitleAnchor.LowerThird, EnumWire.Parse("lowerThird", "anchor", TitleAnchor.Center));
         Assert.Equal(TitleAnchor.Center, EnumWire.Parse<TitleAnchor>(null, "anchor", TitleAnchor.Center));

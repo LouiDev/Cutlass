@@ -1,4 +1,5 @@
 using Cutlass.Compiler;
+using Cutlass.Compiler.Capabilities;
 using Cutlass.Compiler.Emit;
 using Cutlass.Compiler.Export;
 using Cutlass.Core.Model;
@@ -382,6 +383,108 @@ public sealed class TimelineCompilerTests
             render.GraphText,
             StringComparison.Ordinal);
         Assert.Empty(render.Warnings);
+    }
+
+    [Fact]
+    public void GeneratorsEmitLavfiSourcesAndNoInputs()
+    {
+        // Effects batch 5 (TECH_BRIEF 7.3, generators): the matte is drawn as rgb24 and scaled with the BT.709 output
+        // options like a media clip (a no-op resize at canvas size), the transformed bars scale and place like a media
+        // clip, the tone feeds the shared audio tail.
+        var golden = GoldenCases.Get("generators");
+        var render = TimelineCompiler.Compile(golden.Project, golden.Catalog, golden.Request);
+
+        Assert.Empty(render.Inputs);
+        Assert.Empty(render.Warnings);
+        Assert.Contains(
+            "color=c=0x3366CC:s=1920x1080:r=30,trim=end_frame=60,format=rgb24,scale=w=1920:h=1080:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,lut=a=val*0.800000,fade=t=in:",
+            render.GraphText,
+            StringComparison.Ordinal);
+        Assert.Contains("smptehdbars=s=1920x1080:r=30,trim=end_frame=60,scale=w=960:h=540:flags=bicubic:out_color_matrix=bt709:out_range=tv,setsar=1,format=yuva420p,", render.GraphText, StringComparison.Ordinal);
+        Assert.Contains("overlay=x=580:y=220:", render.GraphText, StringComparison.Ordinal);
+        Assert.Contains(
+            "aevalsrc=0.125*sin(2*PI*440.000000*(n+0)/48000)|0.125*sin(2*PI*440.000000*(n+0)/48000):s=48000:c=stereo,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_len=96000,atrim=end_sample=96000,volume=-6.000000dB,afade=t=in:ss=0:ns=24000:curve=tri,",
+            render.GraphText,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ATonePhaseCountsFromTheTimelineSoWindowsAndSplitsJoin()
+    {
+        // The source sample n is absolute timeline sample N0 + n with N0 = SamplesAt(segment start), so a later window
+        // starts at its own sample and a split half continues the phase without generating samples to discard.
+        var tone = GeneratorClip.Create("c_t", 10, 60, GeneratorKind.Tone);
+        var project = Project(new SequenceSettings(1920, 1080, FrameRate.Fps30), [], VideoTrack("tr_v1", []), AudioTrack("tr_a1", [tone]));
+        var later = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(30, 60, video: false));
+        Assert.Contains(
+            "aevalsrc=0.125*sin(2*PI*1000.000000*(n+48000)/48000)|0.125*sin(2*PI*1000.000000*(n+48000)/48000):s=48000:c=stereo,aformat=",
+            later.GraphText,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("atrim=start_sample", later.GraphText, StringComparison.Ordinal);
+
+        var full = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 60, video: false));
+        Assert.Contains("aevalsrc=0.125*sin(2*PI*1000.000000*(n+16000)/48000)|", full.GraphText, StringComparison.Ordinal);
+        Assert.Contains(",asetpts=PTS-STARTPTS,adelay=16000S:all=1", full.GraphText, StringComparison.Ordinal);
+        Assert.DoesNotContain("atrim=start_sample", full.GraphText, StringComparison.Ordinal);
+        Assert.Empty(full.Warnings);
+    }
+
+    [Fact]
+    public void TheGeneratorSourcesAreRequiredFilters()
+    {
+        // Effects batch 5 emits smptehdbars and aevalsrc (color is older); a build without one cannot render.
+        var golden = GoldenCases.Get("generators");
+        var graph = TimelineCompiler.Compile(golden.Project, golden.Catalog, golden.Request).GraphText;
+        foreach (var source in new[] { "color", "smptehdbars", "aevalsrc" })
+        {
+            Assert.Contains(source + "=", graph, StringComparison.Ordinal);
+            Assert.Contains(source, FfmpegCapabilities.RequiredFilters);
+        }
+
+        var all = new FfmpegCapabilities("test", 9, 0, FilterScriptSyntax.Slash, [.. FfmpegCapabilities.RequiredFilters], []);
+        Assert.True(all.CanRender);
+        foreach (var missing in new[] { "smptehdbars", "aevalsrc" })
+        {
+            var lacking = all with { Filters = all.Filters.Remove(missing) };
+            Assert.False(lacking.CanRender);
+            Assert.Equal(missing, Assert.Single(lacking.MissingRequiredFilters));
+        }
+    }
+
+    [Theory]
+    [InlineData(-50.0, "20.000000")]
+    [InlineData(96000.0, "20000.000000")]
+    [InlineData(double.NaN, "1000.000000")]
+    public void AnOutOfRangeToneFrequencyIsClampedWithAWarning(double hz, string used)
+    {
+        // A hand-edited project can hold any toneHz; the render clamps (NaN takes the default) instead of failing.
+        var tone = GeneratorClip.Create("c_t", 0, 30, GeneratorKind.Tone) with { ToneHz = hz };
+        var project = Project(new SequenceSettings(1920, 1080, FrameRate.Fps30), [], VideoTrack("tr_v1", []), AudioTrack("tr_a1", [tone]));
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, video: false));
+
+        Assert.Contains("aevalsrc=0.125*sin(2*PI*" + used + "*(n+0)/48000)|", render.GraphText, StringComparison.Ordinal);
+        Assert.Contains(render.Warnings, w => w.Contains("tone frequency of clip c_t", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void GeneratorEffectsFollowTheMediaOrderAndABadMatteColourIsBlack()
+    {
+        var matte = GeneratorClip.Create("c_g", 0, 30, GeneratorKind.ColorMatte) with
+        {
+            Color = "#FF000080",
+            Video = VideoProps.Default with { Effects = GoldenCases.AllEffects },
+        };
+        var project = Project(new SequenceSettings(1920, 1080, FrameRate.Fps30), [], VideoTrack("tr_v1", [matte]));
+        var render = TimelineCompiler.Compile(project, TestCatalog.For(project), Export(0, 30, audio: false));
+
+        Assert.Contains("color=c=0x000000:s=1920x1080:r=30,trim=end_frame=30,format=rgb24,", render.GraphText, StringComparison.Ordinal);
+        Assert.Contains(render.Warnings, w => w.Contains("matte colour '#FF000080'", StringComparison.Ordinal));
+        var graph = render.GraphText;
+        var order = new[] { "hflip", "vflip", "colortemperature", "colorbalance", "hue=", "gblur", "unsharp", "vignette", "setsar=1,format=yuva420p", "chromakey", "rotate" }
+            .Select(f => graph.IndexOf(f, StringComparison.Ordinal))
+            .ToList();
+        Assert.All(order, i => Assert.True(i > 0));
+        Assert.Equal(order.OrderBy(i => i), order);
     }
 
     [Fact]

@@ -288,6 +288,9 @@ internal static class VideoEmitter
             case MediaClip { Stream: StreamKind.Video } media:
                 return EmitMedia(ctx, media, segment);
 
+            case GeneratorClip generator when generator.Kind.IsVideo():
+                return EmitGenerator(ctx, generator, segment);
+
             default:
                 ctx.Warn($"Clip {segment.Clip.Id} cannot be shown on a video track and renders as a gap.");
                 return StandIn(ctx, segment);
@@ -370,35 +373,82 @@ internal static class VideoEmitter
             .Then("trim=end_frame=" + count);
 
         var g = Geometry.Compute(ctx, video, clip.Video.Transform);
+        Crop(chain, g);
+        chain.Then(
+            "scale=w=" + FfNum.Integer(g.Width) + ":h=" + FfNum.Integer(g.Height) + ":flags=" + ctx.ScaleFlags
+            + ":out_color_matrix=bt709:out_range=tv");
+        return EffectsAndPlacement(ctx, chain, segment, clip.Id, clip.Video, g);
+    }
+
+    // Effects batch 5 (TECH_BRIEF 7.3, generators): a lavfi source at the canvas size and rate, trimmed to the segment,
+    // then cropped and scaled exactly like a media clip whose source is the canvas, with the same BT.709 output options.
+    // The scale is emitted for an untransformed generator too: it is a no-op resize, but it fixes the colour matrix and
+    // range of the chain, so ffmpeg negotiates the same conversions in a one-frame window as in the full render. The
+    // matte is drawn as rgb24, so that scale converts it with the BT.709 matrix (the color source alone encodes BT.601
+    // values); smptehdbars writes BT.709 limited-range frames already.
+    private static VideoSegmentOutput EmitGenerator(EmitContext ctx, GeneratorClip clip, PlannedSegment segment)
+    {
+        var size = ctx.CanvasSize + ":r=" + FfNum.Rate(ctx.Rate);
+        GraphChain chain;
+        if (clip.Kind == GeneratorKind.Bars)
+        {
+            chain = ctx.Graph.StartSource("smptehdbars=s=" + size).Then("trim=end_frame=" + FfNum.Integer(segment.Length));
+        }
+        else
+        {
+            var color = clip.Color is { Length: 7 } && TitleEmitter.FormatColor(clip.Color) is { } valid ? valid : null;
+            if (color is null)
+            {
+                ctx.Warn($"The matte colour '{clip.Color}' of clip {clip.Id} is not #RRGGBB; black is used.");
+                color = "0x000000";
+            }
+
+            chain = ctx.Graph.StartSource("color=c=" + color + ":s=" + size)
+                .Then("trim=end_frame=" + FfNum.Integer(segment.Length))
+                .Then("format=rgb24");
+        }
+
+        var g = Geometry.Compute(ctx, ctx.Width, ctx.Height, clip.Video.Transform);
+        Crop(chain, g);
+        chain.Then(
+            "scale=w=" + FfNum.Integer(g.Width) + ":h=" + FfNum.Integer(g.Height) + ":flags=" + ctx.ScaleFlags
+            + ":out_color_matrix=bt709:out_range=tv");
+        return EffectsAndPlacement(ctx, chain, segment, clip.Id, clip.Video, g);
+    }
+
+    private static void Crop(GraphChain chain, Geometry g)
+    {
         if (g.IsCropped)
         {
             chain.Then(
                 "crop=w=iw*" + FfNum.Decimal(1 - g.Left - g.Right) + ":h=ih*" + FfNum.Decimal(1 - g.Top - g.Bottom)
                 + ":x=iw*" + FfNum.Decimal(g.Left) + ":y=ih*" + FfNum.Decimal(g.Top));
         }
+    }
 
-        chain.Then(
-            "scale=w=" + FfNum.Integer(g.Width) + ":h=" + FfNum.Integer(g.Height) + ":flags=" + ctx.ScaleFlags
-            + ":out_color_matrix=bt709:out_range=tv");
-        // TECH_BRIEF 7.3 steps 5 and 6: flips, then the RGB-domain colour pair (converted back to BT.709 yuv420p), eq, hue,
-        // blur, sharpen and vignette; after the alpha format the chroma key and the user rotation (transparent fill).
-        // Neutral emits nothing.
-        var fx = clip.Video.Effects;
+    // The part shared by media clips and generators once the picture has its final size: TECH_BRIEF 7.3 steps 5 and 6,
+    // flips, then the RGB-domain colour pair (converted back to BT.709 yuv420p), eq, hue, blur, sharpen and vignette;
+    // after the alpha format the chroma key and the user rotation (transparent fill); then opacity, the fades and the
+    // placement. Neutral emits nothing.
+    private static VideoSegmentOutput EffectsAndPlacement(
+        EmitContext ctx, GraphChain chain, PlannedSegment segment, string clipId, VideoProps props, Geometry g)
+    {
+        var fx = props.Effects;
         Then(chain, VideoEffectFilters.FlipH(fx));
         Then(chain, VideoEffectFilters.FlipV(fx));
         Then(chain, VideoEffectFilters.Temperature(fx));
         Then(chain, VideoEffectFilters.Tint(fx));
         Then(chain, VideoEffectFilters.RgbToYuv(fx));
-        Then(chain, Eq(clip.Video.Color));
+        Then(chain, Eq(props.Color));
         Then(chain, VideoEffectFilters.Hue(fx));
         Then(chain, VideoEffectFilters.Blur(fx, ctx.PixelScale));
         Then(chain, VideoEffectFilters.Sharpen(fx));
         Then(chain, VideoEffectFilters.Vignette(fx));
 
         chain.Then("setsar=1").Then("format=yuva420p");
-        Then(chain, VideoEffectFilters.ChromaKey(ctx, clip.Id, fx));
+        Then(chain, VideoEffectFilters.ChromaKey(ctx, clipId, fx));
         Then(chain, VideoEffectFilters.Rotate(fx));
-        OpacityAndFades(ctx, chain, segment, clip.Video.Opacity, clip.Video.FadeInFrames, clip.Video.FadeOutFrames);
+        OpacityAndFades(ctx, chain, segment, props.Opacity, props.FadeInFrames, props.FadeOutFrames);
 
         if (g.IsIdentity)
         {
@@ -588,10 +638,16 @@ internal static class VideoEmitter
     {
         public bool IsCropped => Left > 0 || Top > 0 || Right > 0 || Bottom > 0;
 
-        public static Geometry Compute(EmitContext ctx, VideoStreamInfo video, Transform transform)
+        public static Geometry Compute(EmitContext ctx, VideoStreamInfo video, Transform transform) =>
+            Compute(
+                ctx,
+                video.DisplayWidth > 0 ? video.DisplayWidth : Math.Max(1, video.Width),
+                video.DisplayHeight > 0 ? video.DisplayHeight : Math.Max(1, video.Height),
+                transform);
+
+        // dw and dh are the display size of the source; a generator passes the canvas size.
+        public static Geometry Compute(EmitContext ctx, double dw, double dh, Transform transform)
         {
-            double dw = video.DisplayWidth > 0 ? video.DisplayWidth : Math.Max(1, video.Width);
-            double dh = video.DisplayHeight > 0 ? video.DisplayHeight : Math.Max(1, video.Height);
             var (l, r) = CropPair(transform.CropLeft, transform.CropRight);
             var (t, b) = CropPair(transform.CropTop, transform.CropBottom);
 

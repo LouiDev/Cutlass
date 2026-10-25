@@ -70,10 +70,19 @@ internal static class ModelAssert
                 {
                     Assert.Equal(em.Audio.Keys.ToArray(), am.Audio.Keys.ToArray());
                 }
+
+                if (et.Clips[j] is GeneratorClip eg && at.Clips[j] is GeneratorClip ag)
+                {
+                    Assert.Equal(eg.Audio.Keys.ToArray(), ag.Audio.Keys.ToArray());
+                }
             }
         }
     }
 
-    private static Clip Normalize(Clip clip) =>
-        clip is MediaClip m ? m with { Audio = m.Audio with { Keys = [] } } : clip;
+    private static Clip Normalize(Clip clip) => clip switch
+    {
+        MediaClip m => m with { Audio = m.Audio with { Keys = [] } },
+        GeneratorClip g => g with { Audio = g.Audio with { Keys = [] } },
+        _ => clip,
+    };
 }

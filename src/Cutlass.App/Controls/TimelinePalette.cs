@@ -29,6 +29,7 @@ public sealed class TimelinePalette
         AudioClip = color("AudioClipColor", "#2E8B6E");
         TitleClip = color("TitleClipColor", "#8E5BD6");
         StillClip = color("StillClipColor", "#4F7C9A");
+        GeneratorClip = color("GeneratorClipColor", "#8A7F45");
         Snap = color("SnapColor", "#F5D547");
         Marker = color("MarkerColor", "#F5D547");
         InOutRange = color("InOutRangeColor", "#14FFFFFF");
@@ -85,6 +86,9 @@ public sealed class TimelinePalette
 
     /// <summary>The StillClip token.</summary>
     public Color StillClip { get; }
+
+    /// <summary>The GeneratorClip token (effects batch 5: colour matte, bars and tone).</summary>
+    public Color GeneratorClip { get; }
 
     /// <summary>The Snap token.</summary>
     public Color Snap { get; }

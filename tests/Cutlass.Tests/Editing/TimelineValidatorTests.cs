@@ -76,6 +76,32 @@ public sealed class TimelineValidatorTests
         Assert.Empty(Check(new ProjectBuilder().With(V1, V("s1", 0, 100_000, media: Still), Title("t1", 100_000, 500_000))));
 
     [Fact]
+    public void GeneratorsAreUnboundedOnTheirTrackKind() =>
+        Assert.Empty(Check(new ProjectBuilder()
+            .With(V1, Generator("g1", 0, 100_000), Generator("g2", 100_000, 500_000, GeneratorKind.Bars))
+            .With(A1, Generator("g3", 0, 100_000, GeneratorKind.Tone))));
+
+    [Fact]
+    public void GeneratorOnTheWrongTrackKindFails()
+    {
+        Assert.Contains(Check(new ProjectBuilder().With(A1, Generator("g1", 0, 10))), e => e.Contains("Generator g1 (ColorMatte) is on Audio track"));
+        Assert.Contains(Check(new ProjectBuilder().With(V1, Generator("g2", 0, 10, GeneratorKind.Tone))), e => e.Contains("Generator g2 (Tone) is on Video track"));
+    }
+
+    [Fact]
+    public void LinkedGeneratorFails() =>
+        Assert.Contains(Check(new ProjectBuilder().With(V1, Generator("g1", 0, 10) with { LinkId = "l_1" })), e => e.Contains("Generator g1 is linked"));
+
+    [Fact]
+    public void GeneratorFadesAndKeysAreChecked()
+    {
+        var fades = Generator("g1", 0, 10) with { Video = VideoProps.Default with { FadeInFrames = 6, FadeOutFrames = 5 } };
+        var keys = Generator("g2", 0, 10, GeneratorKind.Tone) with { Audio = AudioProps.Default with { Keys = [new VolumeKey(10, 0)] } };
+        Assert.Contains(Check(new ProjectBuilder().With(V1, fades)), e => e.Contains("g1 has video fades 6+5"));
+        Assert.Contains(Check(new ProjectBuilder().With(A1, keys)), e => e.Contains("g2 has a volume key at 10"));
+    }
+
+    [Fact]
     public void FrozenClipsAreUnbounded()
     {
         // The same clip without the flag runs 99,900 frames past the 100-frame source; frozen, it holds one frame.

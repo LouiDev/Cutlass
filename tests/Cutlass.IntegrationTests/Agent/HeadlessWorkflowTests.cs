@@ -63,12 +63,23 @@ public sealed class HeadlessWorkflowTests
         Assert.Equal([0L, 50L, 100L], v1.Clips.Select(c => c.Start));
         Assert.Equal(200, afterSplit.Sequence.DurationFrames);
 
-        // 4. A batch with a move and a title, undone as one step.
+        // 4. A batch with a move, a title and a colour matte (added, then recoloured), undone as one step.
         var beforeBatch = JsonSerializer.Serialize(afterSplit.Tracks, AgentJsonContext.Default.ListTrackSummaryDto);
         await client.BeginBatchAsync("Tidy");
         await client.MoveAsync(new MoveRequest { ClipIds = [v1.Clips[2].Id], DeltaFrames = 10 });
         var v2 = afterSplit.Tracks.Single(t => t.Kind == "video" && t.Index == 2);
         await client.AddTitleAsync(new TitleAddRequest { TrackId = v2.Id, At = 0, DurationFrames = 25, Title = new TitleDto { Text = "Hello" } });
+        var matte = await client.AddGeneratorAsync(new GeneratorAddRequest { TrackId = v2.Id, At = 40, DurationFrames = 30, Kind = "colorMatte", Color = "#336699", Opacity = 0.5 });
+        Assert.True(matte.Changed);
+        var matteId = Assert.Single(matte.Select!);
+        var recoloured = await client.UpdateGeneratorAsync(new GeneratorUpdateRequest { ClipId = matteId, Color = "#ff8000" });
+        Assert.True(recoloured.Changed);
+        var withMatte = await client.GetProjectAsync();
+        var matteClip = withMatte.Tracks.Single(t => t.Id == v2.Id).Clips.Single(c => c.Id == matteId);
+        Assert.Equal(("generator", "Color Matte", 40L, 30L), (matteClip.Type, matteClip.DisplayName, matteClip.Start, matteClip.Duration));
+        Assert.Equal(("colorMatte", "#FF8000"), (matteClip.Generator!.Kind, matteClip.Generator.Color));
+        Assert.Equal(0.5, matteClip.Video!.Opacity);
+        Assert.Null(matteClip.MediaId);
         var end = await client.EndBatchAsync();
         Assert.Equal("Agent: Tidy", end.UndoLabel);
         await client.UndoAsync();

@@ -15,7 +15,7 @@ public static partial class TimelineEdits
     /// change; without it the new length stops at the next clip. Volume keyframes scale with the clip.
     /// </summary>
     /// <param name="project">The project.</param>
-    /// <param name="clipIds">The clips (titles, stills and frozen clips are skipped).</param>
+    /// <param name="clipIds">The clips (titles, generators, stills and frozen clips are skipped).</param>
     /// <param name="percent">The new speed in percent.</param>
     /// <param name="rippleFollowing">True to ripple following clips (the dialog default).</param>
     /// <returns>The result.</returns>
@@ -41,6 +41,10 @@ public static partial class TimelineEdits
             if (found.Track.Locked)
             {
                 w.Warn($"{found.Track.Name} is locked.");
+            }
+            else if (clip is GeneratorClip)
+            {
+                w.Warn("Generators have no speed.");
             }
             else if (clip is not MediaClip m || w.IsStill(m))
             {
@@ -157,6 +161,12 @@ public static partial class TimelineEdits
                     SpeedPercent = om.SpeedPercent,
                 };
             }
+            else if (restored is GeneratorClip rg && clip is GeneratorClip og && rg.Kind.TrackKindOf() != og.Kind.TrackKindOf())
+            {
+                // A generator may switch between the video kinds (matte and bars) but never to another track kind;
+                // the restore below then reports it with the shared warning.
+                restored = rg with { Kind = og.Kind };
+            }
 
             if (!restored.Equals(updated))
             {
@@ -183,7 +193,7 @@ public static partial class TimelineEdits
     public static EditResult SetEnabled(Project project, IReadOnlyCollection<string> clipIds, bool enabled) =>
         UpdateClips(project, clipIds, c => c with { Enabled = enabled }, enabled ? "Enable" : "Disable");
 
-    /// <summary>Puts media clips into one new link group (Ctrl+L). Titles are never linked; at least two clips are needed.</summary>
+    /// <summary>Puts media clips into one new link group (Ctrl+L). Titles and generators are never linked; at least two clips are needed.</summary>
     /// <param name="ids">The id generator.</param>
     /// <param name="project">The project.</param>
     /// <param name="clipIds">The clips.</param>
@@ -207,6 +217,10 @@ public static partial class TimelineEdits
             else if (found.Track.Clips[found.Index] is TitleClip)
             {
                 w.Warn("Titles cannot be linked.");
+            }
+            else if (found.Track.Clips[found.Index] is GeneratorClip)
+            {
+                w.Warn("Generators cannot be linked.");
             }
             else
             {
@@ -508,6 +522,16 @@ public static partial class TimelineEdits
                 },
             },
             TitleClip t => t with { FadeInFrames = F(t.FadeInFrames), FadeOutFrames = F(t.FadeOutFrames) },
+            GeneratorClip g => g with
+            {
+                Video = g.Video with { FadeInFrames = F(g.Video.FadeInFrames), FadeOutFrames = F(g.Video.FadeOutFrames) },
+                Audio = g.Audio with
+                {
+                    FadeInFrames = F(g.Audio.FadeInFrames),
+                    FadeOutFrames = F(g.Audio.FadeOutFrames),
+                    Keys = g.Audio.Keys.IsDefaultOrEmpty ? g.Audio.Keys : [.. g.Audio.Keys.Select(k => k with { Frame = F(k.Frame) })],
+                },
+            },
             _ => clip,
         };
         return SanitizeClip(scaled);

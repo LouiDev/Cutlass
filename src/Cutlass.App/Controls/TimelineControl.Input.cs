@@ -473,10 +473,10 @@ public sealed partial class TimelineControl
             return;
         }
 
-        if (hit.Zone == HitZone.Keyframe && TimelineQuery.FindClip(vm.Session.Current, clipId)?.Clip is MediaClip keyed
-            && hit.KeyIndex >= 0 && hit.KeyIndex < keyed.Audio.Keys.Length)
+        if (hit.Zone == HitZone.Keyframe && TimelineQuery.FindClip(vm.Session.Current, clipId)?.Clip is { } keyed
+            && ClipAudio.Keys(keyed) is var keyedKeys && hit.KeyIndex >= 0 && hit.KeyIndex < keyedKeys.Length)
         {
-            var key = keyed.Audio.Keys[hit.KeyIndex];
+            var key = keyedKeys[hit.KeyIndex];
             if (context.PressAlt)
             {
                 // Alt+click removes the keyframe.

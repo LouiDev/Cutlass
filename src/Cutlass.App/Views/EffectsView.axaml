@@ -42,6 +42,9 @@
     <Style Selector="Border.effectBadge.title">
       <Setter Property="Background" Value="{DynamicResource TitleClipBrush}" />
     </Style>
+    <Style Selector="Border.effectBadge.generator">
+      <Setter Property="Background" Value="{DynamicResource GeneratorClipBrush}" />
+    </Style>
     <Style Selector="Border.effectBadge > TextBlock">
       <Setter Property="FontSize" Value="10" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -58,7 +61,8 @@
     <DataTemplate DataType="vm:EffectItem">
       <Border Classes="effectRow" Classes.selected="{Binding IsSelected}" ToolTip.Tip="{Binding Description}">
         <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-          <Border Classes="effectBadge" Classes.transition="{Binding IsTransition}" Classes.title="{Binding IsTitle}">
+          <Border Classes="effectBadge" Classes.transition="{Binding IsTransition}" Classes.title="{Binding IsTitle}"
+                Classes.generator="{Binding IsGenerator}">
             <TextBlock Text="{Binding Badge}" />
           </Border>
           <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
@@ -76,7 +80,7 @@
     </DataTemplate>
   </UserControl.DataTemplates>
 
-  <!-- DESIGN 4.2 Effects tab: transitions (double-click sets the default), title templates and fade presets.
+  <!-- DESIGN 4.2 Effects tab: transitions (double-click sets the default), title templates, generators and fade presets.
        Click selects, Apply or double-click applies to the timeline selection, and items drag out as cutlass/effect-id. -->
   <Border Classes="panel">
     <DockPanel>
@@ -104,6 +108,8 @@
           <ItemsControl ItemsSource="{Binding TransitionAudio}" />
           <TextBlock Classes="panelTitle groupTitle" Text="TITLES" />
           <ItemsControl ItemsSource="{Binding Titles}" />
+          <TextBlock Classes="panelTitle groupTitle" Text="GENERATORS" />
+          <ItemsControl ItemsSource="{Binding Generators}" />
           <TextBlock Classes="panelTitle groupTitle" Text="FADES AND PRESETS" />
           <ItemsControl ItemsSource="{Binding Adjustments}" />
         </StackPanel>

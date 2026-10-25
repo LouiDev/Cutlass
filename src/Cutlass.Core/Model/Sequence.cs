@@ -10,7 +10,10 @@ namespace Cutlass.Core.Model;
 /// <param name="Markers">Sequence markers, sorted by frame.</param>
 /// <param name="InFrame">The In point, or null when unset.</param>
 /// <param name="OutFrame">The Out point (exclusive), or null when unset.</param>
-/// <param name="HasHadClips">True once any clip was placed; sequence settings then change only through the dialog.</param>
+/// <param name="HasHadClips">
+/// True once a media clip was placed (titles and generators do not count); sequence settings then change only through
+/// the dialog, and the next media clip no longer sets them.
+/// </param>
 public sealed record Sequence(
     SequenceSettings Settings,
     ImmutableArray<Track> Tracks,

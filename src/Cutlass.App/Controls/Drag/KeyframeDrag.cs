@@ -57,16 +57,17 @@ public sealed class KeyframeDrag : IDragOperation
         var vm = c.ViewModel;
         var origin = vm.Session.Current;
         if (TimelineQuery.FindClip(origin, _clipId) is not { } found || found.Track.Locked
-            || found.Clip is not MediaClip { Stream: StreamKind.Audio } clip
-            || clip.Audio.Keys.IsDefaultOrEmpty || _index < 0 || _index >= clip.Audio.Keys.Length)
+            || ClipAudio.Of(found.Clip) is not { } audio
+            || audio.Keys.IsDefaultOrEmpty || _index < 0 || _index >= audio.Keys.Length)
         {
             return;
         }
 
-        var keys = clip.Audio.Keys;
+        var clip = found.Clip;
+        var keys = audio.Keys;
         _key = keys[_index];
         _frame = _key.Frame;
-        _gain = clip.Audio.GainDb;
+        _gain = audio.GainDb;
         _minFrame = _index > 0 ? keys[_index - 1].Frame + 1 : 0;
         _maxFrame = _index + 1 < keys.Length ? keys[_index + 1].Frame - 1 : clip.Duration - 1;
         _clipHeight = Math.Max(1, (vm.GetLayout().Row(found.Track.Id)?.Height ?? 48) - 2);

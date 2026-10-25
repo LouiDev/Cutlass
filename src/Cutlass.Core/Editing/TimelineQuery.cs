@@ -502,7 +502,7 @@ public static class TimelineQuery
     /// <summary>True when the clip's source has limits (a non-still, non-frozen media clip with a known duration).</summary>
     /// <param name="clip">The clip.</param>
     /// <param name="media">The clip's media, or null.</param>
-    /// <returns>False for titles, stills, frozen clips and media without a known duration.</returns>
+    /// <returns>False for titles, generators, stills, frozen clips and media without a known duration.</returns>
     public static bool IsBounded(Clip clip, MediaAsset? media) =>
         clip is MediaClip { Freeze: false } && media is not null && !media.Info.IsStill && media.Info.DurationMicros > 0;
 
@@ -649,7 +649,7 @@ public static class TimelineQuery
         return negative ? -frames : frames;
     }
 
-    /// <summary>A short display name for a clip: the media file name or the first line of a title.</summary>
+    /// <summary>A short display name for a clip: the media file name, the first line of a title or the generator name.</summary>
     /// <param name="project">The project.</param>
     /// <param name="clip">The clip.</param>
     /// <returns>The name.</returns>
@@ -670,6 +670,8 @@ public static class TimelineQuery
             case TitleClip t:
                 var line = t.Title.Text.Split('\n')[0].Trim();
                 return line.Length == 0 ? "Title" : line.Length > 40 ? line[..40] : line;
+            case GeneratorClip g:
+                return g.Kind.DisplayName();
             default:
                 return clip.Id;
         }

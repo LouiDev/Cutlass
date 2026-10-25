@@ -42,11 +42,20 @@ public sealed class ProjectSerializerTests
         {
             Audio = new AudioProps(-3.25, 0, 12, [new VolumeKey(10, 0), new VolumeKey(30, -12.5)], new AudioEffects(80, 12000, 2.5, -1.5, true, -24, 3, true, -50, -0.4, true)),
         };
+        // Effects batch 5: a matte with video props, bars, and a tone with gain, fades and keys.
+        var g1 = Generator("g1", 200, 60, color: "#3366CC") with
+        {
+            Video = VideoProps.Default with { Opacity = 0.6, FadeInFrames = 10, FadeOutFrames = 5, Transform = Transform.Identity with { Scale = 0.5 } },
+        };
+        var g3 = Generator("g3", 220, 80, GeneratorKind.Tone, toneHz: 440) with
+        {
+            Audio = AudioProps.Default with { GainDb = -6, FadeInFrames = 5, Keys = [new VolumeKey(0, -3), new VolumeKey(40, -9)] },
+        };
         var p = new ProjectBuilder()
-            .With(V1, c1, c2, t1)
-            .With(V2, V("s1", 0, 125, media: Still), V("f1", 125, 60, media: Short, sourceFrame: 20, freeze: true))
+            .With(V1, c1, c2, t1, g1)
+            .With(V2, V("s1", 0, 125, media: Still), V("f1", 125, 60, media: Short, sourceFrame: 20, freeze: true), Generator("g2", 200, 30, GeneratorKind.Bars))
             .With(A1, a1, A("a2", 50, 40, media: Short, sourceFrame: 20, speed: 150))
-            .With(A2, A("m1", 10, 200, media: Music))
+            .With(A2, A("m1", 10, 200, media: Music), g3)
             .Transition(V1, "x1", "c1", "c2", 10, TransitionKind.DipToWhite)
             .Transition(A1, "x2", "a1", "a2", 8)
             .Marker("k1", 30, "Intro")
@@ -145,6 +154,15 @@ public sealed class ProjectSerializerTests
         var title = v1["clips"]![2]!.AsObject();
         Assert.Equal(["type", "id", "start", "duration", "enabled", "title", "opacity", "fadeIn", "fadeOut"], title.Select(kv => kv.Key));
         Assert.Equal("top", (string)title["title"]!["anchor"]!);
+        var matte = v1["clips"]![3]!.AsObject();
+        Assert.Equal(["type", "id", "start", "duration", "enabled", "generator", "color", "video"], matte.Select(kv => kv.Key));
+        Assert.Equal(("generator", "colorMatte", "#3366CC"), ((string)matte["type"]!, (string)matte["generator"]!, (string)matte["color"]!));
+        var bars = tracks[1]!["clips"]![2]!.AsObject();
+        Assert.Equal(["type", "id", "start", "duration", "enabled", "generator", "video"], bars.Select(kv => kv.Key));
+        Assert.Equal("bars", (string)bars["generator"]!);
+        var tone = tracks[3]!["clips"]![1]!.AsObject();
+        Assert.Equal(["type", "id", "start", "duration", "enabled", "generator", "toneHz", "audio"], tone.Select(kv => kv.Key));
+        Assert.Equal(("tone", 440.0), ((string)tone["generator"]!, (double)tone["toneHz"]!));
         Assert.Equal("dipToWhite", (string)v1["transitions"]![0]!["kind"]!);
         Assert.Equal("audioCrossfade", (string)a1["transitions"]![0]!["kind"]!);
         var audioClip = a1["clips"]![0]!.AsObject();
@@ -178,6 +196,36 @@ public sealed class ProjectSerializerTests
         var q = ProjectSerializer.Deserialize(root.ToJsonString());
         Assert.False(ModelAssert.Media(q, (string)audio["id"]!).Freeze);
         Assert.True(ModelAssert.Media(q, "f1").Freeze);
+    }
+
+    [Fact]
+    public void GeneratorsRoundTripWithTheirKindColourAndFrequency()
+    {
+        var q = ProjectSerializer.Deserialize(ProjectSerializer.Serialize(Rich()));
+        var matte = Assert.IsType<GeneratorClip>(ModelAssert.Clip(q, "g1"));
+        Assert.Equal((GeneratorKind.ColorMatte, "#3366CC", 0.6, 10L, 5L, 0.5), (matte.Kind, matte.Color, matte.Video.Opacity, matte.Video.FadeInFrames, matte.Video.FadeOutFrames, matte.Video.Transform.Scale));
+        Assert.Equal(GeneratorKind.Bars, Assert.IsType<GeneratorClip>(ModelAssert.Clip(q, "g2")).Kind);
+        var tone = Assert.IsType<GeneratorClip>(ModelAssert.Clip(q, "g3"));
+        Assert.Equal((GeneratorKind.Tone, 440.0, -6.0, 5L), (tone.Kind, tone.ToneHz, tone.Audio.GainDb, tone.Audio.FadeInFrames));
+        Assert.Equal([new VolumeKey(0, -3), new VolumeKey(40, -9)], tone.Audio.Keys.ToArray());
+        Assert.Null(tone.LinkId);
+    }
+
+    [Fact]
+    public void GeneratorFieldsDefaultWhenMissingAndUnknownKindsFallBackToAMatte()
+    {
+        // Missing fields take the defaults; a kind from a newer build loads as a matte (like transition kinds).
+        var root = JsonNode.Parse(ProjectSerializer.Serialize(Rich()))!;
+        var matte = root["sequence"]!["tracks"]![0]!["clips"]![3]!.AsObject();
+        matte.Remove("color");
+        matte.Remove("video");
+        var bars = root["sequence"]!["tracks"]![1]!["clips"]![2]!.AsObject();
+        bars["generator"] = "plasma";
+        var q = ProjectSerializer.Deserialize(root.ToJsonString());
+        var g1 = Assert.IsType<GeneratorClip>(ModelAssert.Clip(q, "g1"));
+        Assert.Equal((GeneratorKind.ColorMatte, GeneratorClip.DefaultColor, VideoProps.Default), (g1.Kind, g1.Color, g1.Video));
+        Assert.Equal(GeneratorKind.ColorMatte, Assert.IsType<GeneratorClip>(ModelAssert.Clip(q, "g2")).Kind);
+        ModelAssert.Valid(q);
     }
 
     [Fact]

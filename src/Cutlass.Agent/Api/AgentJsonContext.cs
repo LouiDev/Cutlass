@@ -82,6 +82,8 @@ namespace Cutlass.Agent.Api;
 [JsonSerializable(typeof(TransitionIdsRequest))]
 [JsonSerializable(typeof(TitleAddRequest))]
 [JsonSerializable(typeof(TitleUpdateRequest))]
+[JsonSerializable(typeof(GeneratorAddRequest))]
+[JsonSerializable(typeof(GeneratorUpdateRequest))]
 [JsonSerializable(typeof(MarkerAddRequest))]
 [JsonSerializable(typeof(MarkerUpdateRequest))]
 [JsonSerializable(typeof(MarkerIdsRequest))]

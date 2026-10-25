@@ -43,16 +43,17 @@ public static class VolumeScale
     /// The level of the volume line at a fractional clip-relative frame: the clip gain plus the keyframe envelope,
     /// interpolated linearly between key centres and constant outside them.
     /// </summary>
-    /// <param name="clip">The audio clip.</param>
+    /// <param name="clip">The audio clip or tone (<see cref="ClipAudio"/>; other clips read 0 dB).</param>
     /// <param name="frame">The frame relative to the clip start (fractional).</param>
     /// <returns>The level in dB.</returns>
-    public static double LevelAt(MediaClip clip, double frame)
+    public static double LevelAt(Clip clip, double frame)
     {
         ArgumentNullException.ThrowIfNull(clip);
-        var keys = clip.Audio.Keys;
+        var audio = ClipAudio.Of(clip) ?? AudioProps.Default;
+        var keys = audio.Keys;
         if (keys.IsDefaultOrEmpty)
         {
-            return clip.Audio.GainDb;
+            return audio.GainDb;
         }
 
         double env;
@@ -80,20 +81,20 @@ public static class VolumeScale
             }
         }
 
-        return clip.Audio.GainDb + env;
+        return audio.GainDb + env;
     }
 
     /// <summary>
     /// The keys a volume line drag at a clip-relative frame moves (DESIGN 5.5): the two keys around the segment, the
     /// single key before the first or after the last, or none when the clip has no keys (the clip gain changes).
     /// </summary>
-    /// <param name="clip">The audio clip.</param>
+    /// <param name="clip">The audio clip or tone.</param>
     /// <param name="frame">The pressed frame relative to the clip start.</param>
     /// <returns>The key indices.</returns>
-    public static IReadOnlyList<int> SegmentKeys(MediaClip clip, double frame)
+    public static IReadOnlyList<int> SegmentKeys(Clip clip, double frame)
     {
         ArgumentNullException.ThrowIfNull(clip);
-        var keys = clip.Audio.Keys;
+        var keys = ClipAudio.Keys(clip);
         if (keys.IsDefaultOrEmpty)
         {
             return [];

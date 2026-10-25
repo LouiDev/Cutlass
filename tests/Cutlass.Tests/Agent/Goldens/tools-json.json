@@ -1643,7 +1643,7 @@
     {
       "name": "edit.volume-keys",
       "mcpName": "cutlass_set_volume_keys",
-      "description": "Replace an audio clip's volume envelope (empty clears).",
+      "description": "Replace the volume envelope of an audio clip or a tone (empty clears).",
       "method": "POST",
       "route": "/v1/edit/volume-keys",
       "needsLock": true,
@@ -1655,7 +1655,7 @@
         "properties": {
           "clipId": {
             "type": "string",
-            "description": "The audio clip."
+            "description": "The audio clip or tone."
           },
           "keys": {
             "type": "array",
@@ -2124,6 +2124,159 @@
           "opacity": {
             "type": "number",
             "description": "0 to 1."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId"
+        ]
+      }
+    },
+    {
+      "name": "edit.generator.add",
+      "mcpName": "cutlass_add_generator",
+      "description": "Add a colour matte or colour bars on a video track, or a sine tone on an audio track.",
+      "method": "POST",
+      "route": "/v1/edit/generator/add",
+      "needsLock": true,
+      "mutating": true,
+      "heavy": false,
+      "result": "json",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "A video track (colorMatte, bars) or an audio track (tone)."
+          },
+          "at": {
+            "type": "integer",
+            "description": "Timeline frame.",
+            "minimum": 0
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Length in frames.",
+            "minimum": 1
+          },
+          "mode": {
+            "type": "string",
+            "description": "overwrite (default) or insert.",
+            "enum": [
+              "overwrite",
+              "insert"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "description": "What to generate.",
+            "enum": [
+              "colorMatte",
+              "bars",
+              "tone"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Matte colour #RRGGBB (#000000)."
+          },
+          "toneHz": {
+            "type": "number",
+            "description": "Tone frequency, 20 to 20000 Hz (1000)."
+          },
+          "opacity": {
+            "type": "number",
+            "description": "Video kinds: 0 to 1 (1)."
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Tone: gain in dB over the sine level of -18 dBFS peak per channel (0)."
+          },
+          "fadeInFrames": {
+            "type": "integer",
+            "description": "Fade-in frames.",
+            "minimum": 0
+          },
+          "fadeOutFrames": {
+            "type": "integer",
+            "description": "Fade-out frames.",
+            "minimum": 0
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "trackId",
+          "at",
+          "durationFrames",
+          "kind"
+        ]
+      }
+    },
+    {
+      "name": "edit.generator.update",
+      "mcpName": "cutlass_update_generator",
+      "description": "Change a generator's kind (on the same kind of track), colour, frequency, opacity, gain or fades.",
+      "method": "POST",
+      "route": "/v1/edit/generator/update",
+      "needsLock": true,
+      "mutating": true,
+      "heavy": false,
+      "result": "json",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The generator clip."
+          },
+          "kind": {
+            "type": "string",
+            "description": "New kind: colorMatte and bars swap, a tone stays a tone.",
+            "enum": [
+              "colorMatte",
+              "bars",
+              "tone"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Matte colour #RRGGBB."
+          },
+          "toneHz": {
+            "type": "number",
+            "description": "Tone frequency, 20 to 20000 Hz."
+          },
+          "opacity": {
+            "type": "number",
+            "description": "Video kinds: 0 to 1."
+          },
+          "gainDb": {
+            "type": "number",
+            "description": "Tone: gain in dB."
           },
           "fadeInFrames": {
             "type": "integer",

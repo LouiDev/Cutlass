@@ -67,7 +67,12 @@ public sealed record ClipClipboard(ImmutableArray<ClipPlacement> Items)
                 continue;
             }
 
-            var kind = item.Clip is MediaClip { Stream: StreamKind.Audio } ? TrackKind.Audio : TrackKind.Video;
+            var kind = item.Clip switch
+            {
+                MediaClip { Stream: StreamKind.Audio } => TrackKind.Audio,
+                GeneratorClip g => g.Kind.TrackKindOf(),
+                _ => TrackKind.Video,
+            };
             var fallback = project.Sequence.Tracks.FirstOrDefault(t => t.Kind == kind && !t.Locked);
             if (fallback is not null)
             {

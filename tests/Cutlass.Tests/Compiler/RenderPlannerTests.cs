@@ -14,6 +14,25 @@ public sealed class RenderPlannerTests
         [new Transition("x_1", TransitionKind.Crossfade, "c_a", "c_b", 30)]);
 
     [Fact]
+    public void GeneratorsPlanLikeTitles()
+    {
+        // Effects batch 5: a matte and a title joined by a crossfade are one run with full extents; a window inside the
+        // transition widens over both, since neither has a source to run out of.
+        var track = VideoTrack(
+            "tr_v1",
+            [GeneratorClip.Create("c_g", 0, 60, GeneratorKind.ColorMatte), Title("c_t", 60, 60), GeneratorClip.Create("c_b", 150, 30, GeneratorKind.Bars)],
+            [new Transition("x_1", TransitionKind.Crossfade, "c_g", "c_t", 20)]);
+        var runs = RenderPlanner.PlanVideoTrack(track, 0, 180);
+        Assert.Equal(
+            [("c_g", 0L, 70L), ("c_t", 50L, 120L), ("c_b", 150L, 180L)],
+            runs.SelectMany(r => r.Segments).Select(s => (s.Clip.Id, s.Start, s.End)));
+
+        var widened = Assert.Single(RenderPlanner.PlanVideoTrack(track, 58, 62));
+        Assert.True(widened.IsWidened);
+        Assert.Equal([("c_g", 50L, 70L), ("c_t", 50L, 70L)], widened.Segments.Select(s => (s.Clip.Id, s.Start, s.End)));
+    }
+
+    [Fact]
     public void FullWindowHasEveryExtent()
     {
         var run = Assert.Single(RenderPlanner.PlanVideoTrack(V1, 0, 300));

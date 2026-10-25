@@ -43,6 +43,121 @@ public sealed class EffectsViewModelTests
         Assert.Equal("cutlass/effect-id", EffectItem.DragFormat);
         Assert.Equal("transition:DipToBlack", vm.Transitions.Single(t => t.TransitionKind == TransitionKind.DipToBlack).Id);
         Assert.Same(vm.Titles[1], vm.Find("title:LowerThird"));
+        Assert.Equal(["Color Matte", "Bars", "Tone"], vm.Generators.Select(g => g.Name));
+        Assert.Equal(["generator:ColorMatte", "generator:Bars", "generator:Tone"], vm.Generators.Select(g => g.Id));
+        Assert.All(vm.Generators, g => Assert.True(g.IsGenerator && !g.IsTitle && !g.IsTransition && g.Category == EffectCategory.Generator));
+        Assert.Same(vm.Generators[2], vm.Find("generator:Tone"));
+    }
+
+    [Fact]
+    public void GeneratorsGoOnAFreeTrackOfTheirKindAtThePlayhead()
+    {
+        // Effects batch 5: V1 is busy at the playhead, so the matte goes to V2 above it (the title rule); only A2 is
+        // targeted and free, so the tone goes there. The clip lasts the still duration and is selected.
+        var vm = Vm(Cuts().Target(V2, A2), out var timeline);
+        timeline.StillDurationSeconds = 2;
+        Assert.All(vm.Generators, g => Assert.Equal("2 s", g.Detail));
+        timeline.Playhead = 10;
+        var matte = vm.Apply(vm.Find("generator:ColorMatte")!);
+        Assert.NotNull(matte);
+        var placed = Clip<GeneratorClip>(timeline, matte.Select[0]);
+        Assert.Equal((GeneratorKind.ColorMatte, 10L, 50L, GeneratorClip.DefaultColor), (placed.Kind, placed.Start, placed.Duration, placed.Color));
+        Assert.Equal(V2, TimelineQuery.FindClip(timeline.Session.Current, placed.Id)!.Value.Track.Id);
+        Assert.Equal([placed.Id], timeline.SelectedClipIds);
+        Assert.Equal("Add Color Matte", timeline.Session.UndoLabel);
+        Assert.StartsWith("Added Color Matte at ", vm.StatusText, StringComparison.Ordinal);
+
+        var tone = vm.Apply(vm.Find("generator:Tone")!);
+        Assert.NotNull(tone);
+        Assert.Equal(A2, TimelineQuery.FindClip(timeline.Session.Current, tone.Select[0])!.Value.Track.Id);
+        Assert.Equal(GeneratorKind.Tone, Clip<GeneratorClip>(timeline, tone.Select[0]).Kind);
+        ModelAssert.Valid(timeline.Session.Current);
+    }
+
+    [Fact]
+    public void ApplyNeverOverwritesAndAddsATrackWhenEveryTrackIsBusy()
+    {
+        // V1, V2, A1 and A2 all hold clips over the playhead; V1 and A1 are targeted. Apply leaves them intact and adds
+        // V3 for the bars and A3 for the tone (one undo step each, the track and the clip together).
+        var builder = Cuts()
+            .With(V2, V("busyV", 0, 150, sourceFrame: 700))
+            .With(A2, A("busyA", 0, 150, sourceFrame: 700))
+            .Target(V1, A1);
+        var vm = Vm(builder, out var timeline);
+        timeline.Playhead = 20;
+        var before = timeline.Session.Current;
+
+        var bars = vm.Apply(vm.Find("generator:Bars")!);
+        var tone = vm.Apply(vm.Find("generator:Tone")!);
+
+        var project = timeline.Session.Current;
+        Assert.NotNull(bars);
+        Assert.NotNull(tone);
+        foreach (var id in new[] { V1, V2, A1, A2 })
+        {
+            Assert.Equal(TimelineQuery.FindTrack(before, id)!.Clips, TimelineQuery.FindTrack(project, id)!.Clips);
+        }
+
+        var barsTrack = TimelineQuery.FindClip(project, bars.Select[0])!.Value.Track;
+        var toneTrack = TimelineQuery.FindClip(project, tone.Select[0])!.Value.Track;
+        Assert.Equal(("V3", TrackKind.Video), (barsTrack.Name, barsTrack.Kind));
+        Assert.Equal(("A3", TrackKind.Audio), (toneTrack.Name, toneTrack.Kind));
+        Assert.Equal(20, Clip<GeneratorClip>(timeline, tone.Select[0]).Start);
+        ModelAssert.Valid(project);
+
+        timeline.Session.Undo();
+        Assert.Null(TimelineQuery.FindTrack(timeline.Session.Current, toneTrack.Id));
+    }
+
+    [Fact]
+    public void ToneApplyPrefersAFreeTargetedTrackThenAnyFreeTrack()
+    {
+        // A1 is targeted but busy at the playhead, A2 is free: the tone goes to A2 and A1 stays intact.
+        var vm = Vm(Cuts().Target(V1, A1), out var timeline);
+        timeline.Playhead = 20;
+        var tone = vm.Apply(vm.Find("generator:Tone")!);
+        Assert.NotNull(tone);
+        Assert.Equal(A2, TimelineQuery.FindClip(timeline.Session.Current, tone.Select[0])!.Value.Track.Id);
+        Assert.Equal(3, TimelineQuery.FindTrack(timeline.Session.Current, A1)!.Clips.Length);
+    }
+
+    [Fact]
+    public void GeneratorDropsCheckTheTrackKindAndShowAGhost()
+    {
+        var vm = Vm(Cuts().Lock(A2), out var timeline);
+        var hold = timeline.StillDurationFrames;
+        Assert.Equal(new EffectDropPreview(V2, 30, hold, EffectCategory.Generator), vm.PreviewAt("generator:Bars", V2, 30));
+        Assert.Equal(new EffectDropPreview(A1, 5, hold, EffectCategory.Generator), vm.PreviewAt("generator:Tone", A1, 5));
+        Assert.Null(vm.PreviewAt("generator:Tone", V1, 5));
+        Assert.Null(vm.PreviewAt("generator:ColorMatte", A1, 5));
+        Assert.Null(vm.PreviewAt("generator:Tone", A2, 5));
+
+        Assert.Null(vm.ApplyAt("generator:Tone", V2, 5));
+        Assert.Equal("Drop Tone on an audio track.", vm.StatusText);
+        Assert.Null(vm.ApplyAt("generator:Bars", A1, 5));
+        Assert.Equal("Drop Bars on a video track.", vm.StatusText);
+        Assert.Null(vm.ApplyAt("generator:Tone", A2, 5));
+        Assert.Equal("A2 is locked.", vm.StatusText);
+        Assert.Equal(0, timeline.Session.UndoCount);
+
+        var bars = vm.ApplyAt("generator:Bars", V2, 30);
+        Assert.NotNull(bars);
+        var clip = Assert.IsType<GeneratorClip>(Assert.Single(TimelineQuery.FindTrack(timeline.Session.Current, V2)!.Clips));
+        Assert.Equal((GeneratorKind.Bars, 30L, hold), (clip.Kind, clip.Start, clip.Duration));
+    }
+
+    [Fact]
+    public void PresetsReachGeneratorsOfTheirSide()
+    {
+        var vm = Vm(new ProjectBuilder().With(V1, Generator("g1", 0, 100)).With(A1, Generator("g2", 0, 100, GeneratorKind.Tone)), out var timeline);
+        timeline.Select(["g1", "g2"], false);
+        vm.Apply(vm.Find("adjust:FadeInOut")!);
+        vm.Apply(vm.Find("adjust:Grayscale")!);
+        vm.Apply(vm.Find("adjust:Mono")!);
+        var matte = Clip<GeneratorClip>(timeline, "g1");
+        var tone = Clip<GeneratorClip>(timeline, "g2");
+        Assert.Equal((25L, 25L, true, false), (matte.Video.FadeInFrames, matte.Video.FadeOutFrames, matte.Video.Effects.Grayscale, matte.Audio.Effects.Mono));
+        Assert.Equal((25L, 25L, true, false), (tone.Audio.FadeInFrames, tone.Audio.FadeOutFrames, tone.Audio.Effects.Mono, tone.Video.Effects.Grayscale));
     }
 
     [Fact]

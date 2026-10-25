@@ -135,7 +135,9 @@ public sealed partial class InspectorViewModel : ObservableObject
         }
 
         var allTitles = ids.All(id => TimelineQuery.FindClip(project, id)?.Clip is TitleClip);
-        return (allTitles ? "title:" : "clip:") + string.Join(",", ids);
+        // Effects batch 5: an all-generator selection gets the generator section; mixed selections keep the clip section.
+        var allGenerators = ids.All(id => TimelineQuery.FindClip(project, id)?.Clip is GeneratorClip);
+        return (allTitles ? "title:" : allGenerators ? "generator:" : "clip:") + string.Join(",", ids);
     }
 
     private InspectorSection CreateSection(Project project, string key, IReadOnlyList<string> clipIds)
@@ -154,6 +156,11 @@ public sealed partial class InspectorViewModel : ObservableObject
         if (key.StartsWith("title:", StringComparison.Ordinal))
         {
             return new TitleSectionViewModel(Editor, _expanded, clipIds, _fonts);
+        }
+
+        if (key.StartsWith("generator:", StringComparison.Ordinal))
+        {
+            return new GeneratorSectionViewModel(Editor, _expanded, project, clipIds);
         }
 
         if (key.StartsWith("clip:", StringComparison.Ordinal))

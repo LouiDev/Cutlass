@@ -79,16 +79,21 @@ public sealed partial class SmokeRunner
         _log.Write("  Effects: " + effects.StatusText);
     }
 
-    // clip-prop <track> <pos> <field>=<value>...: the Inspector rows of the media clip under the frame, set like a user
-    // types them (effects batch 2). A row is found by its label with '-' for spaces; number rows take the display unit.
+    // clip-prop <track> <pos> <field>=<value>...: the Inspector rows of the media clip or generator under the frame, set
+    // like a user types them (effects batches 2 and 5). A row is found by its label with '-' for spaces; number rows take
+    // the display unit. A generator also has its Color (matte) and Frequency (tone) rows.
     private void ClipProp(SmokeStep step)
     {
         var track = Track(Arg(step, 0));
         var frame = Position(step, 1);
-        var clip = TimelineQuery.ClipAt(track, frame) as MediaClip
-            ?? throw Fail(string.Create(CultureInfo.InvariantCulture, $"no media clip on {track.Name} at {frame}"));
+        var clip = TimelineQuery.ClipAt(track, frame) is { } found and (MediaClip or GeneratorClip)
+            ? found
+            : throw Fail(string.Create(CultureInfo.InvariantCulture, $"no media clip or generator on {track.Name} at {frame}"));
         _vm.Timeline.Select([clip.Id], false);
-        var section = _vm.Inspector.Section as ClipSectionViewModel ?? throw Fail("the Inspector shows no clip section");
+        var section = _vm.Inspector.Section as InspectorPropsSectionBase ?? throw Fail("the Inspector shows no clip or generator section");
+        Expect(
+            (clip is GeneratorClip) == (section is GeneratorSectionViewModel),
+            "the Inspector shows the " + (section is GeneratorSectionViewModel ? "generator" : "clip") + " section for " + clip.Id);
         var options = step.Args.Where(a => a.Contains('=', StringComparison.Ordinal)).ToList();
         Expect(options.Count > 0, SmokeScript.Commands["clip-prop"]);
         foreach (var option in options)
@@ -99,13 +104,19 @@ public sealed partial class SmokeRunner
             Edit(() => SetInspectorRow(section, label, value), string.Create(CultureInfo.InvariantCulture, $"set {label} to {value} on {clip.Id}"));
         }
 
-        var video = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Video;
+        var current = TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip;
+        if (current is GeneratorClip generator)
+        {
+            _log.Write(string.Create(CultureInfo.InvariantCulture, $"  generator: {generator.Kind} color={generator.Color} toneHz={generator.ToneHz}"));
+        }
+
+        var video = current is null ? null : InspectorPropsSectionBase.VideoOf(current);
         _log.Write(video is null
             ? "  video: (gone)"
             : string.Create(
                 CultureInfo.InvariantCulture,
                 $"  video: opacity={video.Opacity} rotation={video.Effects.RotationDegrees} hue={video.Effects.HueDegrees} blur={video.Effects.Blur} flipH={video.Effects.FlipH} flipV={video.Effects.FlipV} grayscale={video.Effects.Grayscale} key={video.Effects.KeyEnabled}"));
-        var audio = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Audio;
+        var audio = current is null ? null : InspectorPropsSectionBase.AudioOf(current);
         if (audio is not null)
         {
             var e = audio.Effects;
@@ -115,8 +126,23 @@ public sealed partial class SmokeRunner
         }
     }
 
-    private static void SetInspectorRow(ClipSectionViewModel section, string label, string value)
+    private static void SetInspectorRow(InspectorPropsSectionBase section, string label, string value)
     {
+        if (section is GeneratorSectionViewModel generator)
+        {
+            if (generator.ColorRow.IsVisible && string.Equals(generator.ColorRow.Label, label, StringComparison.OrdinalIgnoreCase))
+            {
+                generator.ColorRow.Text = value;
+                return;
+            }
+
+            if (generator.FrequencyRow.IsVisible && string.Equals(generator.FrequencyRow.Label, label, StringComparison.OrdinalIgnoreCase))
+            {
+                generator.FrequencyRow.Value = double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+                return;
+            }
+        }
+
         // Hyphenated labels ("High-pass") match their spaced spelling, since the command spells spaces as '-'.
         var number = section.VideoFields.Concat(section.AudioFields).FirstOrDefault(f => string.Equals(f.Label.Replace('-', ' '), label, StringComparison.OrdinalIgnoreCase));
         if (number is not null)
@@ -138,7 +164,7 @@ public sealed partial class SmokeRunner
             return;
         }
 
-        throw Fail("the Clip section has no row labelled '" + label + "'");
+        throw Fail("the " + (section is GeneratorSectionViewModel ? "Generator" : "Clip") + " section has no row labelled '" + label + "'");
     }
 
     // select-transition <track> [index]: a click on a transition block.
@@ -154,22 +180,21 @@ public sealed partial class SmokeRunner
         _log.Write(string.Create(CultureInfo.InvariantCulture, $"selected {transition.Kind} ({transition.Duration} frames) on {track.Name}"));
     }
 
-    // volume-key <track> <pos> <dB>: selects the audio clip under the frame and adds a keyframe at that level.
+    // volume-key <track> <pos> <dB>: selects the audio clip or tone under the frame and adds a keyframe at that level.
     private void VolumeKey(SmokeStep step)
     {
         var track = Track(Arg(step, 0));
         var frame = Position(step, 1);
         var db = double.Parse(Arg(step, 2), NumberStyles.Float, CultureInfo.InvariantCulture);
-        var clip = TimelineQuery.ClipAt(track, frame) as MediaClip;
-        Expect(clip is { Stream: StreamKind.Audio }, string.Create(CultureInfo.InvariantCulture, $"no audio clip on {track.Name} at {frame}"));
+        var clip = TimelineQuery.ClipAt(track, frame);
+        Expect(clip is not null && ClipAudio.Of(clip) is not null, string.Create(CultureInfo.InvariantCulture, $"no audio clip on {track.Name} at {frame}"));
         var at = frame - clip!.Start;
         _vm.Timeline.Select([clip.Id], false);
         Edit(
-            () => _vm.Timeline.Run(p => TimelineEdits.UpdateClips(p, [clip.Id], c => c is MediaClip m
-                ? m with { Audio = m.Audio with { Keys = [.. m.Audio.Keys.Where(k => k.Frame != at).Append(new VolumeKey(at, db)).OrderBy(k => k.Frame)] } }
-                : c, "Add Keyframe")),
+            () => _vm.Timeline.Run(p => TimelineEdits.UpdateClips(
+                p, [clip.Id], c => TimelineViewModel.WithKeys(c, keys => [.. keys.Where(k => k.Frame != at).Append(new VolumeKey(at, db)).OrderBy(k => k.Frame)]), "Add Keyframe")),
             string.Create(CultureInfo.InvariantCulture, $"keyframe {db} dB at clip frame {at} on {track.Name}"));
-        var keys = (TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip as MediaClip)?.Audio.Keys ?? ImmutableArray<VolumeKey>.Empty;
+        var keys = TimelineQuery.FindClip(_vm.Session.Current, clip.Id)?.Clip is { } now ? ClipAudio.Keys(now) : ImmutableArray<VolumeKey>.Empty;
         _log.Write("  keys: " + string.Join(", ", keys.Select(k => string.Create(CultureInfo.InvariantCulture, $"{k.Frame}:{k.Db}"))));
     }
 

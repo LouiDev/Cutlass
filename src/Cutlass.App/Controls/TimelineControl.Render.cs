@@ -101,6 +101,7 @@ public sealed partial class TimelineControl
     private Color ClipColor(Project project, Clip clip) => clip switch
     {
         TitleClip => _palette.TitleClip,
+        GeneratorClip => _palette.GeneratorClip,
         MediaClip { Stream: StreamKind.Audio } => _palette.AudioClip,
         MediaClip m when TimelineQuery.FindMedia(project, m.MediaId)?.Info.IsStill == true => _palette.StillClip,
         _ => _palette.VideoClip,
@@ -215,9 +216,10 @@ public sealed partial class TimelineControl
             DrawTriangle(context, shade, new Point(full.Right, full.Bottom), new Point(full.Right, full.Top), new Point(fx, full.Top));
         }
 
-        if (clip is MediaClip { Stream: StreamKind.Audio } audio && !offline)
+        // Audio media and tones (effects batch 5) draw the volume line; a tone has no waveform.
+        if (ClipAudio.Of(clip) is { } audioProps && !offline)
         {
-            DrawVolume(context, vm, audio, full, rect, selected);
+            DrawVolume(context, vm, clip, audioProps, full, rect, selected);
         }
 
         using (context.PushClip(rect.Deflate(new Thickness(4, 0))))
@@ -313,6 +315,13 @@ public sealed partial class TimelineControl
             }
         }
 
+        // Effects batch 5: a generator lights "fx" by the same rules as a media clip of its side.
+        if (clip is GeneratorClip g
+            && (g.Kind.IsVideo() ? g.Video with { FadeInFrames = 0, FadeOutFrames = 0 } != VideoProps.Default : g.Audio.Effects != AudioEffects.None))
+        {
+            badges.Add(("fx", false));
+        }
+
         return badges;
     }
 
@@ -346,11 +355,11 @@ public sealed partial class TimelineControl
 
     // DESIGN 5.1 and 5.5: the volume line (clip gain plus the keyframe envelope) and the keyframe dots, on the -60 to
     // +12 dB scale with 0 dB at 83% of the clip height. Selected clips draw it brighter; they are the editable ones.
-    private void DrawVolume(DrawingContext context, TimelineViewModel vm, MediaClip clip, Rect full, Rect visible, bool selected)
+    private void DrawVolume(DrawingContext context, TimelineViewModel vm, Clip clip, AudioProps audio, Rect full, Rect visible, bool selected)
     {
         var p = _palette;
         var view = vm.ViewState;
-        var keys = clip.Audio.Keys;
+        var keys = audio.Keys;
         var linePen = new Pen(TimelinePalette.Brush(p.Snap, selected ? 0.95 : 0.55), selected ? 1.5 : 1);
         double Y(double db) => VolumeScale.DbToY(db, full.Top, full.Height);
         using (context.PushClip(visible))
@@ -363,7 +372,7 @@ public sealed partial class TimelineControl
                 {
                     foreach (var key in keys)
                     {
-                        g.LineTo(new Point(LaneX(view, clip.Start + key.Frame + 0.5), Y(clip.Audio.GainDb + key.Db)));
+                        g.LineTo(new Point(LaneX(view, clip.Start + key.Frame + 0.5), Y(audio.GainDb + key.Db)));
                     }
                 }
 
@@ -380,7 +389,7 @@ public sealed partial class TimelineControl
             var selectedKey = vm.SelectedVolumeKey is { } k && k.ClipId == clip.Id ? k.Frame : (long?)null;
             foreach (var key in keys)
             {
-                var center = new Point(LaneX(view, clip.Start + key.Frame + 0.5), Y(clip.Audio.GainDb + key.Db));
+                var center = new Point(LaneX(view, clip.Start + key.Frame + 0.5), Y(audio.GainDb + key.Db));
                 var isSelected = selectedKey == key.Frame;
                 var fill = TimelinePalette.Brush(isSelected ? p.Selection : p.Snap, selected ? 1 : 0.6);
                 var outline = new Pen(TimelinePalette.Brush(isSelected ? p.Accent : Colors.Black, 0.8), isSelected ? 2 : 1);
@@ -549,7 +558,8 @@ public sealed partial class TimelineControl
     }
 
     // Effects tab drops (DESIGN 4.2): the cut a transition goes to highlights with an Accent band of the transition's
-    // length, a title shows a TitleClip ghost, and a fade preset outlines the clip it applies to.
+    // length, a title shows a TitleClip ghost, a generator a GeneratorClip ghost, and a fade preset outlines the clip it
+    // applies to.
     private void DrawEffectGhost(DrawingContext context, EffectDropPreview effect, TimelineViewState view, TrackLayout layout, Rect lanes, Pen outline)
     {
         if (layout.Row(effect.TrackId) is not { } row)
@@ -576,6 +586,9 @@ public sealed partial class TimelineControl
                 break;
             case EffectCategory.Title:
                 context.DrawRectangle(TimelinePalette.Brush(_palette.TitleClip, 0.5), outline, new RoundedRect(body, ClipRadius));
+                break;
+            case EffectCategory.Generator:
+                context.DrawRectangle(TimelinePalette.Brush(_palette.GeneratorClip, 0.5), outline, new RoundedRect(body, ClipRadius));
                 break;
             default:
                 context.DrawRectangle(TimelinePalette.Brush(_palette.Accent, 0.15), new Pen(TimelinePalette.Brush(_palette.Accent), 2), new RoundedRect(body, ClipRadius));

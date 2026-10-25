@@ -276,12 +276,6 @@ internal sealed partial class EditTools
                     warnings.Add("gainDb and audioEffects apply to audio clips only; they were ignored for video clips.");
                 }
 
-                var t = m.Video.Transform;
-                var tr = req.Transform;
-                var co = m.Video.Color;
-                var cr = req.Color;
-                var fo = m.Video.Effects;
-                var fr = req.Effects;
                 var freeze = req.Freeze ?? m.Freeze;
                 if (req.Freeze is not null && TimelineQuery.FindMedia(project, m.MediaId)?.Info.IsStill == true)
                 {
@@ -294,29 +288,7 @@ internal sealed partial class EditTools
                 {
                     Enabled = enabled,
                     Freeze = freeze,
-                    Video = m.Video with
-                    {
-                        Opacity = req.Opacity ?? m.Video.Opacity,
-                        Transform = tr is null ? t : new Transform(tr.X ?? t.X, tr.Y ?? t.Y, tr.Scale ?? t.Scale, tr.CropLeft ?? t.CropLeft, tr.CropTop ?? t.CropTop, tr.CropRight ?? t.CropRight, tr.CropBottom ?? t.CropBottom),
-                        Color = cr is null ? co : new ColorAdjust(cr.Brightness ?? co.Brightness, cr.Contrast ?? co.Contrast, cr.Saturation ?? co.Saturation, cr.Gamma ?? co.Gamma),
-                        Effects = fr is null ? fo : new VideoEffects(
-                            fr.FlipH ?? fo.FlipH,
-                            fr.FlipV ?? fo.FlipV,
-                            fr.RotationDegrees ?? fo.RotationDegrees,
-                            fr.HueDegrees ?? fo.HueDegrees,
-                            fr.TemperatureKelvin ?? fo.TemperatureKelvin,
-                            fr.Tint ?? fo.Tint,
-                            fr.Blur ?? fo.Blur,
-                            fr.Sharpen ?? fo.Sharpen,
-                            fr.Vignette ?? fo.Vignette,
-                            fr.Grayscale ?? fo.Grayscale,
-                            fr.KeyEnabled ?? fo.KeyEnabled,
-                            fr.KeyColor ?? fo.KeyColor,
-                            fr.KeySimilarity ?? fo.KeySimilarity,
-                            fr.KeyBlend ?? fo.KeyBlend),
-                        FadeInFrames = req.FadeInFrames ?? m.Video.FadeInFrames,
-                        FadeOutFrames = req.FadeOutFrames ?? m.Video.FadeOutFrames,
-                    },
+                    Video = MergeVideo(m.Video, req),
                 };
             case MediaClip m:
                 if (req.Opacity is not null || req.Transform is not null || req.Color is not null || req.Effects is not null || req.Freeze is not null)
@@ -324,29 +296,10 @@ internal sealed partial class EditTools
                     warnings.Add("opacity, transform, color, effects and freeze apply to video clips only; they were ignored for audio clips.");
                 }
 
-                var ao = m.Audio.Effects;
-                var ar = req.AudioEffects;
                 return m with
                 {
                     Enabled = enabled,
-                    Audio = m.Audio with
-                    {
-                        GainDb = req.GainDb ?? m.Audio.GainDb,
-                        FadeInFrames = req.FadeInFrames ?? m.Audio.FadeInFrames,
-                        FadeOutFrames = req.FadeOutFrames ?? m.Audio.FadeOutFrames,
-                        Effects = ar is null ? ao : new AudioEffects(
-                            ar.HighPassHz ?? ao.HighPassHz,
-                            ar.LowPassHz ?? ao.LowPassHz,
-                            ar.BassDb ?? ao.BassDb,
-                            ar.TrebleDb ?? ao.TrebleDb,
-                            ar.Compressor ?? ao.Compressor,
-                            ar.CompressorThresholdDb ?? ao.CompressorThresholdDb,
-                            ar.CompressorRatio ?? ao.CompressorRatio,
-                            ar.Gate ?? ao.Gate,
-                            ar.GateThresholdDb ?? ao.GateThresholdDb,
-                            ar.Pan ?? ao.Pan,
-                            ar.Mono ?? ao.Mono),
-                    },
+                    Audio = MergeAudio(m.Audio, req),
                 };
             case TitleClip title:
                 if (req.GainDb is not null || req.AudioEffects is not null || req.Transform is not null || req.Color is not null || req.Effects is not null || req.Freeze is not null)
@@ -361,9 +314,70 @@ internal sealed partial class EditTools
                     FadeInFrames = req.FadeInFrames ?? title.FadeInFrames,
                     FadeOutFrames = req.FadeOutFrames ?? title.FadeOutFrames,
                 };
+            case GeneratorClip g:
+                return ApplyGenerator(g, enabled, req, warnings);
             default:
                 return clip;
         }
+    }
+
+    // The partial merge of the video side of edit.clip-props, shared by video media clips and video generators.
+    private static VideoProps MergeVideo(VideoProps v, ClipPropsRequest req)
+    {
+        var t = v.Transform;
+        var tr = req.Transform;
+        var co = v.Color;
+        var cr = req.Color;
+        var fo = v.Effects;
+        var fr = req.Effects;
+        return v with
+        {
+            Opacity = req.Opacity ?? v.Opacity,
+            Transform = tr is null ? t : new Transform(tr.X ?? t.X, tr.Y ?? t.Y, tr.Scale ?? t.Scale, tr.CropLeft ?? t.CropLeft, tr.CropTop ?? t.CropTop, tr.CropRight ?? t.CropRight, tr.CropBottom ?? t.CropBottom),
+            Color = cr is null ? co : new ColorAdjust(cr.Brightness ?? co.Brightness, cr.Contrast ?? co.Contrast, cr.Saturation ?? co.Saturation, cr.Gamma ?? co.Gamma),
+            Effects = fr is null ? fo : new VideoEffects(
+                fr.FlipH ?? fo.FlipH,
+                fr.FlipV ?? fo.FlipV,
+                fr.RotationDegrees ?? fo.RotationDegrees,
+                fr.HueDegrees ?? fo.HueDegrees,
+                fr.TemperatureKelvin ?? fo.TemperatureKelvin,
+                fr.Tint ?? fo.Tint,
+                fr.Blur ?? fo.Blur,
+                fr.Sharpen ?? fo.Sharpen,
+                fr.Vignette ?? fo.Vignette,
+                fr.Grayscale ?? fo.Grayscale,
+                fr.KeyEnabled ?? fo.KeyEnabled,
+                fr.KeyColor ?? fo.KeyColor,
+                fr.KeySimilarity ?? fo.KeySimilarity,
+                fr.KeyBlend ?? fo.KeyBlend),
+            FadeInFrames = req.FadeInFrames ?? v.FadeInFrames,
+            FadeOutFrames = req.FadeOutFrames ?? v.FadeOutFrames,
+        };
+    }
+
+    // The partial merge of the audio side of edit.clip-props, shared by audio media clips and tones.
+    private static AudioProps MergeAudio(AudioProps a, ClipPropsRequest req)
+    {
+        var ao = a.Effects;
+        var ar = req.AudioEffects;
+        return a with
+        {
+            GainDb = req.GainDb ?? a.GainDb,
+            FadeInFrames = req.FadeInFrames ?? a.FadeInFrames,
+            FadeOutFrames = req.FadeOutFrames ?? a.FadeOutFrames,
+            Effects = ar is null ? ao : new AudioEffects(
+                ar.HighPassHz ?? ao.HighPassHz,
+                ar.LowPassHz ?? ao.LowPassHz,
+                ar.BassDb ?? ao.BassDb,
+                ar.TrebleDb ?? ao.TrebleDb,
+                ar.Compressor ?? ao.Compressor,
+                ar.CompressorThresholdDb ?? ao.CompressorThresholdDb,
+                ar.CompressorRatio ?? ao.CompressorRatio,
+                ar.Gate ?? ao.Gate,
+                ar.GateThresholdDb ?? ao.GateThresholdDb,
+                ar.Pan ?? ao.Pan,
+                ar.Mono ?? ao.Mono),
+        };
     }
 
     private Task<ApiResult> SpeedAsync(ToolCallContext ctx)
@@ -440,9 +454,11 @@ internal sealed partial class EditTools
             .ToImmutableArray();
         return d.Edits.EditAsync(ctx, req, p =>
         {
-            if (RequireClip(p, id) is not MediaClip { Stream: StreamKind.Audio } audio)
+            // Audio media clips and tones (effects batch 5) carry audio props and so volume keys.
+            var audio = RequireClip(p, id);
+            if (ClipAudio.Of(audio) is null)
             {
-                throw ApiException.InvalidArgument("clipId", $"'{id}' is not an audio clip; volume keys belong to audio clips.");
+                throw ApiException.InvalidArgument("clipId", $"'{id}' is not an audio clip or tone; volume keys belong to audio clips and tones.");
             }
 
             var warnings = new List<string>();
@@ -451,7 +467,7 @@ internal sealed partial class EditTools
                 warnings.Add(string.Create(CultureInfo.InvariantCulture, $"Keys outside the clip (0 to {audio.Duration - 1}) were left out."));
             }
 
-            var result = TimelineEdits.UpdateClips(p, [id], c => ((MediaClip)c) with { Audio = ((MediaClip)c).Audio with { Keys = envelope } }, "Volume Keys");
+            var result = TimelineEdits.UpdateClips(p, [id], c => ClipAudio.Of(c) is { } a ? ClipAudio.With(c, a with { Keys = envelope }) : c, "Volume Keys");
             return Warn(result, warnings);
         });
     }

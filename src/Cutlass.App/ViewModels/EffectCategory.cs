@@ -11,4 +11,7 @@ public enum EffectCategory
 
     /// <summary>Simple video adjustments (fade presets).</summary>
     Adjustment,
+
+    /// <summary>Generator clips (effects batch 5): colour matte, bars and tone.</summary>
+    Generator,
 }

@@ -145,8 +145,10 @@ public sealed class EditFuzzTests
 
             case 2:
                 // Titles and, since effects batch 4, frozen clips (unbounded like stills, but with a source position) and freeze frames.
-                return rng.Next(3) switch
+                // Effects batch 5: generators of a random kind on a random track (a wrong track kind is refused).
+                return rng.Next(4) switch
                 {
+                    3 => TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), Generator("gg", 0, rng.Next(1, 80), Enum.GetValues<GeneratorKind>()[rng.Next(3)]))], Frame(), rng.Next(2) == 0 ? EditMode.Insert : EditMode.Overwrite),
                     0 => TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), V("ff", 0, rng.Next(1, 80), MediaIds[rng.Next(MediaIds.Length)], rng.NextInt64(0, 3000), freeze: true))], Frame(), rng.Next(2) == 0 ? EditMode.Insert : EditMode.Overwrite),
                     1 when clip is not null => TimelineEdits.FreezeFrame(ids, p, clip.Id, clip.Start + rng.NextInt64(-2, clip.Duration + 2), rng.Next(-5, 120), rng.Next(2) == 0),
                     _ => TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), Title("tt", 0, rng.Next(1, 80)))], Frame(), EditMode.Overwrite),
@@ -329,6 +331,20 @@ public sealed class EditFuzzTests
             },
         },
         TitleClip t => t with { Opacity = rng.NextDouble() * 2 - 0.5, FadeInFrames = rng.Next(0, 50), FadeOutFrames = rng.Next(0, 50), Title = t.Title with { Size = rng.Next(-10, 300) } },
+        GeneratorClip g => g with
+        {
+            Kind = Enum.GetValues<GeneratorKind>()[rng.Next(3)],
+            Color = rng.Next(3) switch { 0 => "#FF8000", 1 => "#12AB", _ => "orange" },
+            ToneHz = rng.NextDouble() * 30000 - 1000,
+            Video = g.Video with { Opacity = rng.NextDouble() * 1.5 - 0.2, FadeInFrames = rng.Next(-5, 60), FadeOutFrames = rng.Next(-5, 60) },
+            Audio = g.Audio with
+            {
+                GainDb = rng.Next(-90, 30),
+                FadeInFrames = rng.Next(-5, 60),
+                FadeOutFrames = rng.Next(-5, 60),
+                Keys = [.. Enumerable.Range(0, rng.Next(0, 5)).Select(_ => new VolumeKey(rng.Next(-10, (int)Math.Min(g.Duration + 10, 1000)), rng.Next(-80, 20)))],
+            },
+        },
         _ => clip,
     };
 

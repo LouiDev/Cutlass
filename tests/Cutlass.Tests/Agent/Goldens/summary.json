@@ -50,6 +50,57 @@
           "opacity": 1,
           "fadeInFrames": 0,
           "fadeOutFrames": 0
+        },
+        {
+          "id": "c_03",
+          "type": "generator",
+          "start": 120,
+          "duration": 60,
+          "end": 180,
+          "enabled": true,
+          "linkId": null,
+          "displayName": "Color Matte",
+          "video": {
+            "transform": {
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "cropLeft": 0,
+              "cropTop": 0,
+              "cropRight": 0,
+              "cropBottom": 0
+            },
+            "opacity": 0.5,
+            "color": {
+              "brightness": 0,
+              "contrast": 1,
+              "saturation": 1,
+              "gamma": 1
+            },
+            "fadeInFrames": 10,
+            "fadeOutFrames": 0,
+            "effects": {
+              "flipH": false,
+              "flipV": false,
+              "rotationDegrees": 0,
+              "hueDegrees": 0,
+              "temperatureKelvin": 6500,
+              "tint": 0,
+              "blur": 0,
+              "sharpen": 0,
+              "vignette": 0,
+              "grayscale": false,
+              "keyEnabled": false,
+              "keyColor": "#00FF00",
+              "keySimilarity": 0.1,
+              "keyBlend": 0
+            }
+          },
+          "generator": {
+            "kind": "colorMatte",
+            "color": "#3366CC",
+            "toneHz": 1000
+          }
         }
       ],
       "transitions": []
@@ -340,6 +391,49 @@
               "pan": -0.3,
               "mono": false
             }
+          }
+        },
+        {
+          "id": "c_04",
+          "type": "generator",
+          "start": 300,
+          "duration": 48,
+          "end": 348,
+          "enabled": true,
+          "linkId": null,
+          "displayName": "Tone",
+          "audio": {
+            "gainDb": -6,
+            "fadeInFrames": 0,
+            "fadeOutFrames": 0,
+            "keys": [
+              {
+                "frame": 0,
+                "db": -12
+              },
+              {
+                "frame": 24,
+                "db": 0
+              }
+            ],
+            "effects": {
+              "highPassHz": 0,
+              "lowPassHz": 0,
+              "bassDb": 0,
+              "trebleDb": 0,
+              "compressor": false,
+              "compressorThresholdDb": -20,
+              "compressorRatio": 4,
+              "gate": false,
+              "gateThresholdDb": -40,
+              "pan": 0,
+              "mono": false
+            }
+          },
+          "generator": {
+            "kind": "tone",
+            "color": "#000000",
+            "toneHz": 440
           }
         }
       ],

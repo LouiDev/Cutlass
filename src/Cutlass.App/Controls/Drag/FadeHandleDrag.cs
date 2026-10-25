@@ -52,7 +52,7 @@ public sealed class FadeHandleDrag : IDragOperation
     /// <summary>True for the fade-in handle.</summary>
     public bool IsFadeIn => _fadeIn;
 
-    /// <summary>Returns a clip with a new fade-in or fade-out length (titles, video and audio clips).</summary>
+    /// <summary>Returns a clip with a new fade-in or fade-out length (titles, video and audio clips, generators).</summary>
     /// <param name="clip">The clip.</param>
     /// <param name="fadeIn">True for the fade-in.</param>
     /// <param name="frames">The new length in frames.</param>
@@ -60,6 +60,14 @@ public sealed class FadeHandleDrag : IDragOperation
     public static Clip WithFade(Clip clip, bool fadeIn, long frames) => clip switch
     {
         TitleClip t => fadeIn ? t with { FadeInFrames = frames } : t with { FadeOutFrames = frames },
+        GeneratorClip { Kind: GeneratorKind.Tone } g => g with
+        {
+            Audio = fadeIn ? g.Audio with { FadeInFrames = frames } : g.Audio with { FadeOutFrames = frames },
+        },
+        GeneratorClip g => g with
+        {
+            Video = fadeIn ? g.Video with { FadeInFrames = frames } : g.Video with { FadeOutFrames = frames },
+        },
         MediaClip { Stream: StreamKind.Video } m => m with
         {
             Video = fadeIn ? m.Video with { FadeInFrames = frames } : m.Video with { FadeOutFrames = frames },

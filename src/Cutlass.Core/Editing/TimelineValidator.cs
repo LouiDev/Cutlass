@@ -187,22 +187,7 @@ public static class TimelineValidator
 
                     CheckFades(m.Id, "video", m.Video.FadeInFrames, m.Video.FadeOutFrames, m.Duration, fail);
                     CheckFades(m.Id, "audio", m.Audio.FadeInFrames, m.Audio.FadeOutFrames, m.Duration, fail);
-                    long lastKey = -1;
-                    foreach (var key in m.Audio.Keys)
-                    {
-                        if (key.Frame < 0 || key.Frame >= m.Duration)
-                        {
-                            fail($"Clip {m.Id} has a volume key at {key.Frame}, outside [0, {m.Duration}).");
-                        }
-
-                        if (key.Frame <= lastKey)
-                        {
-                            fail($"Clip {m.Id} has volume keys out of order at {key.Frame}.");
-                        }
-
-                        lastKey = key.Frame;
-                    }
-
+                    CheckKeys(m.Id, m.Audio.Keys, m.Duration, fail);
                     break;
                 case TitleClip t:
                     if (track.Kind != TrackKind.Video)
@@ -216,6 +201,21 @@ public static class TimelineValidator
                     }
 
                     CheckFades(t.Id, "title", t.FadeInFrames, t.FadeOutFrames, t.Duration, fail);
+                    break;
+                case GeneratorClip g:
+                    if (g.Kind.TrackKindOf() != track.Kind)
+                    {
+                        fail($"Generator {g.Id} ({g.Kind}) is on {track.Kind} track {track.Name}.");
+                    }
+
+                    if (g.LinkId is not null)
+                    {
+                        fail($"Generator {g.Id} is linked.");
+                    }
+
+                    CheckFades(g.Id, "video", g.Video.FadeInFrames, g.Video.FadeOutFrames, g.Duration, fail);
+                    CheckFades(g.Id, "audio", g.Audio.FadeInFrames, g.Audio.FadeOutFrames, g.Duration, fail);
+                    CheckKeys(g.Id, g.Audio.Keys, g.Duration, fail);
                     break;
             }
         }
@@ -302,6 +302,25 @@ public static class TimelineValidator
                     fail($"Clip {clip.Id} runs past the end of its source (extent tail {tail}).");
                 }
             }
+        }
+    }
+
+    private static void CheckKeys(string id, ImmutableArray<VolumeKey> keys, long duration, Action<FormattableString> fail)
+    {
+        long lastKey = -1;
+        foreach (var key in keys.IsDefault ? ImmutableArray<VolumeKey>.Empty : keys)
+        {
+            if (key.Frame < 0 || key.Frame >= duration)
+            {
+                fail($"Clip {id} has a volume key at {key.Frame}, outside [0, {duration}).");
+            }
+
+            if (key.Frame <= lastKey)
+            {
+                fail($"Clip {id} has volume keys out of order at {key.Frame}.");
+            }
+
+            lastKey = key.Frame;
         }
     }
 

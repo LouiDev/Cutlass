@@ -17,7 +17,7 @@ public sealed class VolumeLineDrag : IDragOperation
     private readonly string _clipId;
     private readonly double _pressFrame;
     private TimelineDragState? _state;
-    private MediaClip? _clip;
+    private Clip? _clip;
     private IReadOnlyList<int> _segment = [];
     private double _clipHeight = 1;
 
@@ -59,7 +59,7 @@ public sealed class VolumeLineDrag : IDragOperation
         var vm = c.ViewModel;
         var origin = vm.Session.Current;
         if (TimelineQuery.FindClip(origin, _clipId) is not { } found || found.Track.Locked
-            || found.Clip is not MediaClip { Stream: StreamKind.Audio } clip)
+            || found.Clip is not { } clip || ClipAudio.Of(clip) is null)
         {
             return;
         }
@@ -81,38 +81,39 @@ public sealed class VolumeLineDrag : IDragOperation
         }
 
         var dDb = VolumeScale.DbPerPixels(c.Y - c.PressY, _clipHeight) * (c.Shift ? FineFactor : 1);
-        var gain = clip.Audio.GainDb;
+        var origin = ClipAudio.Of(clip) ?? AudioProps.Default;
+        var gain = origin.GainDb;
         Clip Apply(Clip current)
         {
-            if (current is not MediaClip m)
+            if (ClipAudio.Of(current) is not { } audio)
             {
                 return current;
             }
 
             if (_segment.Count == 0)
             {
-                return m with { Audio = m.Audio with { GainDb = Math.Round(Math.Clamp(gain + dDb, VolumeScale.MinDb, VolumeScale.MaxDb), 2) } };
+                return ClipAudio.With(current, audio with { GainDb = Math.Round(Math.Clamp(gain + dDb, VolumeScale.MinDb, VolumeScale.MaxDb), 2) });
             }
 
-            var keys = m.Audio.Keys;
+            var keys = audio.Keys;
             foreach (var i in _segment)
             {
-                if (i < keys.Length)
+                if (i < keys.Length && i < origin.Keys.Length)
                 {
-                    var original = clip.Audio.Keys[i];
+                    var original = origin.Keys[i];
                     var level = Math.Clamp(gain + original.Db + dDb, VolumeScale.MinDb, VolumeScale.MaxDb);
                     keys = keys.SetItem(i, original with { Db = Math.Round(level - gain, 2) });
                 }
             }
 
-            return m with { Audio = m.Audio with { Keys = keys } };
+            return ClipAudio.With(current, audio with { Keys = keys });
         }
 
         var clipId = _clipId;
         var label = _segment.Count == 0 ? "Clip Gain" : "Volume";
         var result = c.ViewModel.Session.UpdateGesture(p => TimelineEdits.UpdateClips(p, [clipId], Apply, label));
         _state.Last = result;
-        var now = TimelineQuery.FindClip(result.Project, _clipId)?.Clip as MediaClip ?? clip;
+        var now = TimelineQuery.FindClip(result.Project, _clipId)?.Clip ?? clip;
         var level = VolumeScale.LevelAt(now, _pressFrame);
         var wanted = VolumeScale.LevelAt(clip, _pressFrame) + dDb;
         TooltipIsLimit = Math.Abs(level - wanted) > 0.01;

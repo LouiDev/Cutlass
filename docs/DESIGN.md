@@ -27,7 +27,7 @@ Principles:
   - One sequence per project, saved as `.cutlass` JSON.
   - Resolution presets: 3840x2160, 2560x1440, 1920x1080, 1280x720, 1080x1920, 1080x1080, or a custom even size.
   - Frame rates: 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60. Audio is stereo, 48 kHz.
-  - The first clip placed into a never-used sequence sets the sequence size (rounded to even) and frame rate (nearest supported). A toast reports it, and the change can be undone.
+  - The first clip placed into a never-used sequence sets the sequence size (rounded to even) and frame rate (nearest supported). A toast reports it, and the change can be undone. Only media uses a sequence: titles and generators (effects batch 5) placed first leave it unused, so the first video media placed after them still sets the size and rate (the titles and generators already there are converted to the new rate).
   - Autosave, crash recovery, recent projects, relink.
 - **Media.**
   - Video, audio and stills (PNG, JPG, WebP, BMP). Anything ffprobe opens is accepted.
@@ -35,7 +35,7 @@ Principles:
   - Background probe, frame index, poster, thumbnails, waveform, and a proxy where the policy calls for one.
 - **Timeline.**
   - Up to 8 video and 8 audio tracks. A new project starts with V1, V2, A1 and A2.
-  - Media, still and title clips.
+  - Media, still, title and generator clips.
   - Tools: Select, Ripple, Roll, Slip, Razor.
   - Overwrite and insert, trim, split, lift, ripple delete, gap close, snapping, markers, In/Out, linked A/V, copy and paste.
   - Track lock, hide, mute, solo, target and gain. Undo up to 500 steps.
@@ -50,6 +50,7 @@ Principles:
   - Color: brightness, contrast, saturation, gamma.
   - Video effects (static per clip, effects batch 2): flip horizontal and vertical, rotation (-180..180 degrees, the frame keeps its size), hue shift, colour temperature and tint, gaussian blur, sharpen, vignette, grayscale, and a chroma key (colour, similarity, blend) that lets the tracks below show through.
   - Audio effects (static per clip, effects batch 3): high-pass and low-pass filters, bass and treble shelves, a compressor (threshold, ratio), a noise gate (threshold), a constant-power pan and a mono sum that keeps the stream stereo.
+  - Generators (effects batch 5): a Color Matte (any `#RRGGBB` colour, black by default) and SMPTE HD colour bars on video tracks, and a sine Tone (20 to 20000 Hz, 1 kHz by default, -18 dBFS peak per channel before the clip gain) on audio tracks. Generators have no media: they are unbounded like stills, have no speed, slip or link, and take the video or audio properties and effects of their side.
 - **Preview.**
   - Frame-accurate scrub and step.
   - Real-time playback with audio, JKL forward at 1x, 2x and 4x.
@@ -159,7 +160,8 @@ It covers the panels and the timeline only: the menu row with the agent banner a
 - **Effects tab.**
   - Transitions: the 41 video transitions under four sub-headers, FADES (Cross Dissolve, Dip to Black, Dip to White, Fade Grays, Fade Fast, Fade Slow, Noise Dissolve, Pixelate), WIPES (the eight wipes, the four smooth wipes, the four diagonals, Radial Wipe, Distance Dissolve), SLIDES (the four slides, Squeeze Horizontal, Squeeze Vertical, Zoom In) and SHAPES (Circle Open, Circle Close, Circle Crop, Rect Crop, Horizontal Open and Close, Vertical Open and Close), plus AUDIO (Audio Crossfade). Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
   - Title templates (TITLES): the six `TitleTemplates` of Core, Centered, Lower Third, Top Caption, Subtitle (Inter Regular 44 on a translucent dark box, lower third), Headline (Inter Bold 120 with a 4 px outline, top) and Quote (Inter SemiBold 72 on a translucent box, centred). Drag one onto a video track to create a 5 s title; the sizes are authored for 1080 lines and scale with the sequence height.
-  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral), the audio presets Mono (toggles the mono sum on the audio clips), Voice (high-pass 80 Hz) and Reset Audio Effects (every audio effect back to neutral), and Freeze Frame (effects batch 4: the same edit as Shift+F on the selected video clip under the playhead; dropped on a clip, it holds the frame under the pointer). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
+  - Generators (GENERATORS, effects batch 5): Color Matte, Bars and Tone, each with the default still duration as its detail (5 s unless changed in Settings). Apply places the generator at the playhead for that duration without overwriting anything: the matte and the bars go to the lowest unlocked video track above every track with a clip under the playhead that is free for that duration (the title rule), the tone to the first targeted unlocked audio track that is free over that range, else the first free unlocked audio track; without one a track of the kind is added (at 8 tracks of the kind, the topmost unlocked video track or the first targeted unlocked audio track is overwritten). The new clip is selected so the Inspector shows its colour or frequency. A drop overwrites where it lands, on the track the user picked; the drop ghost is a GeneratorClip-coloured span of the default still duration, and a track of the other kind shows no ghost and refuses the drop silently, like a title on an audio track.
+  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral), the audio presets Mono (toggles the mono sum on the audio clips), Voice (high-pass 80 Hz) and Reset Audio Effects (every audio effect back to neutral; the effect and fade presets also reach generators of the matching side), and Freeze Frame (effects batch 4: the same edit as Shift+F on the selected video clip under the playhead; dropped on a clip, it holds the frame under the pointer). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
 - **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.
@@ -200,6 +202,11 @@ Context sensitive, with collapsible sections whose state is remembered.
   - Fades: video fade in and out (frames).
   - Audio: gain dB, fades, and a keyframe list (time, dB) with add and remove.
   - Audio effects: High-pass (Hz, 0 is off, 20..2000), Low-pass (Hz, 0 is off, 200..20000), Bass (-20..20 dB, shelf at 100 Hz), Treble (-20..20 dB, shelf at 3 kHz), Compressor with Threshold (-60..0 dB) and Ratio (1..20 :1), Gate with Gate threshold (-80..0 dB), Pan (-100..100 %, constant power, left negative), Mono, Reset.
+- **Generator clip** (effects batch 5; a selection of generators only, a mixed selection shows the media clip section and its rows act on the media clips).
+  - Clip: name (Color Matte, Bars or Tone), enabled, start, duration.
+  - Generator: Color (#RRGGBB, colour mattes only; the row shows the normalised #RRGGBBAA form) and Frequency (20..20000 Hz, tones only), Reset (black, 1000 Hz). The rows follow the kinds in the selection.
+  - Colour mattes and bars: the Transform, Color, Effects, Chroma key and Fades groups of a video clip, with the same ranges.
+  - Tones: the Audio (gain, fades, keyframes) and Audio effects groups of an audio clip, with the same ranges.
 - **Title clip.**
   - Text (multi-line).
   - Font: bundled Inter Regular, SemiBold or Bold, or a system font file.
@@ -252,12 +259,13 @@ Context sensitive, with collapsible sections whose state is remembered.
   - Track height 56 px (video) and 48 px (audio) by default, adjustable from 32 to 160 px by dragging the header's bottom edge or with Alt+wheel.
 - **Rendering.** One custom-drawn control that draws only the visible range.
 - **Clip body.**
-  - Rounded rectangle (3 px) in VideoClip, AudioClip, TitleClip or StillClip color.
+  - Rounded rectangle (3 px) in VideoClip, AudioClip, TitleClip, StillClip or GeneratorClip color.
   - Name in Inter 11 px at the top left.
-  - Badges: speed (`150%`), `hold` next to it on a freeze frame (a frozen video clip; never on a still), `fx` (on a video clip any transform, opacity, color or video effect that is not neutral, on an audio clip any audio effect; fades, gain and keyframes do not count), and a red sync badge (`+5`) when linked clips have drifted (frozen clips and their partners never show one).
+  - Badges: speed (`150%`), `hold` next to it on a freeze frame (a frozen video clip; never on a still), `fx` (on a video clip or a matte or bars any transform, opacity, color or video effect that is not neutral, on an audio clip or a tone any audio effect; fades, gain and keyframes do not count), and a red sync badge (`+5`) when linked clips have drifted (frozen clips and their partners never show one).
 - **Clip content.**
   - Video clips tile a filmstrip, each tile showing the source frame at its left edge.
   - Audio clips draw a min/max waveform from the peak level nearest one peak per pixel, overlaid by the volume line and keyframe dots. The height follows the square root of the normalised peak (`WaveformScale`), so quiet material stays readable: -20 dBFS fills about a third of the half height, full scale touches the edge.
+  - Generators (effects batch 5) draw their GeneratorClip body colour and their name (Color Matte, Bars or Tone) and no filmstrip. A tone shows the volume line and keyframe dots of an audio clip, editable the same way (drag, Ctrl+click, Alt+click), but no waveform.
 - **Clip states.**
   - Fades: a diagonal shade plus 8x8 px corner handles.
   - Selected: 2 px white outline and a body 12% lighter.
@@ -304,11 +312,11 @@ Context sensitive, with collapsible sections whose state is remembered.
 ### 5.4 Hit zones and tools
 
 **Hit zones,** highest priority first:
-1. Keyframe dot (selected audio clips).
+1. Keyframe dot (selected audio clips and tones).
 2. Fade handle: an 8x8 px corner square. Only when the clip is at least 40 px wide and the track at least 40 px tall.
 3. Transition band: 40% of the track height, centered on a cut.
 4. Edge: 6 px inside each end. Clips under 18 px wide split into thirds.
-5. Volume line: within 4 px of it, on selected audio clips.
+5. Volume line: within 4 px of it, on selected audio clips and tones.
 6. Body.
 
 At a junction, each clip keeps its own edge zone. A press becomes a drag after 4 px of movement.
@@ -353,7 +361,7 @@ At a junction, each clip keeps its own edge zone. A press becomes a drag after 4
   - Editing a cut moves and re-clamps its transition. Inserting inside a transition removes it.
 - **Fades and keyframes.**
   - Corner handles set fade lengths. Video fades go to transparent: black on V1, lower tracks show through above it. Audio fades are linear.
-  - On selected audio clips:
+  - On selected audio clips and tones (effects batch 5):
     - Dragging the volume line changes gain (Shift for fine steps).
     - Ctrl+click or double-click on the volume line adds a keyframe; Alt+click on a keyframe removes it.
     - Between keyframes, dragging the line moves both keys of that segment; without keyframes it changes the clip gain.
@@ -465,6 +473,7 @@ Dark, neutral and low-chroma, so footage colors read correctly. The theme is Flu
 | AudioClip | `#2E8B6E` | audio clips |
 | TitleClip | `#8E5BD6` | titles |
 | StillClip | `#4F7C9A` | images |
+| GeneratorClip | `#8A7F45` | generators: colour matte, bars, tone (a muted olive apart from the greens of Accent and AudioClip, the blues of VideoClip and StillClip, TitleClip and Warning) |
 | Snap / Marker | `#F5D547` | snap line, default marker |
 | InOutRange | `#FFFFFF` at 8% | In/Out shading |
 | Danger | `#E5484D` | errors, offline, sync badge, clamp flag |

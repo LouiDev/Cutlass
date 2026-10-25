@@ -19,6 +19,9 @@
   <Color x:Key="AudioClipColor">#2E8B6E</Color>
   <Color x:Key="TitleClipColor">#8E5BD6</Color>
   <Color x:Key="StillClipColor">#4F7C9A</Color>
+  <!-- Effects batch 5: generator clips (colour matte, bars, tone), a muted olive apart from the green Accent and
+       AudioClip, the blue VideoClip and StillClip, the violet TitleClip and the bright amber Warning. -->
+  <Color x:Key="GeneratorClipColor">#8A7F45</Color>
   <Color x:Key="SnapColor">#F5D547</Color>
   <Color x:Key="MarkerColor">#F5D547</Color>
   <!-- White at 8% (0x14 = 20 of 255). -->
@@ -51,6 +54,7 @@
   <SolidColorBrush x:Key="AudioClipBrush" Color="{StaticResource AudioClipColor}" />
   <SolidColorBrush x:Key="TitleClipBrush" Color="{StaticResource TitleClipColor}" />
   <SolidColorBrush x:Key="StillClipBrush" Color="{StaticResource StillClipColor}" />
+  <SolidColorBrush x:Key="GeneratorClipBrush" Color="{StaticResource GeneratorClipColor}" />
   <SolidColorBrush x:Key="SnapBrush" Color="{StaticResource SnapColor}" />
   <SolidColorBrush x:Key="MarkerBrush" Color="{StaticResource MarkerColor}" />
   <SolidColorBrush x:Key="InOutRangeBrush" Color="{StaticResource InOutRangeColor}" />
