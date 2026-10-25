@@ -262,39 +262,63 @@ public sealed partial class TimelineControl
 
     }
 
-    private void DrawBadges(DrawingContext context, Project project, Clip clip, Rect rect, double y, bool offline)
+    /// <summary>
+    /// The badges of a clip, right to left (DESIGN 5.1): OFFLINE, the speed, "hold" for a freeze frame (effects batch 4),
+    /// "fx" for non-default video or audio props, and the sync offset. <c>Danger</c> picks the red badge colour.
+    /// Public and static only so <c>TimelineBadgesTests</c> can check the texts without a visual tree; nothing outside
+    /// this control should call it.
+    /// </summary>
+    /// <param name="project">The project.</param>
+    /// <param name="clip">The clip.</param>
+    /// <param name="offline">True when the clip's media is missing.</param>
+    /// <returns>The badge texts in drawing order.</returns>
+    public static IReadOnlyList<(string Text, bool Danger)> Badges(Project project, Clip clip, bool offline)
     {
-        var badges = new List<(string Text, Color Color)>();
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(clip);
+        var badges = new List<(string Text, bool Danger)>();
         if (offline)
         {
-            badges.Add(("OFFLINE", _palette.Danger));
+            badges.Add(("OFFLINE", true));
         }
 
         if (clip is MediaClip m)
         {
             if (m.SpeedPercent != 100)
             {
-                badges.Add((m.SpeedPercent.ToString(CultureInfo.InvariantCulture) + "%", _palette.Bg0));
+                badges.Add((m.SpeedPercent.ToString(CultureInfo.InvariantCulture) + "%", false));
+            }
+
+            // A still is a single frame anyway, so a stray Freeze flag on one shows no badge.
+            if (m.Freeze && TimelineQuery.FindMedia(project, m.MediaId)?.Info.IsStill != true)
+            {
+                badges.Add(("hold", false));
             }
 
             // Anything but the fades lights "fx": transform, opacity, colour and the batch 2 effects.
             if (m.Stream == StreamKind.Video && m.Video with { FadeInFrames = 0, FadeOutFrames = 0 } != VideoProps.Default)
             {
-                badges.Add(("fx", _palette.Bg0));
+                badges.Add(("fx", false));
             }
 
             // Effects batch 3: an audio clip with any audio effect also shows "fx" (gain, fades and keys draw as the volume line).
             if (m.Stream == StreamKind.Audio && m.Audio.Effects != AudioEffects.None)
             {
-                badges.Add(("fx", _palette.Bg0));
+                badges.Add(("fx", false));
             }
 
             if (TimelineQuery.SyncOffset(project, clip.Id) is { } offset && offset != 0)
             {
-                badges.Add(((offset > 0 ? "+" : string.Empty) + offset.ToString(CultureInfo.InvariantCulture), _palette.Danger));
+                badges.Add(((offset > 0 ? "+" : string.Empty) + offset.ToString(CultureInfo.InvariantCulture), true));
             }
         }
 
+        return badges;
+    }
+
+    private void DrawBadges(DrawingContext context, Project project, Clip clip, Rect rect, double y, bool offline)
+    {
+        var badges = Badges(project, clip, offline).Select(b => (b.Text, Color: b.Danger ? _palette.Danger : _palette.Bg0));
         var x = rect.Right - 4;
         foreach (var (text, color) in badges)
         {

@@ -27,6 +27,7 @@ internal sealed partial class EditTools
         d.Register("edit.close-gap", CloseGapAsync);
         d.Register("edit.clip-props", ClipPropsAsync);
         d.Register("edit.speed", SpeedAsync);
+        d.Register("edit.freeze", FreezeAsync);
         d.Register("edit.link", LinkAsync);
         d.Register("edit.unlink", UnlinkAsync);
         d.Register("edit.volume-keys", VolumeKeysAsync);
@@ -259,12 +260,12 @@ internal sealed partial class EditTools
         {
             RequireClips(p, ids);
             var warnings = new SortedSet<string>(StringComparer.Ordinal);
-            var result = TimelineEdits.UpdateClips(p, ids, c => Apply(c, req, warnings), "Clip Properties");
+            var result = TimelineEdits.UpdateClips(p, ids, c => Apply(p, c, req, warnings), "Clip Properties");
             return Warn(result, warnings);
         });
     }
 
-    private static Clip Apply(Clip clip, ClipPropsRequest req, ISet<string> warnings)
+    private static Clip Apply(Project project, Clip clip, ClipPropsRequest req, ISet<string> warnings)
     {
         var enabled = req.Enabled ?? clip.Enabled;
         switch (clip)
@@ -281,9 +282,18 @@ internal sealed partial class EditTools
                 var cr = req.Color;
                 var fo = m.Video.Effects;
                 var fr = req.Effects;
+                var freeze = req.Freeze ?? m.Freeze;
+                if (req.Freeze is not null && TimelineQuery.FindMedia(project, m.MediaId)?.Info.IsStill == true)
+                {
+                    // A still never gets the flag: it would only show a misleading hold badge.
+                    warnings.Add("A still image is already a single frame.");
+                    freeze = m.Freeze;
+                }
+
                 return m with
                 {
                     Enabled = enabled,
+                    Freeze = freeze,
                     Video = m.Video with
                     {
                         Opacity = req.Opacity ?? m.Video.Opacity,
@@ -309,9 +319,9 @@ internal sealed partial class EditTools
                     },
                 };
             case MediaClip m:
-                if (req.Opacity is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
+                if (req.Opacity is not null || req.Transform is not null || req.Color is not null || req.Effects is not null || req.Freeze is not null)
                 {
-                    warnings.Add("opacity, transform, color and effects apply to video clips only; they were ignored for audio clips.");
+                    warnings.Add("opacity, transform, color, effects and freeze apply to video clips only; they were ignored for audio clips.");
                 }
 
                 var ao = m.Audio.Effects;
@@ -339,7 +349,7 @@ internal sealed partial class EditTools
                     },
                 };
             case TitleClip title:
-                if (req.GainDb is not null || req.AudioEffects is not null || req.Transform is not null || req.Color is not null || req.Effects is not null)
+                if (req.GainDb is not null || req.AudioEffects is not null || req.Transform is not null || req.Color is not null || req.Effects is not null || req.Freeze is not null)
                 {
                     warnings.Add("Titles take opacity, fades and enabled only; use update_title for their style and position.");
                 }
@@ -365,6 +375,28 @@ internal sealed partial class EditTools
         {
             RequireClips(p, ids);
             return TimelineEdits.SetSpeed(p, ids, percent, req.RippleFollowing ?? true);
+        });
+    }
+
+    private Task<ApiResult> FreezeAsync(ToolCallContext ctx)
+    {
+        var req = ctx.Read(AgentJsonContext.Relaxed.FreezeRequest);
+        var id = Args.Required(req.ClipId, "clipId");
+        var frame = Args.Required(req.Frame, "frame");
+        var duration = Args.Required(req.DurationFrames, "durationFrames");
+        if (frame < 0 || duration < 1)
+        {
+            throw ApiException.InvalidArgument(frame < 0 ? "frame" : "durationFrames", "'frame' must not be negative and 'durationFrames' must be at least 1.");
+        }
+
+        return d.Edits.EditAsync(ctx, req, p =>
+        {
+            if (RequireClip(p, id) is not MediaClip { Stream: StreamKind.Video })
+            {
+                throw ApiException.InvalidArgument("clipId", $"'{id}' is not a video clip.");
+            }
+
+            return TimelineEdits.FreezeFrame(Ids, p, id, frame, duration, req.RippleFollowing ?? true);
         });
     }
 

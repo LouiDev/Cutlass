@@ -64,6 +64,10 @@ public sealed class ClipSummaryDto
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? SpeedPercent { get; set; }
 
+    /// <summary>Media clips: true for a freeze frame (the source in point held for the whole clip); written only when true.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Freeze { get; set; }
+
     /// <summary>Video media clips: the video properties.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ClipVideoDto? Video { get; set; }

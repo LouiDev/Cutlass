@@ -17,7 +17,10 @@ public sealed class TitleAddRequest : MutationRequest
     /// <summary><c>overwrite</c> or <c>insert</c>.</summary>
     public string? Mode { get; set; }
 
-    /// <summary>Text and style over the default title.</summary>
+    /// <summary>A template name from <c>capabilities.titleTemplates</c> to start from (scaled to the sequence height), or null for the default style.</summary>
+    public string? Template { get; set; }
+
+    /// <summary>Text and style over the template or the default title.</summary>
     public TitleDto? Title { get; set; }
 
     /// <summary>Opacity.</summary>

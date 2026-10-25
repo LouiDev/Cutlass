@@ -129,6 +129,7 @@ public static partial class ProjectSerializer
                     LinkId = m.LinkId,
                     SourceInFlicks = m.SourceInFlicks,
                     SpeedPercent = m.SpeedPercent,
+                    Freeze = m.Freeze ? true : null,
                     Video = isVideo
                         ? new VideoPropsDto
                         {
@@ -363,7 +364,11 @@ public static partial class ProjectSerializer
                             afx.Gate,
                             afx.GateThresholdDb,
                             afx.Pan,
-                            afx.Mono)));
+                            afx.Mono)))
+                {
+                    // Freeze frames are video only (TECH_BRIEF 3.5); the key on an audio clip is ignored.
+                    Freeze = dto.Freeze == true && stream == StreamKind.Video,
+                };
             case "title":
                 var title = dto.Title ?? new TitleSpecDto();
                 return new TitleClip(

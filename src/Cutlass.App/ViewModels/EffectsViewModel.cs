@@ -68,24 +68,12 @@ public sealed partial class EffectsViewModel : ObservableObject
             GroupOf(EffectItem.TransitionGroup(kind)).Add(item);
         }
 
-        Titles.Add(TitleItem("Centered", "Centered", "Large centred title.", TitleSpec.Default with { Text = "Title", Anchor = TitleAnchor.Center }));
-        Titles.Add(TitleItem("LowerThird", "Lower Third", "Name strap in the lower third.", TitleSpec.Default with
+        // Effects batch 4: the templates live in Core (TitleTemplates), shared with the agent's add_title.
+        foreach (var name in TitleTemplates.Names)
         {
-            Text = "Name",
-            Font = "builtin:Inter-SemiBold",
-            Size = 64,
-            Box = true,
-            Anchor = TitleAnchor.LowerThird,
-        }));
-        Titles.Add(TitleItem("TopCaption", "Top Caption", "Small caption near the top.", TitleSpec.Default with
-        {
-            Text = "Caption",
-            Font = "builtin:Inter-Regular",
-            Size = 48,
-            OutlineWidth = 0,
-            Box = true,
-            Anchor = TitleAnchor.Top,
-        }));
+            TitleTemplates.TryGet(name, out var spec);
+            Titles.Add(TitleItem(name, TitleTemplates.DisplayName(name), TitleTemplates.Description(name), spec));
+        }
 
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FadeIn", "Fade In", EffectCategory.Adjustment, "F↗", "1 s", "1 s video and audio fade in on the selected clips."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FadeOut", "Fade Out", EffectCategory.Adjustment, "F↘", "1 s", "1 s video and audio fade out on the selected clips."));
@@ -100,6 +88,8 @@ public sealed partial class EffectsViewModel : ObservableObject
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "Mono", "Mono", EffectCategory.Adjustment, "MO", string.Empty, "Sums the selected audio clips to mono (again to undo)."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "Voice", "Voice (high-pass 80 Hz)", EffectCategory.Adjustment, "HP", string.Empty, "An 80 Hz high-pass on the selected audio clips to take rumble out of speech."));
         Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "ResetAudioEffects", "Reset Audio Effects", EffectCategory.Adjustment, "A0", string.Empty, "Removes every audio effect (filters, bass, treble, compressor, gate, pan, mono) of the selected clips."));
+        // Effects batch 4: a freeze frame of the selected (or dropped-on) video clip at the playhead (or the drop frame).
+        Adjustments.Add(new EffectItem(EffectItem.AdjustmentPrefix + "FreezeFrame", "Freeze Frame", EffectCategory.Adjustment, "FRZ", string.Empty, "Holds the frame of the selected video clip at the playhead for the default still duration; dropped on a clip, the frame under the pointer (Shift+F)."));
 
         DefaultTransitionKind = TransitionKind.Crossfade;
         MarkDefault(DefaultTransitionKind);
@@ -320,7 +310,7 @@ public sealed partial class EffectsViewModel : ObservableObject
                 return track.Kind == TrackKind.Video ? AddTitle(spec, frame, track.Id) : null;
             case EffectCategory.Adjustment when TimelineQuery.ClipAt(track, frame) is { } clip:
                 // Like a click, a drop on a clip also reaches its linked partners while linked selection is on.
-                return Adjust(item.Id, _timeline.LinkedSelection ? TimelineQuery.WithLinkedPartners(project, [clip.Id]) : [clip.Id]);
+                return Adjust(item.Id, _timeline.LinkedSelection ? TimelineQuery.WithLinkedPartners(project, [clip.Id]) : [clip.Id], frame);
             default:
                 return null;
         }
@@ -549,15 +539,33 @@ public sealed partial class EffectsViewModel : ObservableObject
             return null;
         }
 
-        return Adjust(effectId, ids);
+        return Adjust(effectId, ids, _timeline.Playhead);
     }
 
-    // The adjustment presets: the fades and, since effects batch 2, the effect toggles and their reset.
-    private EditResult? Adjust(string effectId, IReadOnlyCollection<string> clipIds)
+    // The adjustment presets: the fades, since effects batch 2 the effect toggles and their reset, and since batch 4
+    // the freeze frame, which holds the first video clip among the targets that contains the frame.
+    private EditResult? Adjust(string effectId, IReadOnlyCollection<string> clipIds, long frame)
     {
         var project = _timeline.Session.Current;
         var frames = FramesFor(FadeSeconds, project.Sequence.Settings.Rate);
         var name = effectId[EffectItem.AdjustmentPrefix.Length..];
+        if (name == "FreezeFrame")
+        {
+            var target = clipIds.Select(id => TimelineQuery.FindClip(project, id)?.Clip)
+                .FirstOrDefault(c => c is MediaClip { Stream: StreamKind.Video } m && m.Start <= frame && frame < m.End);
+            if (target is null)
+            {
+                StatusText = TimelineViewModel.FreezeTargetMissing;
+                return null;
+            }
+
+            var frozen = _timeline.FreezeFrameAt(target.Id, frame);
+            StatusText = frozen.Changed(project)
+                ? "Freeze frame at " + Timecode.Format(frame, project.Sequence.Settings.Rate) + "."
+                : frozen.Warnings.IsDefaultOrEmpty ? "Nothing to change." : frozen.Warnings[0];
+            return frozen;
+        }
+
         (Func<Clip, Clip>? Change, string Label) spec = name switch
         {
             "FadeIn" => (c => WithFades(c, frames, null), "Fade In"),
@@ -609,14 +617,9 @@ public sealed partial class EffectsViewModel : ObservableObject
         var duration = FramesFor(TitleLengthSeconds, project.Sequence.Settings.Rate);
         var at = Math.Max(0, frame);
         var ids = _timeline.Ids;
-        // Gap filled: the template sizes are for a 1080-line canvas, so they scale with the sequence height.
-        var scale = project.Sequence.Settings.Height / 1080.0;
-        var scaled = spec with
-        {
-            Size = Math.Max(1, Math.Round(spec.Size * scale)),
-            OutlineWidth = Math.Round(spec.OutlineWidth * scale, 1),
-            BoxPadding = Math.Round(spec.BoxPadding * scale),
-        };
+        // The template sizes are for a 1080-line canvas, so they scale with the sequence height (TitleTemplates.Scale,
+        // shared with the agent's add_title).
+        var scaled = TitleTemplates.Scale(spec, project.Sequence.Settings.Height);
         var title = new TitleClip("c_title", 0, duration, true, scaled, 1, 0, 0);
         var result = _timeline.Run(p =>
         {

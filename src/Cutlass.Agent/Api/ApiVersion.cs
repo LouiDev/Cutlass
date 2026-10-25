@@ -13,9 +13,11 @@ public static class ApiVersion
     /// <c>effects</c> object (flips, rotation, hue, temperature, tint, blur, sharpen, vignette, grayscale, chroma key)
     /// to <c>edit.clip-props</c> and to the <c>video</c> block of every video clip in the project summary. 5 added the
     /// <c>audioEffects</c> object (high-pass, low-pass, bass, treble, compressor, gate, pan, mono) to <c>edit.clip-props</c>
-    /// and <c>effects</c> to the <c>audio</c> block of every audio clip in the project summary.
+    /// and <c>effects</c> to the <c>audio</c> block of every audio clip in the project summary. 6 added <c>edit.freeze</c>
+    /// (<c>cutlass_freeze_frame</c>), the <c>freeze</c> flag of <c>edit.clip-props</c> and of frozen media clips in the
+    /// project summary, the <c>template</c> of <c>edit.title.add</c> and <c>capabilities.titleTemplates</c>.
     /// </summary>
-    public const int Revision = 5;
+    public const int Revision = 6;
 
     /// <summary>The route prefix of this version.</summary>
     public const string Prefix = "/v1";

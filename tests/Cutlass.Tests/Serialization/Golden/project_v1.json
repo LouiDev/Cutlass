@@ -393,6 +393,56 @@
                 "keyBlend": 0
               }
             }
+          },
+          {
+            "type": "media",
+            "id": "f1",
+            "stream": "video",
+            "mediaId": "m_short",
+            "start": 125,
+            "duration": 60,
+            "enabled": true,
+            "sourceInFlicks": 564480000,
+            "speedPercent": 100,
+            "freeze": true,
+            "video": {
+              "transform": {
+                "x": 0,
+                "y": 0,
+                "scale": 1,
+                "crop": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "opacity": 1,
+              "color": {
+                "brightness": 0,
+                "contrast": 1,
+                "saturation": 1,
+                "gamma": 1
+              },
+              "fadeIn": 0,
+              "fadeOut": 0,
+              "effects": {
+                "flipH": false,
+                "flipV": false,
+                "rotationDegrees": 0,
+                "hueDegrees": 0,
+                "temperatureKelvin": 6500,
+                "tint": 0,
+                "blur": 0,
+                "sharpen": 0,
+                "vignette": 0,
+                "grayscale": false,
+                "keyEnabled": false,
+                "keyColor": "#00FF00",
+                "keySimilarity": 0.1,
+                "keyBlend": 0
+              }
+            }
           }
         ],
         "transitions": []

@@ -140,6 +140,9 @@ public static class CommandIds
     /// <summary>Ctrl+R: speed dialog.</summary>
     public const string Speed = "edit.speed";
 
+    /// <summary>Shift+F: freeze frame at the playhead (effects batch 4).</summary>
+    public const string FreezeFrame = "edit.freezeFrame";
+
     /// <summary>Ctrl+L: link or unlink.</summary>
     public const string LinkUnlink = "edit.link";
 

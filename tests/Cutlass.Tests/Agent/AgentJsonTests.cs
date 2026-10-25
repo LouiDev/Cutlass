@@ -28,7 +28,7 @@ public sealed class AgentJsonTests
         RoundTrip(new StatusDto { Version = "1.2.3", Project = new ProjectStatusDto { Path = "D:/a.cutlass", OfflineMediaIds = ["m_1"] }, Playhead = 12, Batch = "Cut" }, c.StatusDto);
         RoundTrip(new LockStateDto { Phase = "held", AgentName = "A", Since = DateTimeOffset.FromUnixTimeMilliseconds(1_700_000_000_123), LeaseSeconds = 90 }, c.LockStateDto);
         RoundTrip(new LockGrantDto { LockId = "abc", LeaseSeconds = 90, LeaseExpiresAt = DateTimeOffset.FromUnixTimeMilliseconds(1_700_000_000_000) }, c.LockGrantDto);
-        RoundTrip(new CapabilitiesDto { Presets = [new PresetDto { Id = "h264", Name = "H.264", Available = true }], Qualities = ["high"] }, c.CapabilitiesDto);
+        RoundTrip(new CapabilitiesDto { Presets = [new PresetDto { Id = "h264", Name = "H.264", Available = true }], Qualities = ["high"], TitleTemplates = ["Subtitle"] }, c.CapabilitiesDto);
         RoundTrip(new LevelsDto { StartFrame = 3, IntervalMs = 50, RmsDb = [-3.01, -120], PeakDb = [0.5, -120] }, c.LevelsDto);
         RoundTrip(new SilencesDto { Ranges = [new SilenceRangeDto { Start = 10, End = 20, Seconds = 0.4 }] }, c.SilencesDto);
         RoundTrip(new PeaksDto { PeaksPerSecond = 12.5, Min = [-0.25], Max = [0.75] }, c.PeaksDto);
@@ -55,9 +55,11 @@ public sealed class AgentJsonTests
         RoundTrip(new MoveRequest { ClipIds = ["c"], DeltaFrames = -3 }, c.MoveRequest);
         RoundTrip(new TrimRequest { ClipId = "c", Edge = "end", ToFrame = 4 }, c.TrimRequest);
         RoundTrip(new RemoveRangesRequest { Ranges = [new FrameRange { Start = 1, End = 2 }] }, c.RemoveRangesRequest);
-        RoundTrip(new ClipPropsRequest { ClipIds = ["c"], Transform = new TransformDto { Scale = 0.5 }, Color = new ColorDto { Gamma = 1.2 }, Effects = new VideoEffectsDto { HueDegrees = 20 }, AudioEffects = new AudioEffectsDto { Pan = -0.5, Compressor = true } }, c.ClipPropsRequest);
+        RoundTrip(new ClipPropsRequest { ClipIds = ["c"], Transform = new TransformDto { Scale = 0.5 }, Color = new ColorDto { Gamma = 1.2 }, Effects = new VideoEffectsDto { HueDegrees = 20 }, Freeze = true, AudioEffects = new AudioEffectsDto { Pan = -0.5, Compressor = true } }, c.ClipPropsRequest);
+        RoundTrip(new SpeedRequest { ClipIds = ["c"], Percent = 200, RippleFollowing = false }, c.SpeedRequest);
+        RoundTrip(new FreezeRequest { ClipId = "c", Frame = 40, DurationFrames = 25, RippleFollowing = false }, c.FreezeRequest);
         RoundTrip(new VolumeKeysRequest { ClipId = "c", Keys = [new VolumeKeyDto { Frame = 1, Db = -6.5 }] }, c.VolumeKeysRequest);
-        RoundTrip(new TitleAddRequest { TrackId = "t", At = 0, DurationFrames = 5, Title = new TitleDto { Text = "Hi", Anchor = "lowerThird" } }, c.TitleAddRequest);
+        RoundTrip(new TitleAddRequest { TrackId = "t", At = 0, DurationFrames = 5, Template = "Quote", Title = new TitleDto { Text = "Hi", Anchor = "lowerThird" } }, c.TitleAddRequest);
         RoundTrip(new TrackUpdateRequest { TrackId = "t", GainDb = -3.5 }, c.TrackUpdateRequest);
         RoundTrip(new SequenceRequest { FrameRate = "30000/1001" }, c.SequenceRequest);
         RoundTrip(new ExportStartRequest { Preset = "h264", OutputPath = "D:/x.mp4" }, c.ExportStartRequest);

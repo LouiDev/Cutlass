@@ -9,8 +9,8 @@ Cutlass is a small, fast non-linear video editor for Windows and Linux, built wi
 - **Import.** Video, audio and stills through the file dialog (Ctrl+I), drops onto the Media panel or drops straight onto the timeline (file manager drops work on Windows; see the Linux notes). Probing, posters, thumbnails, waveforms and proxies run in the background.
 - **Timeline editing.** Up to 8 video and 8 audio tracks with the Select, Ripple, Roll, Slip and Razor tools, overwrite and insert edits, trim, split, lift, ripple delete, gap close, snapping, markers, In/Out, linked audio and video, copy and paste, three-point edits from the Source monitor, track lock, hide, mute, solo and gain, and undo up to 500 steps.
 - **Transitions.** 41 ffmpeg xfade video transitions grouped in the Effects tab (fades and dissolves, wipes, smooth wipes and diagonals, slides, squeezes and zoom, circle and rect crops, bar openings) plus Audio Crossfade on audio tracks, and fade handles on every clip.
-- **Titles.** Centered, Lower Third and Top Caption text titles.
-- **Speed.** Constant speed from 25% to 400% with the pitch kept.
+- **Titles.** Centered, Lower Third, Top Caption, Subtitle, Headline and Quote text titles, scaled to the sequence size.
+- **Speed and freeze frames.** Constant speed from 25% to 400% with the pitch kept, and Shift+F freeze frames that hold the frame under the playhead.
 - **Volume keyframes.** Clip gain and a keyframed volume envelope drawn on audio clips.
 - **Picture in picture and color.** Position, scale, crop, opacity, brightness, contrast, saturation and gamma.
 - **Clip effects.** Static per-clip video effects (flip, rotation, hue, temperature and tint, blur, sharpen, vignette, grayscale, chroma key) and audio effects (high-pass, low-pass, bass and treble shelves, compressor, gate, constant-power pan, mono), set in the Inspector or dropped from the Effects tab.
@@ -52,7 +52,7 @@ powershell -File build/smoke.ps1 -Script m7
 
 - `m4` (default): import, cut, scrub, undo, save and reopen, export and an ffprobe check.
 - `m5`: media jobs, proxies, playback drift, live mute and solo, and 2x/4x shuttle.
-- `m6`: Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed and export, plus the timeline checklist screenshots.
+- `m6`: Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed, clip effects, a freeze frame and export, plus the timeline checklist screenshots.
 - `m7`: the Settings dialog and one export per preset, each checked with ffprobe.
 - `m7b`: offline media on the timeline and screenshots of the Relink, Settings, Export, Speed and Sequence Settings dialogs.
 

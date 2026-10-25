@@ -1258,6 +1258,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RegisterTimeline(CommandIds.AddAudioCrossfade, EffectsTab.AddAudioCrossfadeCommand);
         RegisterTimeline(CommandIds.NewTitle, EffectsTab.NewTitleCommand);
         RegisterTimeline(CommandIds.Speed, Inspector.OpenSpeedDialogCommand);
+        RegisterTimeline(CommandIds.FreezeFrame, Timeline.FreezeFrameCommand);
         RegisterTimeline(CommandIds.SequenceSettings, Inspector.OpenSequenceSettingsCommand);
 
         // Esc leaves a click-to-type timecode first, then cancels a running drag, else deselects (DESIGN 5.3).

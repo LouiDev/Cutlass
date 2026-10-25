@@ -16,7 +16,7 @@ public sealed class ToolCatalogTests
         "cutlass_new_project", "cutlass_open_project", "cutlass_save_project", "cutlass_import_media", "cutlass_list_media",
         "cutlass_render_frame", "cutlass_contact_sheet", "cutlass_audio_levels", "cutlass_find_silences", "cutlass_place_media",
         "cutlass_move_clips", "cutlass_trim_clip", "cutlass_split", "cutlass_delete_clips", "cutlass_remove_ranges", "cutlass_close_gap",
-        "cutlass_set_clip_props", "cutlass_set_speed", "cutlass_set_volume_keys", "cutlass_add_transition", "cutlass_update_transition",
+        "cutlass_set_clip_props", "cutlass_set_speed", "cutlass_freeze_frame", "cutlass_set_volume_keys", "cutlass_add_transition", "cutlass_update_transition",
         "cutlass_remove_transitions", "cutlass_add_title", "cutlass_update_title", "cutlass_add_marker", "cutlass_update_marker",
         "cutlass_remove_markers", "cutlass_set_in_out", "cutlass_add_track", "cutlass_update_track", "cutlass_remove_track",
         "cutlass_set_sequence", "cutlass_set_playhead", "cutlass_undo", "cutlass_redo", "cutlass_begin_batch", "cutlass_end_batch",

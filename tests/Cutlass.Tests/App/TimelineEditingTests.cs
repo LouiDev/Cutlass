@@ -30,6 +30,49 @@ public sealed class TimelineEditingTests
     private static ImmutableArray<Clip> Clips(ProjectSession session, string trackId) => TimelineQuery.FindTrack(session.Current, trackId)!.Clips;
 
     [Fact]
+    public void FreezeFrameHoldsTheSelectedClipOrTheTargetedClipUnderThePlayhead()
+    {
+        var vm = Vm(Linked().With(V2, V("s1", 0, 50, media: Still)), out var session);
+        var hold = vm.StillDurationFrames;
+        vm.Playhead = 20;
+        // Nothing selected: the first targeted video track (V1) with a video clip under the playhead; V2's still is skipped.
+        Assert.Equal("v1", vm.FindFreezeTarget(20));
+        vm.Select(["v2"], false);
+        Assert.Null(vm.FindFreezeTarget(20));
+        vm.Select(["s1"], false);
+        Assert.Null(vm.FindFreezeTarget(20));
+        vm.Select(["v1"], false);
+        Assert.Equal("v1", vm.FindFreezeTarget(20));
+
+        vm.FreezeFrameCommand.Execute(null);
+        var clips = Clips(session, V1);
+        Assert.Equal([(0L, 20L), (20L, hold), (20 + hold, 30L), (100 + hold, 50L)], clips.Select(c => (c.Start, c.Duration)));
+        var frozen = Assert.IsType<MediaClip>(clips[1]);
+        Assert.Equal((true, 20 * F, 100), (frozen.Freeze, frozen.SourceInFlicks, frozen.SpeedPercent));
+        Assert.Equal([frozen.Id], vm.SelectedClipIds);
+        Assert.Equal("Freeze Frame", session.UndoLabel);
+        Assert.Equal(100 + hold, ClipOf(session, "a2").Start);
+        Assert.Equal([(0L, 20L), (20 + hold, 30L), (100 + hold, 50L)], Clips(session, A1).Select(c => (c.Start, c.Duration)));
+
+        // The frozen clip itself and a frame over a gap are not targets, so the command changes nothing and says why
+        // (the same text as the Effects tab preset, through the warning toast).
+        var warnings = new List<string>();
+        vm.WarningRaised += (_, w) => warnings.Add(w);
+        vm.FreezeFrameCommand.Execute(null);
+        Assert.Equal(1, session.UndoCount);
+        Assert.Equal([TimelineViewModel.FreezeTargetMissing], warnings);
+        Assert.Equal("Select a video clip under the playhead to freeze.", TimelineViewModel.FreezeTargetMissing);
+        vm.Select([], false);
+        vm.Playhead = 20 + hold + 40;
+        Assert.Null(vm.FindFreezeTarget(vm.Playhead));
+        vm.FreezeFrameCommand.Execute(null);
+        Assert.Equal(1, session.UndoCount);
+        Assert.Equal(2, warnings.Count);
+        Assert.True(session.Undo());
+        Assert.Equal([(0L, 50L), (100L, 50L)], Clips(session, V1).Select(c => (c.Start, c.Duration)));
+    }
+
+    [Fact]
     public void GapSelectionExposesItsRangeAndCloseGapClosesIt()
     {
         var vm = Vm(Linked(), out var session);
@@ -108,6 +151,19 @@ public sealed class TimelineEditingTests
         Assert.NotEqual("l1", pastedVideo.LinkId);
         Assert.Equal(new[] { pastedAudio.Id, pastedVideo.Id }.Order(), vm.SelectedClipIds.Order());
         Assert.Equal(200, vm.Playhead);
+    }
+
+    [Fact]
+    public void CopyAndPasteKeepTheFrozenFrame()
+    {
+        var vm = Vm(new ProjectBuilder().With(V1, V("f1", 0, 50, sourceFrame: 120, freeze: true)), out var session);
+        vm.Select(["f1"], false);
+        vm.CopyCommand.Execute(null);
+        vm.Playhead = 50;
+        vm.PasteCommand.Execute(null);
+        var pasted = Assert.IsType<MediaClip>(Clips(session, V1).Single(c => c.Start == 50));
+        Assert.NotEqual("f1", pasted.Id);
+        Assert.Equal((50L, 120 * F, true), (pasted.Duration, pasted.SourceInFlicks, pasted.Freeze));
     }
 
     [Fact]

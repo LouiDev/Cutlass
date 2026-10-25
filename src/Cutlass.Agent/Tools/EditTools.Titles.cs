@@ -67,6 +67,20 @@ internal sealed partial class EditTools
             throw ApiException.InvalidArgument("title.text", "'title.text' is required.");
         }
 
+        // Effects batch 4: an optional template (the Effects tab presets, shared through Core) under the explicit
+        // fields. Only a template is scaled to the sequence height; without one the base stays TitleSpec.Default,
+        // unscaled, as before templates existed.
+        TitleSpec? template = null;
+        if (req.Template is not null)
+        {
+            if (!TitleTemplates.TryGet(req.Template, out var found))
+            {
+                throw ApiException.InvalidArgument("template", $"'template' is one of {string.Join(", ", TitleTemplates.Names)}.");
+            }
+
+            template = found;
+        }
+
         var mode = Mode(req.Mode);
         return d.Edits.EditAsync(ctx, req, p =>
         {
@@ -76,7 +90,8 @@ internal sealed partial class EditTools
                 throw ApiException.InvalidArgument("trackId", "Titles go on video tracks.");
             }
 
-            var spec = ApplyTitle(TitleSpec.Default, req.Title, p, ctx.Host.ProjectPath);
+            var start = template is null ? TitleSpec.Default : TitleTemplates.Scale(template, p.Sequence.Settings.Height);
+            var spec = ApplyTitle(start, req.Title, p, ctx.Host.ProjectPath);
             var clip = new TitleClip("c_title", 0, duration, true, spec, req.Opacity ?? 1, req.FadeInFrames ?? 0, req.FadeOutFrames ?? 0);
             var result = TimelineEdits.Place(Ids, p, [new ClipPlacement(trackId, clip)], at, mode);
             return Warn(result with { Label = "Add Title" }, DrawtextWarning());

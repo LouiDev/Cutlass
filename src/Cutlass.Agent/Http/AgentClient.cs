@@ -447,6 +447,12 @@ public sealed class AgentClient : IDisposable
     /// <returns>The mutation result.</returns>
     public Task<ApiResult> SpeedAsync(SpeedRequest r, CancellationToken ct = default) => MutateAsync("edit.speed", r, AgentJsonContext.Relaxed.SpeedRequest, ct);
 
+    /// <summary><c>edit.freeze</c>.</summary>
+    /// <param name="r">The request.</param>
+    /// <param name="ct">Cancels the call.</param>
+    /// <returns>The mutation result.</returns>
+    public Task<ApiResult> FreezeFrameAsync(FreezeRequest r, CancellationToken ct = default) => MutateAsync("edit.freeze", r, AgentJsonContext.Relaxed.FreezeRequest, ct);
+
     /// <summary><c>edit.link</c>.</summary>
     /// <param name="r">The request.</param>
     /// <param name="ct">Cancels the call.</param>

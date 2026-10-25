@@ -9,7 +9,7 @@
     "frameRate": "25/1",
     "fps": 25,
     "sampleRate": 48000,
-    "durationFrames": 450,
+    "durationFrames": 510,
     "inFrame": 10,
     "outFrame": null,
     "playhead": 120
@@ -165,6 +165,61 @@
               "vignette": 0,
               "grayscale": false,
               "keyEnabled": true,
+              "keyColor": "#00FF00",
+              "keySimilarity": 0.1,
+              "keyBlend": 0
+            }
+          }
+        },
+        {
+          "id": "c_08",
+          "type": "media",
+          "start": 450,
+          "duration": 60,
+          "end": 510,
+          "enabled": true,
+          "linkId": null,
+          "mediaId": "m_long",
+          "stream": "video",
+          "displayName": "long.mp4",
+          "offline": false,
+          "sourceInFlicks": 19756800000,
+          "sourceOutFlicks": 19756800000,
+          "sourceInSeconds": 28,
+          "sourceOutSeconds": 28,
+          "speedPercent": 100,
+          "freeze": true,
+          "video": {
+            "transform": {
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "cropLeft": 0,
+              "cropTop": 0,
+              "cropRight": 0,
+              "cropBottom": 0
+            },
+            "opacity": 1,
+            "color": {
+              "brightness": 0,
+              "contrast": 1,
+              "saturation": 1,
+              "gamma": 1
+            },
+            "fadeInFrames": 0,
+            "fadeOutFrames": 0,
+            "effects": {
+              "flipH": false,
+              "flipV": false,
+              "rotationDegrees": 0,
+              "hueDegrees": 0,
+              "temperatureKelvin": 6500,
+              "tint": 0,
+              "blur": 0,
+              "sharpen": 0,
+              "vignette": 0,
+              "grayscale": false,
+              "keyEnabled": false,
               "keyColor": "#00FF00",
               "keySimilarity": 0.1,
               "keyBlend": 0

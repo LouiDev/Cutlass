@@ -19,6 +19,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private readonly ImmutableArray<string> _videoIds;
     private readonly ImmutableArray<string> _audioIds;
     private readonly ImmutableArray<string> _sourceIds;
+    private readonly ImmutableArray<string> _freezeIds;
     private readonly List<InspectorNumberField> _videoFields = [];
     private readonly List<InspectorNumberField> _audioFields = [];
     private readonly List<(InspectorToggleRow Row, Func<VideoProps, bool> Read)> _videoToggles = [];
@@ -54,7 +55,10 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         var clips = ClipsOf(project);
         _videoIds = [.. clips.OfType<MediaClip>().Where(m => m.Stream == StreamKind.Video).Select(m => m.Id)];
         _audioIds = [.. clips.OfType<MediaClip>().Where(m => m.Stream == StreamKind.Audio).Select(m => m.Id)];
-        _sourceIds = [.. clips.OfType<MediaClip>().Where(m => TimelineQuery.IsBounded(m, TimelineQuery.FindMedia(project, m.MediaId))).Select(m => m.Id)];
+        // Clips with a source range once they play (frozen ones included: the toggle can unfreeze them in place, so
+        // Refresh decides the Source rows' visibility from the current freeze flags).
+        _sourceIds = [.. clips.OfType<MediaClip>().Where(m => TimelineQuery.IsBounded(m with { Freeze = false }, TimelineQuery.FindMedia(project, m.MediaId))).Select(m => m.Id)];
+        _freezeIds = [.. clips.OfType<MediaClip>().Where(m => m.Stream == StreamKind.Video && !IsStill(project, m)).Select(m => m.Id)];
 
         _clipGroup = AddGroup("CLIP");
         _clipGroup.Add(NameRow);
@@ -65,6 +69,12 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         _sourceInRow = _clipGroup.Add(new InspectorTimecodeField(editor, "Source in", Key2(_sourceIds, "clip.sourceIn"), SourceInEdit));
         _sourceOutRow = _clipGroup.Add(new InspectorTimecodeField(editor, "Source out", Key2(_sourceIds, "clip.sourceOut"), SourceOutEdit));
         _speedRow = _clipGroup.Add(new InspectorButtonRow("Speed", "100%", openSpeedDialog) { ToolTip = "Speed (Ctrl+R)" });
+        // Effects batch 4: the freeze flag of the selected video clips (stills are always a single frame, so they hide it).
+        // It writes only to those clips, never to a still in a mixed selection.
+        FreezeRow = _clipGroup.Add(new InspectorToggleRow(editor, "Freeze frame", Key2(_freezeIds, "clip.freeze"), on => UpdateFreeze(on))
+        {
+            ToolTip = "Holds the source in point for the whole clip (Shift+F inserts a hold at the playhead)",
+        });
 
         _transformGroup = AddGroup("TRANSFORM", () => Run(UpdateVideo("Reset Transform", m => m with
         {
@@ -148,9 +158,9 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
         _fadesGroup.IsVisible = !_videoIds.IsEmpty;
         _audioGroup.IsVisible = !_audioIds.IsEmpty;
         _audioFxGroup.IsVisible = !_audioIds.IsEmpty;
-        _sourceInRow.IsVisible = !_sourceIds.IsEmpty;
-        _sourceOutRow.IsVisible = !_sourceIds.IsEmpty;
-        _speedRow.IsVisible = clips.OfType<MediaClip>().Any(m => !IsStill(project, m));
+        _sourceInRow.IsVisible = clips.OfType<MediaClip>().Any(m => !m.Freeze && _sourceIds.Contains(m.Id));
+        _sourceOutRow.IsVisible = _sourceInRow.IsVisible;
+        FreezeRow.IsVisible = !_freezeIds.IsEmpty;
         _fileRow.IsVisible = clips.Length == 1 && clips[0] is MediaClip;
         _addKeyRow.IsVisible = _audioIds.Length == 1;
     }
@@ -203,6 +213,9 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     /// <summary>The speed button row.</summary>
     public InspectorButtonRow SpeedRow => _speedRow;
 
+    /// <summary>The Freeze frame toggle (video media clips that are not stills).</summary>
+    public InspectorToggleRow FreezeRow { get; }
+
     /// <summary>The source in row.</summary>
     public InspectorTimecodeField SourceInRow => _sourceInRow;
 
@@ -248,13 +261,22 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
             ? TimelineQuery.FindMedia(project, single.MediaId)?.Path ?? "(missing media)"
             : string.Empty;
 
-        var sources = clips.OfType<MediaClip>().Where(m => _sourceIds.Contains(m.Id)).ToList();
+        // Frozen clips have no source range; the rows hide when every source clip is frozen (or a still), and the
+        // section is reused when the Freeze frame toggle changes that in place, so it is decided on every refresh.
+        var sources = clips.OfType<MediaClip>().Where(m => !m.Freeze && _sourceIds.Contains(m.Id)).ToList();
         var ins = sources.Select(m => SourceInFrame(m, rate)).Distinct().ToList();
         var outs = sources.Select(m => SourceOutFrame(m, rate)).Distinct().ToList();
         _sourceInRow.Load(ins.Count == 1 ? ins[0] : null, rate);
         _sourceOutRow.Load(outs.Count == 1 ? outs[0] : null, rate);
-        var speeds = clips.OfType<MediaClip>().Where(m => !IsStill(project, m)).Select(m => m.SpeedPercent).Distinct().ToList();
+        _sourceInRow.IsVisible = sources.Count > 0;
+        _sourceOutRow.IsVisible = sources.Count > 0;
+        // Stills and frozen clips have no speed; the row hides when the selection holds nothing else (frozen clips can
+        // change in place through the Freeze frame toggle, so this is decided on every refresh).
+        var moving = clips.OfType<MediaClip>().Where(m => !IsStill(project, m) && !m.Freeze).ToList();
+        var speeds = moving.Select(m => m.SpeedPercent).Distinct().ToList();
         _speedRow.ButtonText = speeds.Count == 1 ? speeds[0].ToString(CultureInfo.InvariantCulture) + "%" : "Mixed";
+        _speedRow.IsVisible = moving.Count > 0;
+        FreezeRow.LoadMany(clips.OfType<MediaClip>().Where(m => _freezeIds.Contains(m.Id)).Select(m => m.Freeze));
 
         var videos = clips.Where(c => _videoIds.Contains(c.Id)).ToList();
         foreach (var field in _videoFields)
@@ -328,6 +350,9 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
 
     private Func<Project, EditResult> UpdateVideo(string label, Func<MediaClip, MediaClip> change) =>
         p => TimelineEdits.UpdateClips(p, _videoIds, c => c is MediaClip m ? change(m) : c, label);
+
+    private Func<Project, EditResult> UpdateFreeze(bool on) =>
+        p => TimelineEdits.UpdateClips(p, _freezeIds, c => c is MediaClip m ? m with { Freeze = on } : c, on ? "Freeze Frame" : "Unfreeze");
 
     private Func<Project, EditResult> UpdateAudio(string label, Func<MediaClip, MediaClip> change) =>
         p => TimelineEdits.UpdateClips(p, _audioIds, c => c is MediaClip m ? change(m) : c, label);
@@ -429,7 +454,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private Func<Project, EditResult>? SourceInEdit(long frame) => frame < 0 ? null : p =>
         Chain(p, "Source In", _sourceIds, (q, id) =>
         {
-            if (TimelineQuery.FindClip(q, id)?.Clip is not MediaClip m)
+            if (TimelineQuery.FindClip(q, id)?.Clip is not MediaClip m || m.Freeze)
             {
                 return null;
             }
@@ -443,7 +468,7 @@ public sealed partial class ClipSectionViewModel : InspectorClipSectionBase
     private Func<Project, EditResult>? SourceOutEdit(long frame) => p =>
         Chain(p, "Source Out", _sourceIds, (q, id) =>
         {
-            if (TimelineQuery.FindClip(q, id)?.Clip is not MediaClip m)
+            if (TimelineQuery.FindClip(q, id)?.Clip is not MediaClip m || m.Freeze)
             {
                 return null;
             }

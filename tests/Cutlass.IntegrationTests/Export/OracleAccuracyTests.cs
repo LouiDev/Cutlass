@@ -78,6 +78,36 @@ public sealed class OracleAccuracyTests
         Assert.True(failures.Length == 0, failures.ToString());
     }
 
+    [FfmpegTheory]
+    [InlineData(0)]
+    [InlineData(37)]
+    [InlineData(254)]
+    public async Task AFrozenClipShowsItsSourceFrameOnEveryOutputFrame(long k)
+    {
+        // Effects batch 4: source frame k of the 25 fps oracle starts at k * 40 ms. The frozen clip holds it from
+        // frame 7 for 30 frames, in a full render and in a window that starts inside the clip (range independence).
+        await using var kit = await ExportKit.CreateAsync();
+        var asset = await kit.AssetAsync("m_o", _media.Oracle25Intra);
+        var catalog = await kit.CatalogAsync([asset]);
+        var clip = V("c_f", ClipStart, 30, "m_o", Micros(k * 40_000)) with { Freeze = true };
+        var project = Project(320, 180, FrameRate.Fps30, [asset], Track("tr_v1", TrackKind.Video, [clip]));
+
+        var frames = await kit.RenderBgraAsync(project, catalog, Preview(0, 40, 320, 180));
+        for (long f = 0; f < 40; f++)
+        {
+            var actual = OracleReader.DecodeBgra(frames.AsSpan((int)(f * 320 * 180 * 4), 320 * 180 * 4), 320, 180);
+            var expected = f < ClipStart || f >= ClipStart + 30 ? 0 : TestMediaFixture.ExpectedOracleValue(k);
+            Assert.True(expected == actual, $"frame {f}: expected {expected}, got {actual}");
+        }
+
+        var window = await kit.RenderBgraAsync(project, catalog, Preview(20, 37, 320, 180));
+        for (long f = 0; f < 17; f++)
+        {
+            var actual = OracleReader.DecodeBgra(window.AsSpan((int)(f * 320 * 180 * 4), 320 * 180 * 4), 320, 180);
+            Assert.True(TestMediaFixture.ExpectedOracleValue(k) == actual, $"window frame {20 + f}: got {actual}");
+        }
+    }
+
     [FfmpegFact]
     public async Task H264ExportKeepsTheOracleFramesInPlace()
     {

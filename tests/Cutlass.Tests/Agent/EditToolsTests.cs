@@ -144,7 +144,7 @@ public sealed class EditToolsTests : IDisposable
         Assert.Equal(0.5, ModelAssert.Media(Current, "v1").Video.Transform.Scale);
         Assert.Equal(0, ModelAssert.Media(Current, "v1").Video.Color.Saturation);
         Assert.Equal(VideoEffects.None with { FlipH = true, HueDegrees = 20 }, ModelAssert.Media(Current, "v1").Video.Effects);
-        Assert.Contains(props.Warnings, w => w.Contains("effects apply to video clips only", StringComparison.Ordinal));
+        Assert.Contains(props.Warnings, w => w.Contains("effects and freeze apply to video clips only", StringComparison.Ordinal));
         Assert.Equal(-6, ModelAssert.Media(Current, "a1").Audio.GainDb);
         Assert.Equal(AudioEffects.None with { HighPassHz = 80, Mono = true }, ModelAssert.Media(Current, "a1").Audio.Effects);
         Assert.Equal(AudioProps.Default, ModelAssert.Media(Current, "v1").Audio);
@@ -229,6 +229,94 @@ public sealed class EditToolsTests : IDisposable
         Assert.Equal(Core.Time.FrameRate.Fps2997, Current.Sequence.Settings.Rate);
         await Fails("edit.sequence", """{"frameRate":"12"}""", id, ErrorCode.InvalidArgument);
         ModelAssert.Valid(Current);
+    }
+
+    [Fact]
+    public async Task TitleTemplatesAndFreezeFramesWork()
+    {
+        // Effects batch 4: a title from the Subtitle template (the sequence is 1080 lines, so no scaling), then a freeze.
+        var id = await _host.AcquireAsync();
+        await Ok("edit.title.add", """{"trackId":"tr_v2","at":60,"durationFrames":40,"template":"subtitle","title":{"text":"Sub"}}""", id);
+        var sub = ModelAssert.Track(Current, V2).Clips.OfType<TitleClip>().Single(t => t.Title.Text == "Sub").Title;
+        Assert.Equal(("builtin:Inter-Regular", 44.0, true, "#000000A0", 14.0, TitleAnchor.LowerThird, "#FFFFFFFF"), (sub.Font, sub.Size, sub.Box, sub.BoxColor, sub.BoxPadding, sub.Anchor, sub.Color));
+        Assert.Equal("template", (await Fails("edit.title.add", """{"trackId":"tr_v2","at":0,"durationFrames":5,"template":"Banner","title":{"text":"x"}}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        var caps = await _host.CallAsync("capabilities");
+        Assert.Equal(["Centered", "LowerThird", "TopCaption", "Subtitle", "Headline", "Quote"], caps.Result!.Value.GetProperty("titleTemplates").EnumerateArray().Select(e => e.GetString()));
+
+        var freeze = await Ok("edit.freeze", """{"clipId":"v1","frame":40,"durationFrames":25}""", id);
+        Assert.Equal("Agent: Freeze Frame", freeze.UndoLabel);
+        var v1 = ModelAssert.Track(Current, V1).Clips;
+        Assert.Equal([(0L, 40L), (40L, 25L), (65L, 60L), (125L, 100L)], v1.Select(c => (c.Start, c.Duration)));
+        var frozen = Assert.IsType<MediaClip>(v1[1]);
+        Assert.Equal((true, 40 * F, 100), (frozen.Freeze, frozen.SourceInFlicks, frozen.SpeedPercent));
+        Assert.Equal(125, ModelAssert.Clip(Current, "a2").Start);
+
+        var summary = await _host.CallAsync("project.get");
+        // Tracks are listed top to bottom, so V1 follows V2.
+        var clips = summary.Result!.Value.GetProperty("tracks").EnumerateArray().Single(t => t.GetProperty("id").GetString() == V1).GetProperty("clips");
+        Assert.True(clips[1].GetProperty("freeze").GetBoolean());
+        Assert.False(clips[0].TryGetProperty("freeze", out _));
+        Assert.Equal(clips[1].GetProperty("sourceInFlicks").GetInt64(), clips[1].GetProperty("sourceOutFlicks").GetInt64());
+        var described = await _host.CallAsync("project.describe");
+        Assert.Contains(frozen.Id + " long.mp4 40+25 src 1.600-1.600 s freeze", described.Text, StringComparison.Ordinal);
+
+        var props = await Ok("edit.clip-props", $$"""{"clipIds":["{{frozen.Id}}","a1"],"freeze":false}""", id);
+        Assert.False(ModelAssert.Media(Current, frozen.Id).Freeze);
+        Assert.Contains(props.Warnings, w => w.Contains("freeze apply to video clips only", StringComparison.Ordinal));
+        await Ok("edit.clip-props", $$"""{"clipIds":["{{frozen.Id}}"],"freeze":true}""", id);
+        Assert.True(ModelAssert.Media(Current, frozen.Id).Freeze);
+
+        // A frame outside the clip is a refused edit (a warning), while a title, a missing clip and a bad duration are errors.
+        var outside = await Ok("edit.freeze", """{"clipId":"v2","frame":5,"durationFrames":10}""", id);
+        Assert.Contains("The frame to freeze must lie inside the clip.", outside.Warnings);
+        await Fails("edit.freeze", """{"clipId":"t1","frame":5,"durationFrames":10}""", id, ErrorCode.InvalidArgument);
+        await Fails("edit.freeze", """{"clipId":"nope","frame":5,"durationFrames":10}""", id, ErrorCode.NotFound);
+        Assert.Equal("durationFrames", (await Fails("edit.freeze", """{"clipId":"v1","frame":5,"durationFrames":0}""", id, ErrorCode.InvalidArgument)).Detail("field"));
+        ModelAssert.Valid(Current);
+    }
+
+    [Fact]
+    public async Task OnlyATemplateIsScaledToTheSequenceHeight()
+    {
+        var id = await _host.AcquireAsync();
+        await Ok("edit.sequence", """{"width":1280,"height":720}""", id);
+        Assert.Equal(720, Current.Sequence.Settings.Height);
+        await Ok("edit.title.add", """{"trackId":"tr_v2","at":60,"durationFrames":40,"template":"Subtitle","title":{"text":"Sub"}}""", id);
+        await Ok("edit.title.add", """{"trackId":"tr_v2","at":120,"durationFrames":40,"title":{"text":"Plain"}}""", id);
+        var titles = ModelAssert.Track(Current, V2).Clips.OfType<TitleClip>().ToDictionary(t => t.Title.Text, t => t.Title);
+
+        Assert.True(TitleTemplates.TryGet("Subtitle", out var subtitle));
+        var scaled = TitleTemplates.Scale(subtitle, 720);
+        Assert.NotEqual(subtitle.Size, scaled.Size);
+        Assert.Equal((scaled.Size, scaled.OutlineWidth, scaled.BoxPadding), (titles["Sub"].Size, titles["Sub"].OutlineWidth, titles["Sub"].BoxPadding));
+
+        // Without a template the base is TitleSpec.Default, unscaled, as before templates existed.
+        var plain = titles["Plain"];
+        Assert.Equal((TitleSpec.Default.Size, TitleSpec.Default.OutlineWidth, TitleSpec.Default.BoxPadding), (plain.Size, plain.OutlineWidth, plain.BoxPadding));
+    }
+
+    [Fact]
+    public async Task UnfreezingAHoldPastItsSourceTrimsItWithAWarning()
+    {
+        // short.mov has 100 frames; the hold of source frame 95 is 50 frames long. A still refuses the flag.
+        var p = new ProjectBuilder().With(V1, V("c1", 0, 10, media: Short, sourceFrame: 90), V("s1", 200, 50, media: Still)).Build();
+        using var host = new FakeAgentHost(p);
+        var id = await host.AcquireAsync();
+        var freeze = await host.CallAsync("edit.freeze", """{"clipId":"c1","frame":5,"durationFrames":50}""", id);
+        Assert.Null(freeze.Error);
+        var holdId = freeze.Select![0];
+
+        var props = await host.CallAsync("edit.clip-props", $$"""{"clipIds":["{{holdId}}"],"freeze":false}""", id);
+        Assert.Null(props.Error);
+        var hold = ModelAssert.Media(host.Session.Current, holdId);
+        Assert.Equal((5L, 95 * F, false), (hold.Duration, hold.SourceInFlicks, hold.Freeze));
+        Assert.Contains("Shortened a clip of short.mov to fit its media.", props.Warnings);
+        ModelAssert.Valid(host.Session.Current);
+
+        var still = await host.CallAsync("edit.clip-props", """{"clipIds":["s1"],"freeze":true}""", id);
+        Assert.Null(still.Error);
+        Assert.False(ModelAssert.Media(host.Session.Current, "s1").Freeze);
+        Assert.Contains("A still image is already a single frame.", still.Warnings);
     }
 
     [Fact]

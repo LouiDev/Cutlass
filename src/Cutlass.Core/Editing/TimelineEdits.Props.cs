@@ -15,7 +15,7 @@ public static partial class TimelineEdits
     /// change; without it the new length stops at the next clip. Volume keyframes scale with the clip.
     /// </summary>
     /// <param name="project">The project.</param>
-    /// <param name="clipIds">The clips (titles and stills are skipped).</param>
+    /// <param name="clipIds">The clips (titles, stills and frozen clips are skipped).</param>
     /// <param name="percent">The new speed in percent.</param>
     /// <param name="rippleFollowing">True to ripple following clips (the dialog default).</param>
     /// <returns>The result.</returns>
@@ -45,6 +45,10 @@ public static partial class TimelineEdits
             else if (clip is not MediaClip m || w.IsStill(m))
             {
                 w.Warn("Speed applies to video and audio clips only.");
+            }
+            else if (m.Freeze)
+            {
+                w.Warn("Frozen clips have no speed.");
             }
             else if (m.SpeedPercent != percent)
             {
@@ -110,7 +114,8 @@ public static partial class TimelineEdits
     /// <summary>
     /// Applies an inspector change to clips as one edit (one undo step for several clips). The update may change any
     /// property except identity and placement: id, start, duration, link, media, stream, source in point and speed are
-    /// restored (use the dedicated edits), and the result is sanitized (fades, keyframes, ranges).
+    /// restored (use the dedicated edits), and the result is sanitized (fades, keyframes, ranges). A clip that is
+    /// unfrozen is trimmed to fit its source, or removed when nothing of it fits, with a warning.
     /// </summary>
     /// <param name="project">The project.</param>
     /// <param name="clipIds">The clips.</param>
@@ -159,6 +164,12 @@ public static partial class TimelineEdits
             }
 
             found.Track.Clips[found.Index] = SanitizeClip(restored);
+            if (clip is MediaClip { Freeze: true } && found.Track.Clips[found.Index] is MediaClip { Freeze: false })
+            {
+                // An unfrozen clip is bounded again: a hold longer than the source left after its frame is
+                // shortened (or removed when nothing fits), and Finish re-clamps its transitions.
+                w.ClampClipToSource(found.Track, found.Index);
+            }
         }
 
         return w.Finish(label);

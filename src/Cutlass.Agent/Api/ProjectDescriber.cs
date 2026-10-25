@@ -239,6 +239,11 @@ public static class ProjectDescriber
                     sb.Append(c, $" speed {m.SpeedPercent}%");
                 }
 
+                if (m.Freeze)
+                {
+                    sb.Append(" freeze");
+                }
+
                 if (m.LinkId is { } link)
                 {
                     sb.Append(" link ").Append(link);

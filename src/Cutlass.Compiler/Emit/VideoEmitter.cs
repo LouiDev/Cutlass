@@ -314,6 +314,8 @@ internal static class VideoEmitter
         int inputIndex;
         int streamIndex;
         string[] setpts = [];
+        // A frozen still is a no-op: stills already loop one frame.
+        var frozen = clip.Freeze && !info.Asset.Info.IsStill;
         if (info.Asset.Info.IsStill)
         {
             // Stills loop at the sequence rate with no seek and no setpts.
@@ -321,6 +323,20 @@ internal static class VideoEmitter
             inputIndex = ctx.Inputs.Add(
                 info.Original.Path, null, TimeMath.FloorMicrosFromFlicks(span), true, ctx.Rate.Value, segment.Start, 100);
             streamIndex = video.StreamIndex;
+        }
+        else if (frozen)
+        {
+            // Freeze frame (effects batch 4, TECH_BRIEF 7.3 step 2): the seek resolves at SourceInFlicks (SourceFlicksAt
+            // returns it for every frame of a frozen clip), the input spans one source frame plus the margin, and the
+            // speed marker 0 keeps InputTable from sharing it with a moving use of the same source at the same frame.
+            // setpts only shifts by d0, never divides by the speed; the chain below trims to the first decoded frame.
+            var seek = ResolveSeek(ctx, info, video, clip, segment.Start);
+            var sourceRate = SourceRate(video, ctx.Rate);
+            var sourceFrame = (long)TimeMath.FloorDiv((Int128)TimeMath.FlicksPerSecond * sourceRate.Den, sourceRate.Num);
+            var span = Math.Max(seek.D0, 0) + Math.Max(MinMarginFlicks, 2 * sourceFrame);
+            inputIndex = ctx.Inputs.Add(seek.Path, seek.SeekMicros, TimeMath.FloorMicrosFromFlicks(span), false, null, segment.Start, 0);
+            streamIndex = seek.StreamIndex;
+            setpts = SetPts(seek.D0, 100);
         }
         else
         {
@@ -343,8 +359,14 @@ internal static class VideoEmitter
         }
 
         var count = FfNum.Integer(n);
-        chain.Then("fps=" + FfNum.Rate(ctx.Rate) + ":start_time=0:round=up")
-            .Then("tpad=stop_mode=clone:stop=" + count)
+        chain.Then("fps=" + FfNum.Rate(ctx.Rate) + ":start_time=0:round=up");
+        if (frozen)
+        {
+            // Keep the first decoded frame only, so the clone pad below repeats it for the whole segment.
+            chain.Then("trim=end_frame=1");
+        }
+
+        chain.Then("tpad=stop_mode=clone:stop=" + count)
             .Then("trim=end_frame=" + count);
 
         var g = Geometry.Compute(ctx, video, clip.Video.Transform);

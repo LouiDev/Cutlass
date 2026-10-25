@@ -71,6 +71,7 @@
             <MenuItem Header="New T_itle" InputGesture="Ctrl+T" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.NewTitle}" />
             <Separator />
             <MenuItem Header="Sp_eed..." InputGesture="Ctrl+R" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.Speed}" />
+            <MenuItem Header="_Freeze Frame at Playhead" InputGesture="Shift+F" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.FreezeFrame}" />
             <MenuItem Header="_Link / Unlink" InputGesture="Ctrl+L" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.LinkUnlink}" />
             <MenuItem Header="Move into S_ync" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.MoveIntoSync}" />
             <MenuItem Header="_Enable / Disable" InputGesture="Shift+E" Command="{Binding RunCommandCommand}" CommandParameter="{x:Static services:CommandIds.ToggleEnabled}" />

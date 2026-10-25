@@ -305,6 +305,55 @@ public sealed class TimelineCompilerTests
     }
 
     [Fact]
+    public void FrozenClipTrimsToOneFrameBeforeTheClonePadAndGetsItsOwnInput()
+    {
+        // Effects batch 4 (TECH_BRIEF 7.3): the frozen chain is fps, trim to one frame, clone pad, trim to the segment;
+        // the moving clip of the same source at the same start frame and seek keeps its own input (speed marker 0).
+        var golden = GoldenCases.Get("freeze_frame");
+        var render = TimelineCompiler.Compile(golden.Project, golden.Catalog, golden.Request);
+
+        Assert.Contains(
+            "fps=30:start_time=0:round=up,trim=end_frame=1,tpad=stop_mode=clone:stop=30,trim=end_frame=30,",
+            render.GraphText,
+            StringComparison.Ordinal);
+        Assert.Contains("fps=30:start_time=0:round=up,tpad=stop_mode=clone:stop=30,trim=end_frame=30,", render.GraphText, StringComparison.Ordinal);
+        Assert.Equal(2, render.Inputs.Count);
+        Assert.Equal(render.Inputs[0].SeekMicros, render.Inputs[1].SeekMicros);
+        Assert.DoesNotContain("setpts=PTS/", render.GraphText, StringComparison.Ordinal);
+        Assert.Empty(render.Warnings);
+
+        // A frozen clip ignores its speed: at 200 percent the chain has no speed setpts, and the seek, the span and the
+        // whole graph equal the speed-100 compile.
+        var fast = golden.Project with
+        {
+            Sequence = golden.Project.Sequence with
+            {
+                Tracks = [.. golden.Project.Sequence.Tracks.Select(t => t with { Clips = [.. t.Clips.Select(c => c is MediaClip { Freeze: true } m ? m with { SpeedPercent = 200 } : c)] })],
+            },
+        };
+        Assert.Equal(200, fast.Sequence.Tracks.SelectMany(t => t.Clips).OfType<MediaClip>().Single(c => c.Id == "c_f").SpeedPercent);
+        var fastRender = TimelineCompiler.Compile(fast, golden.Catalog, golden.Request);
+        Assert.DoesNotContain("setpts=PTS/2", fastRender.GraphText, StringComparison.Ordinal);
+        Assert.DoesNotContain(")/2,", fastRender.GraphText, StringComparison.Ordinal);
+        Assert.Equal(render.Inputs[0], fastRender.Inputs[0]);
+        Assert.Equal(render.Inputs.Count, fastRender.Inputs.Count);
+        Assert.Equal(render.GraphText, fastRender.GraphText);
+
+        // A window starting inside the frozen clip still seeks to the frozen frame, and a frozen still is a plain still.
+        var later = TimelineCompiler.Compile(golden.Project, golden.Catalog, Export(10, 30, audio: false));
+        Assert.Equal(render.Inputs[0].SeekMicros, later.Inputs[0].SeekMicros);
+        var still = GoldenCases.Get("still");
+        var frozenStill = still.Project with
+        {
+            Sequence = still.Project.Sequence with
+            {
+                Tracks = [.. still.Project.Sequence.Tracks.Select(t => t with { Clips = [.. t.Clips.Select(c => c is MediaClip m ? m with { Freeze = true } : c)] })],
+            },
+        };
+        Assert.Equal(TimelineCompiler.Compile(still.Project, still.Catalog, still.Request).GraphText, TimelineCompiler.Compile(frozenStill, still.Catalog, still.Request).GraphText);
+    }
+
+    [Fact]
     public void NeutralAudioEffectsKeepTheHistoricalAudioChain()
     {
         var project = Project(Hd30, [AudioAsset("m_music", "D:/Audio/music.wav")], AudioTrack("tr_a1", [A("c_1", 0, 30, "m_music", 0)]));

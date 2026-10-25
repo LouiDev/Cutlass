@@ -33,6 +33,10 @@ internal sealed class ClipDto
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? SpeedPercent { get; set; }
 
+    /// <summary>Written only when true (a freeze frame, effects batch 4); missing means false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Freeze { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public VideoPropsDto? Video { get; set; }
 

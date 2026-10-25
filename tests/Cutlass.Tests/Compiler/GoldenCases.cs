@@ -41,6 +41,7 @@ internal static class GoldenCases
         Envelope(),
         FadesWithWindowOffset(),
         Still(),
+        FreezeFrame(),
         ColorAdjust(),
         VideoEffects(),
         VideoEffectsInRun(),
@@ -235,6 +236,17 @@ internal static class GoldenCases
         MediaAsset[] media = [StillAsset("m_png", "D:/Images/logo.png", 1280, 720)];
         var p = Project(Hd30, media, VideoTrack("tr_v1", [V("c_1", 0, 75, "m_png", 0)]));
         return Make("still", p, Export(0, 75, audio: false));
+    }
+
+    /// <summary>
+    /// A frozen clip (effects batch 4) under a moving clip of the same source with the same start frame and source
+    /// position: the frozen chain trims to one frame before the clone pad, and the two uses get separate inputs.
+    /// </summary>
+    private static Case FreezeFrame()
+    {
+        var frozen = V("c_f", 0, 30, "m_a", 2 * F) with { Freeze = true };
+        var p = Project(Hd30, Hd(), VideoTrack("tr_v1", [frozen]), VideoTrack("tr_v2", [V("c_m", 0, 30, "m_a", 2 * F)]));
+        return Make("freeze_frame", p, Export(0, 30, audio: false));
     }
 
     private static Case ColorAdjust()

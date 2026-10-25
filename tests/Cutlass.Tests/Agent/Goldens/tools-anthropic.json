@@ -871,7 +871,7 @@
   },
   {
     "name": "cutlass_set_clip_props",
-    "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
+    "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), freeze, gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -1009,6 +1009,10 @@
             }
           }
         },
+        "freeze": {
+          "type": "boolean",
+          "description": "Video: hold the source in point for the whole clip (false)."
+        },
         "gainDb": {
           "type": "number",
           "description": "Clip gain in dB (audio)."
@@ -1123,6 +1127,46 @@
       "required": [
         "clipIds",
         "percent"
+      ]
+    }
+  },
+  {
+    "name": "cutlass_freeze_frame",
+    "description": "Hold one frame of a clip for a duration.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "clipId": {
+          "type": "string",
+          "description": "The video clip."
+        },
+        "frame": {
+          "type": "integer",
+          "description": "Timeline frame to hold (inside the clip).",
+          "minimum": 0
+        },
+        "durationFrames": {
+          "type": "integer",
+          "description": "Hold length in frames.",
+          "minimum": 1
+        },
+        "rippleFollowing": {
+          "type": "boolean",
+          "description": "Shift later clips (true)."
+        },
+        "ifRevision": {
+          "type": "integer",
+          "description": "Fail with conflict when the project revision is no longer this."
+        },
+        "returnProject": {
+          "type": "boolean",
+          "description": "Also return the project summary."
+        }
+      },
+      "required": [
+        "clipId",
+        "frame",
+        "durationFrames"
       ]
     }
   },
@@ -1445,6 +1489,18 @@
           "enum": [
             "overwrite",
             "insert"
+          ]
+        },
+        "template": {
+          "type": "string",
+          "description": "Start from a template.",
+          "enum": [
+            "Centered",
+            "LowerThird",
+            "TopCaption",
+            "Subtitle",
+            "Headline",
+            "Quote"
           ]
         },
         "title": {

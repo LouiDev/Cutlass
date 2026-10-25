@@ -62,9 +62,12 @@ internal static class TestMedia
         return new MediaAsset(id, path, null, "sha256:" + id, 1_000_000, new DateTime(2026, 10, 1, 9, 12, 44, DateTimeKind.Utc), info);
     }
 
-    /// <summary>A video media clip; <paramref name="sourceFrame"/> is the source in point in 25 fps frames.</summary>
-    public static MediaClip V(string id, long start, long duration, string media = Long, long sourceFrame = 0, string? link = null, int speed = 100) =>
-        new(id, start, duration, true, link, media, StreamKind.Video, sourceFrame * F, speed, VideoProps.Default, AudioProps.Default);
+    /// <summary>
+    /// A video media clip; <paramref name="sourceFrame"/> is the source in point in 25 fps frames and
+    /// <paramref name="freeze"/> makes it a freeze frame of that source frame.
+    /// </summary>
+    public static MediaClip V(string id, long start, long duration, string media = Long, long sourceFrame = 0, string? link = null, int speed = 100, bool freeze = false) =>
+        new(id, start, duration, true, link, media, StreamKind.Video, sourceFrame * F, speed, VideoProps.Default, AudioProps.Default) { Freeze = freeze };
 
     /// <summary>An audio media clip; <paramref name="sourceFrame"/> is the source in point in 25 fps frames.</summary>
     public static MediaClip A(string id, long start, long duration, string media = Long, long sourceFrame = 0, string? link = null, int speed = 100) =>

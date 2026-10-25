@@ -41,6 +41,37 @@ public sealed class TitleRenderTests
         Assert.True(BrightPixels(await ExportKit.DecodeGrayAsync(job.OutputPath), frame: 15) > 200, "The title text is not visible.");
     }
 
+    [FfmpegTheory]
+    [InlineData("Subtitle", 0.6, 1.0, 40)]
+    [InlineData("Headline", 0.0, 0.4, 1000)]
+    [InlineData("Quote", 0.3, 0.7, 200)]
+    public async Task TheNewTemplatesRenderInTheirAnchorBand(string name, double fromFraction, double toFraction, int minBright)
+    {
+        // Effects batch 4: each template, scaled to the 360-line canvas as the app and the agent do, puts bright text
+        // inside its anchor band (lower third, top, centre) and almost nothing outside it (the boxes are dark).
+        const int w = 640;
+        const int h = 360;
+        await using var kit = await ExportKit.CreateAsync();
+        Assert.True(TitleTemplates.TryGet(name, out var template));
+        var spec = TitleTemplates.Scale(template, h);
+        var project = Project(w, h, FrameRate.Fps30, [], Track("tr_v1", TrackKind.Video, [Title("c_t", 0, 30, spec)]));
+
+        var job = await kit.ExportAsync(kit.Request(project, new TestRenderCatalog(), ExportPresets.H264, "title_" + name.ToLowerInvariant(), 0, 30, w, h));
+
+        ExportKit.AssertCompleted(job);
+        Assert.Empty(job.Warnings);
+        var gray = await ExportKit.DecodeGrayAsync(job.OutputPath);
+        Assert.Equal(30 * w * h, gray.Length);
+        var fromRow = (int)(h * fromFraction);
+        var toRow = (int)(h * toFraction);
+        var inBand = BrightPixelsInRows(gray, 15, w, h, fromRow, toRow);
+        var outside = BrightPixelsInRows(gray, 15, w, h, 0, h) - inBand;
+        // Measured on ffmpeg N-126308 (2026-10-25): Subtitle (15 px) lights 72 pixels above 200, Quote 370 and
+        // Headline 1985; each row's minimum keeps about half of that as margin.
+        Assert.True(inBand >= minBright, $"{name}: only {inBand} bright pixels in rows {fromRow} to {toRow}.");
+        Assert.True(outside <= inBand / 10, $"{name}: {outside} bright pixels outside rows {fromRow} to {toRow}.");
+    }
+
     [FfmpegFact]
     public async Task AnInOutExportResolvesTheFontOfATitlePulledInAcrossATransition()
     {
@@ -110,6 +141,24 @@ public sealed class TitleRenderTests
         Assert.Equal(text.Utf8Content, await File.ReadAllTextAsync(Path.Combine(kit.Harness.Work.Path, text.FileName)));
         Assert.DoesNotContain(job.Log, l => l.Contains("fontconfig", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(30, await ExportKit.CountFramesAsync(job.OutputPath));
+    }
+
+    private static int BrightPixelsInRows(byte[] gray, int frame, int width, int height, int fromRow, int toRow)
+    {
+        var count = 0;
+        for (var row = fromRow; row < toRow; row++)
+        {
+            var start = (frame * width * height) + (row * width);
+            for (var i = start; i < start + width; i++)
+            {
+                if (gray[i] > 200)
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     private static int BrightPixels(byte[] gray, int frame)

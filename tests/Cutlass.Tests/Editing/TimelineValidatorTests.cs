@@ -76,6 +76,14 @@ public sealed class TimelineValidatorTests
         Assert.Empty(Check(new ProjectBuilder().With(V1, V("s1", 0, 100_000, media: Still), Title("t1", 100_000, 500_000))));
 
     [Fact]
+    public void FrozenClipsAreUnbounded()
+    {
+        // The same clip without the flag runs 99,900 frames past the 100-frame source; frozen, it holds one frame.
+        Assert.Contains(Check(new ProjectBuilder().With(V1, V("c1", 0, 100_000, media: Short, sourceFrame: 50))), e => e.Contains("past the end"));
+        Assert.Empty(Check(new ProjectBuilder().With(V1, V("f1", 0, 100_000, media: Short, sourceFrame: 50, freeze: true))));
+    }
+
+    [Fact]
     public void TransitionMustJoinButtingClips() =>
         Assert.Contains(
             Check(new ProjectBuilder().With(V1, V("c1", 0, 50), V("c2", 51, 50, sourceFrame: 100)).Transition(V1, "x1", "c1", "c2", 10)),

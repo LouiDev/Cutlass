@@ -55,6 +55,7 @@ internal sealed class StatusTools(ToolDispatcher d)
             Qualities = EnumWire.Names<ExportQuality>(),
             TransitionKinds = EnumWire.Names<TransitionKind>(),
             TitleAnchors = EnumWire.Names<TitleAnchor>(),
+            TitleTemplates = [.. Core.Model.TitleTemplates.Names],
             EditModes = EnumWire.Names<Core.Editing.EditMode>(),
             Titles = caps?.HasDrawtext ?? false,
         };

@@ -1,6 +1,7 @@
 # Cutlass M6 smoke test (TECH_BRIEF 12, M6). Run it with build/smoke.ps1 -Script m6, which generates clipA.mp4 and
 # clipB.mp4 (6 s, 1280x720, 30 fps, 180 frames each) next to a copy of this file. Paths are relative to the script.
 # Commands: SmokeScript.Commands. Keys go through the real keymap (key <chord>), menu commands through the registry.
+# The effects batches add their rows, presets and the freeze frame before the export, so the export renders them.
 import clipA.mp4 clipB.mp4
 wait 1000
 
@@ -130,9 +131,24 @@ expect-section clip
 screenshot shots/14-audio-effects.png
 deselect
 
+# Effects batch 4: a 1 s freeze frame of clipB at 200 (the view model path of Shift+F, FindFreezeTarget and
+# FreezeFrameAt, with the duration given because the default still length is 5 s). clipB splits at 200, the 30-frame hold is inserted and everything after it ripples
+# on V1 and A1, so the sequence grows to 470 frames. The export renders the hold through the frozen chain
+# (trim=end_frame=1 before the clone pad), so its frame count proves that chain runs on this ffmpeg. The Inspector
+# shows the selected frozen clip with its Freeze frame toggle on and no Speed row; the timeline shows the hold badge.
+freeze-frame V1 200 30
+expect-duration 470
+expect-clips V1 6
+expect-section clip
+playhead 215
+frame
+wait 500
+screenshot shots/15-freeze-frame.png
+deselect
+
 # Export through the export dialog and check the frame count with ffprobe.
 export h264 out/m6.mp4 quality=draft
-probe out/m6.mp4 frames=440 vcodec=h264 acodec=aac size=1280x720 bt709
+probe out/m6.mp4 frames=470 vcodec=h264 acodec=aac size=1280x720 bt709
 
 # ---- DESIGN 5 checklist screenshots (M6 verify). The export above is final; these steps only add state to look at.
 # Effects tab drops (the same calls the timeline control makes on a drop): 1 s fades on clipB, and a wipe dropped
@@ -198,9 +214,10 @@ playhead 200
 key M edit
 screenshot shots/10-markers.png
 
-# Volume keyframes on clipB's audio (selected, so the dots and the volume line show).
+# Volume keyframes on clipB's audio (selected, so the dots and the volume line show). The freeze frame split that
+# audio at 200 and left a gap under the hold, so both keys land on the [90, 200) piece.
 volume-key A1 150 -6
-volume-key A1 200 -20
+volume-key A1 180 -20
 expect-section clip
 screenshot shots/11-keyframes.png
 

@@ -55,7 +55,8 @@ public static partial class TimelineEdits
 
     /// <summary>
     /// Clamps every property of a clip to its legal range (speed, opacity, transform, colour, gain, fades within the
-    /// duration, keyframes inside <c>[0, Duration)</c> and sorted). Returns the same instance when nothing changes.
+    /// duration, keyframes inside <c>[0, Duration)</c> and sorted, <see cref="MediaClip.Freeze"/> only on video clips).
+    /// Returns the same instance when nothing changes.
     /// </summary>
     /// <param name="clip">The clip.</param>
     /// <returns>The sanitized clip.</returns>
@@ -67,9 +68,12 @@ public static partial class TimelineEdits
                 var speed = Math.Clamp(m.SpeedPercent, MinSpeedPercent, MaxSpeedPercent);
                 var video = SanitizeVideo(m.Video, m.Duration);
                 var audio = SanitizeAudio(m.Audio, m.Duration);
-                return speed == m.SpeedPercent && ReferenceEquals(video, m.Video) && ReferenceEquals(audio, m.Audio)
+
+                // Freeze frames are video only: a frozen audio clip would break the independence of linked ranges.
+                var freeze = m.Freeze && m.Stream == StreamKind.Video;
+                return speed == m.SpeedPercent && ReferenceEquals(video, m.Video) && ReferenceEquals(audio, m.Audio) && freeze == m.Freeze
                     ? m
-                    : m with { SpeedPercent = speed, Video = video, Audio = audio };
+                    : m with { SpeedPercent = speed, Video = video, Audio = audio, Freeze = freeze };
             case TitleClip t:
                 var title = SanitizeTitle(t.Title);
                 var opacity = Clamp(t.Opacity, 0, 1, 1);
@@ -481,7 +485,14 @@ public static partial class TimelineEdits
             return _mediaById.GetValueOrDefault(m.MediaId);
         }
 
+        /// <summary>True when the clip shows a still image, so its source position is meaningless (forced to 0).</summary>
         public bool IsStill(Clip clip) => MediaOf(clip)?.Info.IsStill == true;
+
+        /// <summary>
+        /// True when the clip's source has no limits: a still or a frozen clip. Both refuse speed and slip and keep
+        /// their source position when their head is trimmed; only a still also has its source position forced to 0.
+        /// </summary>
+        public bool IsUnbounded(Clip clip) => IsStill(clip) || clip is MediaClip { Freeze: true };
 
         public long Head(Clip clip) => TimelineQuery.HeadHandle(clip, MediaOf(clip), Rate);
 
@@ -519,7 +530,7 @@ public static partial class TimelineEdits
             return mapped;
         }
 
-        /// <summary>Moves a clip's start to <paramref name="newStart"/> keeping its end; the source follows (stills excepted).</summary>
+        /// <summary>Moves a clip's start to <paramref name="newStart"/> keeping its end; the source follows (stills and frozen clips excepted).</summary>
         public Clip TrimHeadTo(Clip clip, long newStart)
         {
             if (newStart == clip.Start)
@@ -531,7 +542,7 @@ public static partial class TimelineEdits
             var duration = clip.End - newStart;
             if (clip is MediaClip m)
             {
-                var source = IsStill(m) ? m.SourceInFlicks : TimeMath.SourceFlicksAt(m, newStart, Rate);
+                var source = IsUnbounded(m) ? m.SourceInFlicks : TimeMath.SourceFlicksAt(m, newStart, Rate);
                 var audio = m.Audio.Keys.IsDefaultOrEmpty
                     ? m.Audio
                     : m.Audio with { Keys = [.. m.Audio.Keys.Select(k => k with { Frame = k.Frame - shift })] };
@@ -681,54 +692,80 @@ public static partial class TimelineEdits
             {
                 for (var i = track.Clips.Count - 1; i >= 0; i--)
                 {
-                    if (track.Clips[i] is not MediaClip m || (mediaIds is not null && !mediaIds.Contains(m.MediaId)))
+                    if (track.Clips[i] is MediaClip m && (mediaIds is null || mediaIds.Contains(m.MediaId)))
                     {
-                        continue;
-                    }
-
-                    var media = MediaOf(m);
-                    if (media is null
-                        || (m.Stream == StreamKind.Video && media.Info.Video is null)
-                        || (m.Stream == StreamKind.Audio && media.Info.Audio is null))
-                    {
-                        track.Clips.RemoveAt(i);
-                        Warn($"Removed a clip of {Name(m)}: the media no longer has that stream.");
-                        continue;
-                    }
-
-                    Clip clip = m;
-                    var head = Head(clip);
-                    if (head < 0)
-                    {
-                        if (-head >= clip.Duration)
-                        {
-                            track.Clips.RemoveAt(i);
-                            Warn($"Removed a clip of {Name(m)}: it lies outside the media.");
-                            continue;
-                        }
-
-                        clip = TrimHeadTo(clip, clip.Start - head);
-                    }
-
-                    var tail = Tail(clip);
-                    if (tail < 0)
-                    {
-                        if (clip.Duration + tail < 1)
-                        {
-                            track.Clips.RemoveAt(i);
-                            Warn($"Removed a clip of {Name(m)}: it lies outside the media.");
-                            continue;
-                        }
-
-                        clip = TrimTailTo(clip, clip.End + tail);
-                    }
-
-                    if (!ReferenceEquals(clip, m))
-                    {
-                        track.Clips[i] = clip;
-                        Warn($"Shortened a clip of {Name(m)} to fit its media.");
+                        ClampClipToSource(track, i);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Trims or removes the media clip at <paramref name="index"/> so it lies inside its source, with a warning
+        /// when anything changes. A frozen clip keeps its length; only its held frame moves back to the last frame of
+        /// the source (the start of the last sequence frame before the media end) when the media got shorter.
+        /// </summary>
+        public void ClampClipToSource(TrackWork track, int index)
+        {
+            if (track.Clips[index] is not MediaClip m)
+            {
+                return;
+            }
+
+            var media = MediaOf(m);
+            if (media is null
+                || (m.Stream == StreamKind.Video && media.Info.Video is null)
+                || (m.Stream == StreamKind.Audio && media.Info.Audio is null))
+            {
+                track.Clips.RemoveAt(index);
+                Warn($"Removed a clip of {Name(m)}: the media no longer has that stream.");
+                return;
+            }
+
+            if (m.Freeze)
+            {
+                var length = TimeMath.FlicksFromMicros(media.Info.DurationMicros);
+                if (!media.Info.IsStill && length > 0 && m.SourceInFlicks >= length)
+                {
+                    var perFrame = Rate.FlicksPerFrame;
+                    track.Clips[index] = m with { SourceInFlicks = Math.Max(0, (length - 1) / perFrame * perFrame) };
+                    Warn($"Moved a frozen clip of {Name(m)} to the last frame of its media.");
+                }
+
+                return;
+            }
+
+            Clip clip = m;
+            var head = Head(clip);
+            if (head < 0)
+            {
+                if (-head >= clip.Duration)
+                {
+                    track.Clips.RemoveAt(index);
+                    Warn($"Removed a clip of {Name(m)}: it lies outside the media.");
+                    return;
+                }
+
+                clip = TrimHeadTo(clip, clip.Start - head);
+            }
+
+            var tail = Tail(clip);
+            if (tail < 0)
+            {
+                if (clip.Duration + tail < 1)
+                {
+                    track.Clips.RemoveAt(index);
+                    Warn($"Removed a clip of {Name(m)}: it lies outside the media.");
+                    return;
+                }
+
+                clip = TrimTailTo(clip, clip.End + tail);
+            }
+
+            if (!ReferenceEquals(clip, m))
+            {
+                track.Clips[index] = clip;
+                Warn($"Shortened a clip of {Name(m)} to fit its media.");
             }
         }
 

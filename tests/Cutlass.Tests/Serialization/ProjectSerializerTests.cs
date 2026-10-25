@@ -44,7 +44,7 @@ public sealed class ProjectSerializerTests
         };
         var p = new ProjectBuilder()
             .With(V1, c1, c2, t1)
-            .With(V2, V("s1", 0, 125, media: Still))
+            .With(V2, V("s1", 0, 125, media: Still), V("f1", 125, 60, media: Short, sourceFrame: 20, freeze: true))
             .With(A1, a1, A("a2", 50, 40, media: Short, sourceFrame: 20, speed: 150))
             .With(A2, A("m1", 10, 200, media: Music))
             .Transition(V1, "x1", "c1", "c2", 10, TransitionKind.DipToWhite)
@@ -152,6 +152,32 @@ public sealed class ProjectSerializerTests
         Assert.Equal(-12.5, (double)audioClip["audio"]!["keys"]![1]!["db"]!);
         Assert.Equal(48000, (int)root["sequence"]!["sampleRate"]!);
         Assert.Equal("1/12800", (string)root["media"]![0]!["info"]!["video"]!["timeBase"]!);
+    }
+
+    [Fact]
+    public void FreezeIsWrittenOnlyWhenTrue()
+    {
+        var root = JsonNode.Parse(ProjectSerializer.Serialize(Rich()))!;
+        var v2 = root["sequence"]!["tracks"]![1]!["clips"]!.AsArray();
+        Assert.Null(v2[0]!["freeze"]);
+        Assert.True((bool)v2[1]!["freeze"]!);
+        Assert.Equal(["type", "id", "stream", "mediaId", "start", "duration", "enabled", "sourceInFlicks", "speedPercent", "freeze", "video"], v2[1]!.AsObject().Select(kv => kv.Key));
+        var q = ProjectSerializer.Deserialize(root.ToJsonString());
+        Assert.True(ModelAssert.Media(q, "f1").Freeze);
+        Assert.False(ModelAssert.Media(q, "s1").Freeze);
+    }
+
+    [Fact]
+    public void FreezeOnAnAudioClipIsIgnored()
+    {
+        // Freeze frames are video only (TECH_BRIEF 3.5): a hand-edited "freeze" on an audio clip loads unfrozen.
+        var root = JsonNode.Parse(ProjectSerializer.Serialize(Rich()))!;
+        var audio = root["sequence"]!["tracks"]!.AsArray().SelectMany(t => t!["clips"]!.AsArray())
+            .First(c => (string?)c!["stream"] == "audio")!.AsObject();
+        audio["freeze"] = true;
+        var q = ProjectSerializer.Deserialize(root.ToJsonString());
+        Assert.False(ModelAssert.Media(q, (string)audio["id"]!).Freeze);
+        Assert.True(ModelAssert.Media(q, "f1").Freeze);
     }
 
     [Fact]

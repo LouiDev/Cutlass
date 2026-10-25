@@ -527,6 +527,59 @@ public sealed class InspectorViewModelTests
     }
 
     [Fact]
+    public void FreezeToggleFreezesTheClipAndHidesTheSpeedRow()
+    {
+        var vm = Vm(Linked().With(V2, V("s1", 0, 50, media: Still)), out var timeline);
+        timeline.Select(["v2"], false);
+        var section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.True(section.FreezeRow.IsVisible);
+        Assert.False(section.FreezeRow.IsChecked);
+        Assert.True(section.SpeedRow.IsVisible);
+        Assert.True(section.SourceInRow.IsVisible);
+        Assert.Equal("inspector:v2:clip.freeze", section.FreezeRow.CoalesceKey);
+
+        // The toggle holds the clip's own source in point (frame 200), and the section is reused, so the Speed and
+        // Source rows hide in place.
+        section.FreezeRow.IsChecked = true;
+        Assert.True(Clip<MediaClip>(timeline, "v2").Freeze);
+        Assert.Equal(200 * F, Clip<MediaClip>(timeline, "v2").SourceInFlicks);
+        Assert.Equal("Freeze Frame", timeline.Session.UndoLabel);
+        Assert.Same(section, vm.Section);
+        Assert.False(section.SpeedRow.IsVisible);
+        Assert.False(section.SourceInRow.IsVisible);
+        Assert.False(section.SourceOutRow.IsVisible);
+
+        timeline.Session.Undo();
+        Assert.False(section.FreezeRow.IsChecked);
+        Assert.True(section.SpeedRow.IsVisible);
+        Assert.True(section.SourceInRow.IsVisible);
+        Assert.True(section.SourceOutRow.IsVisible);
+
+        // Mixed states show indeterminate; audio-only selections and stills have no freeze row.
+        timeline.Session.Execute(p => TimelineEdits.UpdateClips(p, ["v2"], c => ((MediaClip)c) with { Freeze = true }, "Freeze"));
+        timeline.Select(["v1", "v2"], false);
+        section = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Null(section.FreezeRow.IsChecked);
+        Assert.True(section.SpeedRow.IsVisible);
+        timeline.Select(["a1"], false);
+        Assert.False(Assert.IsType<ClipSectionViewModel>(vm.Section).FreezeRow.IsVisible);
+        timeline.Select(["s1"], false);
+        var still = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.False(still.FreezeRow.IsVisible);
+        Assert.False(still.SpeedRow.IsVisible);
+
+        // A mixed selection with a still freezes only the moving clip and keys the gesture on it alone.
+        timeline.Select(["v1", "s1"], false);
+        var mixed = Assert.IsType<ClipSectionViewModel>(vm.Section);
+        Assert.Equal("inspector:v1:clip.freeze", mixed.FreezeRow.CoalesceKey);
+        Assert.False(mixed.FreezeRow.IsChecked);
+        mixed.FreezeRow.IsChecked = true;
+        Assert.True(Clip<MediaClip>(timeline, "v1").Freeze);
+        Assert.False(Clip<MediaClip>(timeline, "s1").Freeze);
+        Assert.True(mixed.FreezeRow.IsChecked);
+    }
+
+    [Fact]
     public void StillsHaveNoSourceOrSpeedRows()
     {
         var vm = Vm(new ProjectBuilder().With(V1, V("s1", 0, 50, media: Still)), out var timeline);

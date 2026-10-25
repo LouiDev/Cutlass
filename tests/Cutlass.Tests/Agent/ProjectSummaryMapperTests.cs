@@ -27,7 +27,8 @@ public sealed class ProjectSummaryMapperTests
             .With(
                 V1,
                 V("c_01", 0, 150, sourceFrame: 50, link: "l_01"),
-                V("c_05", 150, 300, sourceFrame: 400, speed: 200) with { Video = VideoProps.Default with { Effects = VideoEffects.None with { FlipH = true, HueDegrees = 20, Blur = 4, KeyEnabled = true } } })
+                V("c_05", 150, 300, sourceFrame: 400, speed: 200) with { Video = VideoProps.Default with { Effects = VideoEffects.None with { FlipH = true, HueDegrees = 20, Blur = 4, KeyEnabled = true } } },
+                V("c_08", 450, 60, sourceFrame: 700, freeze: true))
             .With(A1, A("c_11", 0, 150, sourceFrame: 50, link: "l_01"))
             .With(A2, music)
             .With(V2, Title("c_02", 0, 120, "Meet Ana"))

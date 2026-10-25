@@ -499,12 +499,12 @@ public static class TimelineQuery
         return (head, tail);
     }
 
-    /// <summary>True when the clip's source has limits (a non-still media file with a known duration).</summary>
+    /// <summary>True when the clip's source has limits (a non-still, non-frozen media clip with a known duration).</summary>
     /// <param name="clip">The clip.</param>
     /// <param name="media">The clip's media, or null.</param>
-    /// <returns>False for titles, stills and media without a known duration.</returns>
+    /// <returns>False for titles, stills, frozen clips and media without a known duration.</returns>
     public static bool IsBounded(Clip clip, MediaAsset? media) =>
-        clip is MediaClip && media is not null && !media.Info.IsStill && media.Info.DurationMicros > 0;
+        clip is MediaClip { Freeze: false } && media is not null && !media.Info.IsStill && media.Info.DurationMicros > 0;
 
     /// <summary>
     /// The number of timeline frames the clip could extend before its <see cref="Clip.Start"/> while every frame still
@@ -607,14 +607,15 @@ public static class TimelineQuery
     /// <summary>The frames a linked clip leads the partner that plays the other stream of the same media.</summary>
     /// <remarks>
     /// Positive means the clip shows later source than its partner at the same timeline frame; moving the clip right by
-    /// this many frames puts it back in sync. Null when the clip is unlinked, has no such partner, or the speeds differ.
+    /// this many frames puts it back in sync. Null when the clip is unlinked, has no such partner, the speeds differ,
+    /// or either clip is frozen (a held frame has no sync to keep).
     /// </remarks>
     /// <param name="project">The project.</param>
     /// <param name="clipId">The clip id.</param>
     /// <returns>The offset in frames (0 when in sync), or null.</returns>
     public static long? SyncOffset(Project project, string clipId)
     {
-        if (FindClip(project, clipId)?.Clip is not MediaClip clip || clip.LinkId is null)
+        if (FindClip(project, clipId)?.Clip is not MediaClip clip || clip.LinkId is null || clip.Freeze)
         {
             return null;
         }
@@ -632,7 +633,7 @@ public static class TimelineQuery
             }
         }
 
-        if (partner is null || partner.SpeedPercent != clip.SpeedPercent)
+        if (partner is null || partner.Freeze || partner.SpeedPercent != clip.SpeedPercent)
         {
             return null;
         }

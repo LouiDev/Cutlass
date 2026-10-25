@@ -732,7 +732,7 @@ Example call:
 
 ## cutlass_set_clip_props
 
-Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.
+Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), freeze, gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.
 
 - Catalog name `edit.clip-props`, route `POST /v1/edit/clip-props`.
 - Needs the lock; changes the project (one undo step); returns JSON.
@@ -770,6 +770,7 @@ Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blu
 | `effects.keyColor` | string | no | #RRGGBB (#00FF00). |
 | `effects.keySimilarity` | number | no | 0.01 to 1 (0.1). |
 | `effects.keyBlend` | number | no | 0 to 1 (0). |
+| `freeze` | boolean | no | Video: hold the source in point for the whole clip (false). |
 | `gainDb` | number | no | Clip gain in dB (audio). |
 | `audioEffects` | object | no | Audio filters (fields optional). |
 | `audioEffects.highPassHz` | number | no | 0 or 20 to 2000 (0 = off). |
@@ -826,6 +827,35 @@ Example call:
       "<clipId>"
     ],
     "percent": 25
+  }
+}
+```
+
+## cutlass_freeze_frame
+
+Hold one frame of a clip for a duration.
+
+- Catalog name `edit.freeze`, route `POST /v1/edit/freeze`.
+- Needs the lock; changes the project (one undo step); returns JSON.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `clipId` | string | yes | The video clip. |
+| `frame` | integer, at least 0 | yes | Timeline frame to hold (inside the clip). |
+| `durationFrames` | integer, at least 1 | yes | Hold length in frames. |
+| `rippleFollowing` | boolean | no | Shift later clips (true). |
+| `ifRevision` | integer | no | Fail with conflict when the project revision is no longer this. |
+| `returnProject` | boolean | no | Also return the project summary. |
+
+Example call:
+
+```json
+{
+  "tool": "cutlass_freeze_frame",
+  "args": {
+    "clipId": "<clipId>",
+    "frame": 0,
+    "durationFrames": 1
   }
 }
 ```
@@ -1009,6 +1039,7 @@ Add a text title on a video track.
 | `at` | integer, at least 0 | yes | Timeline frame. |
 | `durationFrames` | integer, at least 1 | yes | Length in frames. |
 | `mode` | string: overwrite, insert | no | overwrite (default) or insert. |
+| `template` | string: Centered, LowerThird, TopCaption, Subtitle, Headline, Quote | no | Start from a template. |
 | `title` | object | yes | Text and style (only text is required). |
 | `title.text` | string | yes | The text (lines separated by \n). |
 | `title.font` | string | no | builtin:Inter-Bold, a system family or a font file. |

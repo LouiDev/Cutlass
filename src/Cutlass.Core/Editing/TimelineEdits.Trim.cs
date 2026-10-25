@@ -243,8 +243,8 @@ public static partial class TimelineEdits
     /// <summary>
     /// Slips a clip's source by <paramref name="delta"/> timeline frames (positive shows later source); the clip never
     /// moves or resizes. Limited so the clip's extent, including transition handles, stays inside the source. With
-    /// <paramref name="includeLinked"/>, every slippable link partner slips by the same amount. Titles and stills have
-    /// no source to slip.
+    /// <paramref name="includeLinked"/>, every slippable link partner slips by the same amount. Titles, stills and
+    /// frozen clips have no source to slip.
     /// </summary>
     /// <param name="project">The project.</param>
     /// <param name="clipId">The clip.</param>
@@ -271,6 +271,11 @@ public static partial class TimelineEdits
             return EditResult.Unchanged(project, label, "Titles and stills have no source to slip.");
         }
 
+        if (primary is MediaClip { Freeze: true })
+        {
+            return EditResult.Unchanged(project, label, "Frozen clips have no slip.");
+        }
+
         var targets = new List<(TrackWork Track, MediaClip Clip)> { (found.Track, (MediaClip)primary) };
         if (includeLinked && primary.LinkId is not null)
         {
@@ -283,7 +288,7 @@ public static partial class TimelineEdits
 
                 foreach (var c in track.Clips)
                 {
-                    if (c is MediaClip m && m.Id != primary.Id && m.LinkId == primary.LinkId && !w.IsStill(m))
+                    if (c is MediaClip m && m.Id != primary.Id && m.LinkId == primary.LinkId && !w.IsUnbounded(m))
                     {
                         targets.Add((track, m));
                     }

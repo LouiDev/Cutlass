@@ -63,6 +63,16 @@ public sealed class InspectorDialogTests
     }
 
     [Fact]
+    public void SpeedDialogSkipsFrozenClips()
+    {
+        // The frozen clip comes first on the timeline, so it would otherwise be the primary clip of the preview.
+        var project = new ProjectBuilder().With(V1, V("f1", 0, 50, freeze: true), V("v1", 50, 50, speed: 200)).Build();
+        Assert.False(new SpeedDialogViewModel(project, ["f1"]).CanApply);
+        var dialog = new SpeedDialogViewModel(project, ["f1", "v1"]);
+        Assert.Equal((1, 200.0), (dialog.ClipCount, dialog.Percent));
+    }
+
+    [Fact]
     public void SequenceDialogSyncsPresetsAndWarns()
     {
         var dialog = new SequenceSettingsDialogViewModel(new SequenceSettings(1920, 1080, FrameRate.Fps25), hasClips: true);

@@ -53,6 +53,16 @@ public sealed class SmokeScriptTests
     }
 
     [Fact]
+    public void TheFreezeFrameCommandIsKnown()
+    {
+        // Effects batch 4: m6.smoke freezes clipB with it, so the parser must accept it and its usage names the options used.
+        Assert.True(SmokeScript.Commands.TryGetValue("freeze-frame", out var usage));
+        Assert.StartsWith("freeze-frame <track> <pos> [duration]", usage, StringComparison.Ordinal);
+        var step = Assert.Single(SmokeScript.Parse("freeze-frame V1 200 30"));
+        Assert.Equal(["V1", "200", "30"], step.Positional());
+    }
+
+    [Fact]
     public void EveryCommandHasAUsageLine()
     {
         foreach (var (command, usage) in SmokeScript.Commands)

@@ -35,8 +35,9 @@ public sealed class EffectsViewModelTests
     {
         var vm = Vm(Cuts(), out _);
         Assert.Equal(Enum.GetValues<TransitionKind>().Length, vm.Transitions.Count);
-        Assert.Equal(["Centered", "Lower Third", "Top Caption"], vm.Titles.Select(t => t.Name));
-        Assert.Equal(11, vm.Adjustments.Count);
+        Assert.Equal(TitleTemplates.Names.Select(TitleTemplates.DisplayName), vm.Titles.Select(t => t.Name));
+        Assert.Equal(["Centered", "Lower Third", "Top Caption", "Subtitle", "Headline", "Quote"], vm.Titles.Select(t => t.Name));
+        Assert.Equal(12, vm.Adjustments.Count);
         Assert.All(vm.Transitions, t => Assert.Equal("1 s", t.Detail));
         Assert.True(vm.Transitions.Single(t => t.TransitionKind == TransitionKind.Crossfade).IsDefault);
         Assert.Equal("cutlass/effect-id", EffectItem.DragFormat);
@@ -167,6 +168,65 @@ public sealed class EffectsViewModelTests
         timeline.Select(["v1", "v2"], false);
         vm.AddDefaultTransitionCommand.Execute(null);
         Assert.Equal(TransitionKind.CircleOpen, Assert.Single(TransitionsOn(timeline, V1)).Kind);
+    }
+
+    [Fact]
+    public void TitleTemplatesComeFromCoreAndScaleWithTheSequence()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        foreach (var name in TitleTemplates.Names)
+        {
+            var item = vm.Find("title:" + name);
+            Assert.NotNull(item);
+            Assert.True(TitleTemplates.TryGet(name, out var spec));
+            Assert.Equal(spec, item.Title);
+            Assert.Contains(TitleTemplates.Description(name), item.Description, StringComparison.Ordinal);
+        }
+
+        // A 1080-line sequence places the template unscaled; a 540-line one halves the sizes (TitleTemplates.Scale).
+        timeline.Playhead = 10;
+        vm.ApplyAt("title:Quote", V2, 10);
+        var quote = Assert.IsType<TitleClip>(Assert.Single(TimelineQuery.FindTrack(timeline.Session.Current, V2)!.Clips));
+        Assert.True(TitleTemplates.TryGet("Quote", out var expected));
+        Assert.Equal(expected, quote.Title);
+        timeline.Session.Execute(p => TimelineEdits.SetSequenceSettings(p, new SequenceSettings(960, 540, FrameRate.Fps25)));
+        vm.ApplyAt("title:Headline", V2, 200);
+        var headline = Assert.IsType<TitleClip>(TimelineQuery.FindTrack(timeline.Session.Current, V2)!.Clips[^1]);
+        Assert.Equal((60.0, 2.0, TitleAnchor.Top), (headline.Title.Size, headline.Title.OutlineWidth, headline.Title.Anchor));
+    }
+
+    [Fact]
+    public void FreezeFramePresetHoldsTheClipAtThePlayheadAndAsADrop()
+    {
+        var vm = Vm(Cuts(), out var timeline);
+        var hold = timeline.StillDurationFrames;
+        Assert.Null(vm.Apply(vm.Find("adjust:FreezeFrame")!));
+        Assert.Equal("Select clips to apply the preset to.", vm.StatusText);
+        timeline.Select(["v2"], false);
+        timeline.Playhead = 20;
+        Assert.Null(vm.Apply(vm.Find("adjust:FreezeFrame")!));
+        Assert.Equal("Select a video clip under the playhead to freeze.", vm.StatusText);
+        Assert.Equal(0, timeline.Session.UndoCount);
+
+        timeline.Select(["v1"], false);
+        var result = vm.Apply(vm.Find("adjust:FreezeFrame")!);
+        Assert.NotNull(result);
+        var frozen = Clip<MediaClip>(timeline, result.Select[0]);
+        Assert.Equal((20L, hold, true, 120 * F), (frozen.Start, frozen.Duration, frozen.Freeze, frozen.SourceInFlicks));
+        Assert.Equal([frozen.Id], timeline.SelectedClipIds);
+        Assert.Equal("Freeze Frame", timeline.Session.UndoLabel);
+        Assert.StartsWith("Freeze frame at ", vm.StatusText, StringComparison.Ordinal);
+        Assert.Equal(50 + hold, Clip<MediaClip>(timeline, "v2").Start);
+        Assert.Equal(50 + hold, Clip<MediaClip>(timeline, "a2").Start);
+
+        // A drop freezes the clip under the pointer at the drop frame: the right half of v1 starts at 20 + hold with source 120.
+        var drop = vm.ApplyAt("adjust:FreezeFrame", V1, 20 + hold + 10);
+        Assert.NotNull(drop);
+        var dropped = Clip<MediaClip>(timeline, drop.Select[0]);
+        Assert.Equal((20 + hold + 10, hold, true, 130 * F), (dropped.Start, dropped.Duration, dropped.Freeze, dropped.SourceInFlicks));
+        Assert.Equal(new EffectDropPreview(V1, dropped.Start, hold, EffectCategory.Adjustment), vm.PreviewAt("adjust:FreezeFrame", V1, dropped.Start + 1));
+        Assert.Null(vm.ApplyAt("adjust:FreezeFrame", A1, 5));
+        Assert.Equal(2, timeline.Session.UndoCount);
     }
 
     [Fact]

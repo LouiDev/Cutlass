@@ -1,6 +1,7 @@
 using System.Globalization;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
+using Cutlass.Core.Time;
 
 namespace Cutlass.App.Services;
 
@@ -70,6 +71,9 @@ public sealed partial class SmokeRunner
                 return true;
             case "speed":
                 Speed(step);
+                return true;
+            case "freeze-frame":
+                FreezeFrame(step);
                 return true;
             case "select-gap":
                 SelectGap(step);
@@ -244,6 +248,44 @@ public sealed partial class SmokeRunner
         }
 
         return best;
+    }
+
+    // freeze-frame <track> <pos> [duration]: a freeze frame of the video clip under the frame (effects batch 4). Without
+    // a duration the Freeze Frame command runs through the registry (Shift+F, the default still duration); with one the
+    // edit runs with that many frames. Either way the following clips ripple and the frozen clip ends up selected.
+    private void FreezeFrame(SmokeStep step)
+    {
+        var timeline = _vm.Timeline;
+        var track = Track(Arg(step, 0));
+        var frame = Position(step, 1);
+        var clip = TimelineQuery.ClipAt(track, frame) as MediaClip
+            ?? throw Fail(string.Create(CultureInfo.InvariantCulture, $"no media clip on {track.Name} at {frame}"));
+        var positional = step.Positional();
+        var duration = positional.Count > 2 ? long.Parse(positional[2], NumberStyles.None, CultureInfo.InvariantCulture) : (long?)null;
+        timeline.Select([clip.Id], false);
+        timeline.Playhead = frame;
+        var what = string.Create(CultureInfo.InvariantCulture, $"freeze frame of {clip.Id} at {frame}{(duration is { } d ? $" for {d} frames" : " (Shift+F, default still duration)")}");
+        Edit(
+            () =>
+            {
+                if (duration is { } frames)
+                {
+                    // The view model path of the command (target lookup, ripple, selection) with an explicit length.
+                    var target = timeline.FindFreezeTarget(frame) ?? throw Fail(string.Create(CultureInfo.InvariantCulture, $"no clip to freeze at {frame}"));
+                    timeline.FreezeFrameAt(target, frame, frames);
+                }
+                else
+                {
+                    Run(CommandIds.FreezeFrame);
+                }
+            },
+            what);
+        var after = TimelineQuery.FindTrack(_vm.Session.Current, track.Id) ?? throw Fail("the track vanished");
+        var frozen = TimelineQuery.ClipAt(after, frame) as MediaClip;
+        Expect(frozen is { Freeze: true }, string.Create(CultureInfo.InvariantCulture, $"no frozen clip on {track.Name} at {frame} after the freeze"));
+        Expect(frozen!.Start == frame && frozen.SourceInFlicks == TimeMath.SourceFlicksAt(clip, frame, _vm.Session.Current.Sequence.Settings.Rate), "the frozen clip does not hold the frame under the playhead");
+        timeline.Select([frozen.Id], false);
+        _log.Write(string.Create(CultureInfo.InvariantCulture, $"frozen clip {frozen.Id} holds source {frozen.SourceInFlicks} flicks for {frozen.Duration} frames at {frame}"));
     }
 
     private void Speed(SmokeStep step)

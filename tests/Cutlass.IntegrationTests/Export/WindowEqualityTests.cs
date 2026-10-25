@@ -72,11 +72,13 @@ public sealed class WindowEqualityTests
                 [
                     Title("c_t", 30, 50, TitleSpec.Default with { Text = "Window", Size = 40, Box = true }, 10, 10),
                     V("c_p", 80, 40, "m_intra", Micros(1_234_567), video: pip),
+                    // Effects batch 4: a freeze frame, whose chain seeks the same frame whatever the window start.
+                    V("c_f", 120, 10, "m_lgop", Micros(2_000_000)) with { Freeze = true },
                 ]));
 
         var full = await kit.RenderBgraAsync(project, catalog, Preview(0, Length, W, H));
 
-        long[] probes = [0, 35, 45, 52, 59, 60, 61, 65, 69, 70, 79, 80, 85, 100, 119, 129];
+        long[] probes = [0, 35, 45, 52, 59, 60, 61, 65, 69, 70, 79, 80, 85, 100, 119, 120, 125, 129];
         foreach (var frame in probes)
         {
             var single = await kit.RenderBgraAsync(project, catalog, Preview(frame, frame + 1, W, H, RenderPurpose.PreviewFrame));

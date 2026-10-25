@@ -76,6 +76,96 @@ public sealed class PropsTests
     }
 
     [Fact]
+    public void FrozenClipsRefuseSpeedAndSlipAndKeepTheirSourceWhenTrimmed()
+    {
+        // A freeze frame of source frame 100 (effects batch 4): no speed, no slip, and trimming the head keeps the frame.
+        var p = new ProjectBuilder().With(V1, V("f1", 10, 50, sourceFrame: 100, freeze: true), V("c2", 60, 20, sourceFrame: 300)).Build();
+        var speed = TimelineEdits.SetSpeed(p, ["f1"], 200, true);
+        ModelAssert.Unchanged(p, speed);
+        Assert.Contains("Frozen clips have no speed.", speed.Warnings);
+        var slip = TimelineEdits.Slip(p, "f1", 5, includeLinked: false);
+        ModelAssert.Unchanged(p, slip);
+        Assert.Contains("Frozen clips have no slip.", slip.Warnings);
+
+        var q = ModelAssert.Changed(p, TimelineEdits.Trim(p, "f1", ClipEdge.Start, 20, ripple: false, includeLinked: false));
+        var f1 = ModelAssert.Media(q, "f1");
+        Assert.Equal((30L, 30L, 100 * F, true), (f1.Start, f1.Duration, f1.SourceInFlicks, f1.Freeze));
+        Assert.Equal(100 * F, TimeMath.SourceFlicksAt(f1, 55, Rate));
+
+        // The frozen frame is kept by moves and by a sequence rate change, and UpdateClips leaves the flag alone.
+        var moved = ModelAssert.Media(ModelAssert.Changed(p, TimelineEdits.Move(_ids, p, ["f1"], 100, 0, EditMode.Overwrite)), "f1");
+        Assert.Equal((100 * F, true), (moved.SourceInFlicks, moved.Freeze));
+        var rated = ModelAssert.Media(ModelAssert.Changed(p, TimelineEdits.SetSequenceSettings(p, new SequenceSettings(1920, 1080, FrameRate.Fps30))), "f1");
+        Assert.Equal((100 * F, true), (rated.SourceInFlicks, rated.Freeze));
+        var toggled = ModelAssert.Media(ModelAssert.Changed(p, TimelineEdits.UpdateClips(p, ["c2"], c => ((MediaClip)c) with { Freeze = true }, "Freeze")), "c2");
+        Assert.True(toggled.Freeze);
+        Assert.Equal(TimelineQuery.Unbounded, TimelineQuery.TailHandle(q, f1));
+    }
+
+    [Fact]
+    public void UnfreezingAHoldLongerThanItsSourceTrimsOrRemovesIt()
+    {
+        // short.mov has 100 frames: a 50-frame hold of source frame 95 keeps 5 frames once it plays again.
+        var p = new ProjectBuilder().With(V1, V("c1", 0, 10, media: Short, sourceFrame: 90)).Build();
+        var frozen = TimelineEdits.FreezeFrame(_ids, p, "c1", 5, 50, ripple: true);
+        var q = ModelAssert.Changed(p, frozen);
+        var holdId = frozen.Select[0];
+        var r = TimelineEdits.UpdateClips(q, [holdId], c => ((MediaClip)c) with { Freeze = false }, "Freeze");
+        var s = ModelAssert.Changed(q, r);
+        var hold = ModelAssert.Media(s, holdId);
+        Assert.Equal((5L, 5L, 95 * F, false), (hold.Start, hold.Duration, hold.SourceInFlicks, hold.Freeze));
+        Assert.Contains("Shortened a clip of short.mov to fit its media.", r.Warnings);
+
+        // A hold whose frame lies past the source end (after a relink, say) has nothing left to play.
+        var past = new ProjectBuilder().With(V1, V("f1", 0, 20, media: Short, sourceFrame: 120, freeze: true), V("c2", 20, 10)).Build();
+        var gone = TimelineEdits.UpdateClips(past, ["f1"], c => ((MediaClip)c) with { Freeze = false }, "Freeze");
+        Assert.Equal(["c2"], ModelAssert.Track(ModelAssert.Changed(past, gone), V1).Clips.Select(c => c.Id));
+        Assert.Contains("Removed a clip of short.mov: it lies outside the media.", gone.Warnings);
+    }
+
+    [Fact]
+    public void FreezeIsVideoOnly()
+    {
+        var p = new ProjectBuilder().With(V1, V("c1", 0, 50)).With(A1, A("a1", 0, 50)).Build();
+        Assert.False(((MediaClip)TimelineEdits.SanitizeClip(A("a2", 0, 10) with { Freeze = true })).Freeze);
+        var r = TimelineEdits.UpdateClips(p, ["c1", "a1"], c => ((MediaClip)c) with { Freeze = true }, "Freeze");
+        Assert.True(ModelAssert.Media(r.Project, "c1").Freeze);
+        Assert.False(ModelAssert.Media(r.Project, "a1").Freeze);
+        ModelAssert.Valid(r.Project);
+    }
+
+    [Fact]
+    public void SlippingWithLinkedClipsLeavesAFrozenPartnerAlone()
+    {
+        var p = new ProjectBuilder()
+            .With(V1, V("f1", 0, 50, sourceFrame: 100, link: "l1", freeze: true))
+            .With(A1, A("a1", 0, 50, sourceFrame: 100, link: "l1"))
+            .Build();
+        var q = ModelAssert.Changed(p, TimelineEdits.Slip(p, "a1", 5, includeLinked: true));
+        Assert.Equal(105 * F, ModelAssert.Media(q, "a1").SourceInFlicks);
+        Assert.Equal((100 * F, true), (ModelAssert.Media(q, "f1").SourceInFlicks, ModelAssert.Media(q, "f1").Freeze));
+    }
+
+    [Fact]
+    public void ReplacingMediaMovesAFrozenFramePastTheNewEndToTheLastFrame()
+    {
+        var p = new ProjectBuilder().With(V1, V("f1", 0, 80, media: Short, sourceFrame: 90, freeze: true), V("f2", 80, 10, media: Short, sourceFrame: 20, freeze: true)).Build();
+
+        // The re-probed file is 2 s (50 frames): the hold of frame 90 moves to frame 49 and keeps its length.
+        var shorter = Asset(Short, "D:/Footage/short.mov", 2_000_000, video: true, audio: true);
+        var r = TimelineEdits.ImportMedia(p, [shorter]);
+        var q = ModelAssert.Changed(p, r);
+        var f1 = ModelAssert.Media(q, "f1");
+        Assert.Equal((0L, 80L, 49 * F, true), (f1.Start, f1.Duration, f1.SourceInFlicks, f1.Freeze));
+        Assert.Equal(20 * F, ModelAssert.Media(q, "f2").SourceInFlicks);
+        Assert.Contains("Moved a frozen clip of short.mov to the last frame of its media.", r.Warnings);
+
+        // A file without video takes its frozen clips with it.
+        var audioOnly = Asset(Short, "D:/Footage/short.mov", 2_000_000, video: false, audio: true);
+        Assert.Empty(ModelAssert.Track(ModelAssert.Changed(p, TimelineEdits.ImportMedia(p, [audioOnly])), V1).Clips);
+    }
+
+    [Fact]
     public void UpdateClipsAppliesToAllAndSanitizes()
     {
         var p = new ProjectBuilder().With(V1, V("c1", 0, 50), V("c2", 50, 20, sourceFrame: 300)).Build();

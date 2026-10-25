@@ -75,6 +75,75 @@ public sealed partial class TimelineViewModel
         }
     }
 
+    /// <summary>
+    /// The clip a freeze frame at <paramref name="frame"/> would hold (effects batch 4): the selected video media clip
+    /// under the frame, or, with nothing selected, the video media clip under the frame on the first targeted unlocked
+    /// video track that has one. Stills and frozen clips are skipped; the edit refuses them anyway.
+    /// </summary>
+    /// <param name="frame">The timeline frame.</param>
+    /// <returns>The clip id, or null.</returns>
+    public string? FindFreezeTarget(long frame)
+    {
+        var project = Session.Current;
+        bool Holds(Clip c) => c is MediaClip { Stream: StreamKind.Video, Freeze: false } m && m.Start <= frame && frame < m.End
+            && TimelineQuery.FindMedia(project, m.MediaId) is not { Info.IsStill: true };
+        if (_selected.Count > 0)
+        {
+            return _selected.Select(id => TimelineQuery.FindClip(project, id)?.Clip).FirstOrDefault(c => c is not null && Holds(c))?.Id;
+        }
+
+        foreach (var track in TimelineQuery.TracksOfKind(project, TrackKind.Video).Where(t => t.Targeted && !t.Locked))
+        {
+            if (TimelineQuery.ClipAt(track, frame) is { } clip && Holds(clip))
+            {
+                return clip.Id;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Holds the frame of <paramref name="clipId"/> at <paramref name="frame"/> for <paramref name="durationFrames"/>
+    /// (the default still duration when null), rippling the following clips (the Freeze Frame command, the Effects tab
+    /// preset and the smoke step), and selects the frozen clip.
+    /// </summary>
+    /// <param name="clipId">The video clip.</param>
+    /// <param name="frame">The frame to hold.</param>
+    /// <param name="durationFrames">The hold length in frames, or null for the default still duration.</param>
+    /// <returns>The result.</returns>
+    public EditResult FreezeFrameAt(string clipId, long frame, long? durationFrames = null)
+    {
+        ArgumentNullException.ThrowIfNull(clipId);
+        var duration = durationFrames ?? StillDurationFrames;
+        var result = Run(p => TimelineEdits.FreezeFrame(Ids, p, clipId, frame, duration, ripple: true));
+        if (!result.Select.IsDefaultOrEmpty)
+        {
+            Select(result.Select, false);
+        }
+
+        return result;
+    }
+
+    /// <summary>Shift+F: a freeze frame of the clip under the playhead (see <see cref="FindFreezeTarget"/>).</summary>
+    [RelayCommand]
+    private void FreezeFrame()
+    {
+        var frame = Playhead;
+        if (FindFreezeTarget(frame) is { } clipId)
+        {
+            FreezeFrameAt(clipId, frame);
+        }
+        else
+        {
+            // The same feedback as the Effects tab preset, through the warning toast of refused edits.
+            ReportWarnings(EditResult.Unchanged(Session.Current, "Freeze Frame", FreezeTargetMissing));
+        }
+    }
+
+    /// <summary>The feedback when a freeze frame finds no video clip to hold (the command and the Effects preset).</summary>
+    public const string FreezeTargetMissing = "Select a video clip under the playhead to freeze.";
+
     /// <summary>Q: ripple trims the start of the clips under the playhead on the targeted tracks to the playhead.</summary>
     [RelayCommand]
     private void TrimStartToPlayhead() => RippleTrimToPlayhead(ClipEdge.Start);

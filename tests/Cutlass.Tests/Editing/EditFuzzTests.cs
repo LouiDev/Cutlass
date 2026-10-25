@@ -144,7 +144,13 @@ public sealed class EditFuzzTests
             }
 
             case 2:
-                return TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), Title("tt", 0, rng.Next(1, 80)))], Frame(), EditMode.Overwrite);
+                // Titles and, since effects batch 4, frozen clips (unbounded like stills, but with a source position) and freeze frames.
+                return rng.Next(3) switch
+                {
+                    0 => TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), V("ff", 0, rng.Next(1, 80), MediaIds[rng.Next(MediaIds.Length)], rng.NextInt64(0, 3000), freeze: true))], Frame(), rng.Next(2) == 0 ? EditMode.Insert : EditMode.Overwrite),
+                    1 when clip is not null => TimelineEdits.FreezeFrame(ids, p, clip.Id, clip.Start + rng.NextInt64(-2, clip.Duration + 2), rng.Next(-5, 120), rng.Next(2) == 0),
+                    _ => TimelineEdits.Place(ids, p, [new ClipPlacement(TrackId(), Title("tt", 0, rng.Next(1, 80)))], Frame(), EditMode.Overwrite),
+                };
             case 3:
                 return TimelineEdits.Move(ids, p, TimelineQuery.WithLinkedPartners(p, someClips), Delta(60), rng.Next(-1, 2), rng.Next(4) == 0 ? EditMode.Insert : EditMode.Overwrite);
             case 4:

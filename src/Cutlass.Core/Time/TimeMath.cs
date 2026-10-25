@@ -42,13 +42,14 @@ public static class TimeMath
     /// <summary>
     /// The source position (flicks from <c>format.start_time</c>) shown by <paramref name="c"/> at timeline frame
     /// <paramref name="frame"/>: <c>SourceInFlicks + FloorDiv((frame - Start) * FlicksPerFrame * SpeedPercent, 100)</c>.
+    /// A frozen clip (<see cref="MediaClip.Freeze"/>) shows <c>SourceInFlicks</c> at every frame.
     /// </summary>
     /// <param name="c">The media clip.</param>
     /// <param name="frame">The absolute timeline frame.</param>
     /// <param name="r">The sequence rate.</param>
     /// <returns>The source position in flicks.</returns>
     public static long SourceFlicksAt(MediaClip c, long frame, FrameRate r) =>
-        c.SourceInFlicks + (long)FloorDiv((Int128)(frame - c.Start) * r.FlicksPerFrame * c.SpeedPercent, 100);
+        c.Freeze ? c.SourceInFlicks : c.SourceInFlicks + (long)FloorDiv((Int128)(frame - c.Start) * r.FlicksPerFrame * c.SpeedPercent, 100);
 
     /// <summary>Converts exact seconds to microseconds, flooring.</summary>
     /// <param name="seconds">The exact number of seconds.</param>

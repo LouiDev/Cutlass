@@ -25,4 +25,13 @@ public sealed record MediaClip(
     long SourceInFlicks,
     int SpeedPercent,
     VideoProps Video,
-    AudioProps Audio) : Clip(Id, Start, Duration, Enabled, LinkId);
+    AudioProps Audio) : Clip(Id, Start, Duration, Enabled, LinkId)
+{
+    /// <summary>
+    /// True shows the single source frame at <see cref="SourceInFlicks"/> for the whole duration (a freeze frame,
+    /// effects batch 4). Frozen clips are unbounded, keep their source position when trimmed, refuse speed and slip,
+    /// and never ripple their source. An init-only property rather than a positional parameter: false is the right
+    /// default at every construction site.
+    /// </summary>
+    public bool Freeze { get; init; }
+}

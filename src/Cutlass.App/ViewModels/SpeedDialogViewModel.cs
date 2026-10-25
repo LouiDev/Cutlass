@@ -21,7 +21,7 @@ public sealed partial class SpeedDialogViewModel : ObservableObject
 
     /// <summary>Creates the dialog model.</summary>
     /// <param name="project">The project.</param>
-    /// <param name="clipIds">The selected clips (titles and stills are skipped by the edit).</param>
+    /// <param name="clipIds">The selected clips (titles, stills and frozen clips are skipped by the edit).</param>
     public SpeedDialogViewModel(Project project, IReadOnlyCollection<string> clipIds)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -29,7 +29,7 @@ public sealed partial class SpeedDialogViewModel : ObservableObject
         _project = project;
         ClipIds = [.. clipIds];
         var clips = ClipIds.Select(id => TimelineQuery.FindClip(project, id)?.Clip).OfType<MediaClip>()
-            .Where(m => TimelineQuery.FindMedia(project, m.MediaId) is { Info.IsStill: false })
+            .Where(m => !m.Freeze && TimelineQuery.FindMedia(project, m.MediaId) is { Info.IsStill: false })
             .OrderBy(m => m.Start)
             .ToList();
         _primary = clips.FirstOrDefault();

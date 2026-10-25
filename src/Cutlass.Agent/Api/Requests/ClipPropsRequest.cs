@@ -23,6 +23,9 @@ public sealed class ClipPropsRequest : MutationRequest
     /// <summary>Video effect fields (video).</summary>
     public VideoEffectsDto? Effects { get; set; }
 
+    /// <summary>Freeze frame (video): true holds the clip's source in point for its whole duration.</summary>
+    public bool? Freeze { get; set; }
+
     /// <summary>Gain in dB (audio).</summary>
     public double? GainDb { get; set; }
 

@@ -228,6 +228,7 @@ public static class ProjectSummaryMapper
                 dto.SourceInSeconds = Seconds(m.SourceInFlicks);
                 dto.SourceOutSeconds = Seconds(outFlicks);
                 dto.SpeedPercent = m.SpeedPercent;
+                dto.Freeze = m.Freeze ? true : null;
                 if (m.Stream == StreamKind.Video)
                 {
                     var v = m.Video;

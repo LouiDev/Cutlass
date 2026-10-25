@@ -74,6 +74,7 @@ namespace Cutlass.Agent.Api;
 [JsonSerializable(typeof(CloseGapRequest))]
 [JsonSerializable(typeof(ClipPropsRequest))]
 [JsonSerializable(typeof(SpeedRequest))]
+[JsonSerializable(typeof(FreezeRequest))]
 [JsonSerializable(typeof(ClipIdsRequest))]
 [JsonSerializable(typeof(VolumeKeysRequest))]
 [JsonSerializable(typeof(TransitionAddRequest))]

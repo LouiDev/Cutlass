@@ -56,6 +56,7 @@ public static class DefaultKeymap
         new("Ctrl+Shift+D", CommandIds.AddAudioCrossfade),
         new("Ctrl+T", CommandIds.NewTitle),
         new("Ctrl+R", CommandIds.Speed),
+        new("Shift+F", CommandIds.FreezeFrame),
         new("Ctrl+L", CommandIds.LinkUnlink),
         new("Shift+E", CommandIds.ToggleEnabled),
         new("Ctrl+C", CommandIds.Copy),

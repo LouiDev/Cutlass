@@ -6,7 +6,7 @@
     "summary": "Drive the Cutlass video editor from any agent or script over loopback HTTP.",
     "description": "Every route needs the bearer token from the token file that endpoint.json names. Changes need the edit lock: call POST /v1/lock/acquire, then send its lockId as X-Cutlass-Lock. Replies are the envelope {revision, warnings, result} or {revision, error}. POST /v1/call runs any tool by name and is the simplest entry point for a harness. Timeline positions are integer frames; source times are flicks (705600000 per second).",
     "x-cutlass-api-version": 1,
-    "x-cutlass-api-revision": 5
+    "x-cutlass-api-revision": 6
   },
   "servers": [
     {
@@ -1989,7 +1989,7 @@
       "post": {
         "operationId": "cutlass_set_clip_props",
         "summary": "cutlass_set_clip_props",
-        "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
+        "description": "Opacity, transform, colour, video effects (flip, rotation, hue, temperature, blur, sharpen, vignette, grayscale, chroma key), freeze, gain, audio effects (filters, bass, treble, compressor, gate, pan, mono), fades, enable.",
         "tags": [
           "edit"
         ],
@@ -2082,6 +2082,57 @@
         },
         "x-cutlass-tool": "edit.speed",
         "x-cutlass-mcp-name": "cutlass_set_speed",
+        "x-cutlass-needs-lock": true,
+        "x-cutlass-mutating": true,
+        "x-cutlass-heavy": false
+      }
+    },
+    "/v1/edit/freeze": {
+      "post": {
+        "operationId": "cutlass_freeze_frame",
+        "summary": "cutlass_freeze_frame",
+        "description": "Hold one frame of a clip for a duration.",
+        "tags": [
+          "edit"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LockHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AgentHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditFreezeArgs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mutation envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationEnvelope"
+                }
+              }
+            }
+          },
+          "423": {
+            "$ref": "#/components/responses/LockError"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-cutlass-tool": "edit.freeze",
+        "x-cutlass-mcp-name": "cutlass_freeze_frame",
         "x-cutlass-needs-lock": true,
         "x-cutlass-mutating": true,
         "x-cutlass-heavy": false
@@ -4362,6 +4413,10 @@
               }
             }
           },
+          "freeze": {
+            "type": "boolean",
+            "description": "Video: hold the source in point for the whole clip (false)."
+          },
           "gainDb": {
             "type": "number",
             "description": "Clip gain in dB (audio)."
@@ -4472,6 +4527,42 @@
         "required": [
           "clipIds",
           "percent"
+        ]
+      },
+      "EditFreezeArgs": {
+        "type": "object",
+        "properties": {
+          "clipId": {
+            "type": "string",
+            "description": "The video clip."
+          },
+          "frame": {
+            "type": "integer",
+            "description": "Timeline frame to hold (inside the clip).",
+            "minimum": 0
+          },
+          "durationFrames": {
+            "type": "integer",
+            "description": "Hold length in frames.",
+            "minimum": 1
+          },
+          "rippleFollowing": {
+            "type": "boolean",
+            "description": "Shift later clips (true)."
+          },
+          "ifRevision": {
+            "type": "integer",
+            "description": "Fail with conflict when the project revision is no longer this."
+          },
+          "returnProject": {
+            "type": "boolean",
+            "description": "Also return the project summary."
+          }
+        },
+        "required": [
+          "clipId",
+          "frame",
+          "durationFrames"
         ]
       },
       "EditLinkArgs": {
@@ -4766,6 +4857,18 @@
             "enum": [
               "overwrite",
               "insert"
+            ]
+          },
+          "template": {
+            "type": "string",
+            "description": "Start from a template.",
+            "enum": [
+              "Centered",
+              "LowerThird",
+              "TopCaption",
+              "Subtitle",
+              "Headline",
+              "Quote"
             ]
           },
           "title": {

@@ -42,7 +42,9 @@ Principles:
 - **Effects.**
   - `xfade` transitions (41 video kinds, every one an ffmpeg 6.0 xfade transition): Crossfade, Dip to Black, Dip to White, Wipe Left, Wipe Right, Wipe Up, Wipe Down, Wipe Top Left, Wipe Top Right, Wipe Bottom Left, Wipe Bottom Right, Slide Left, Slide Right, Slide Up, Slide Down, Smooth Left, Smooth Right, Smooth Up, Smooth Down, Circle Open, Circle Close, Circle Crop, Rect Crop, Radial Wipe, Distance Dissolve, Horizontal Open, Horizontal Close, Vertical Open, Vertical Close, Diagonal Top Left, Diagonal Top Right, Diagonal Bottom Left, Diagonal Bottom Right, Noise Dissolve, Pixelate, Fade Grays, Fade Fast, Fade Slow, Squeeze Horizontal, Squeeze Vertical, Zoom In; plus Audio Crossfade on audio tracks.
   - Audio crossfade, fade handles, text titles.
+  - Title templates (effects batch 4, shared by the Effects tab and the agent API): Centered, Lower Third, Top Caption, Subtitle, Headline and Quote, authored for 1080 lines and scaled to the sequence height.
   - Constant speed 25% to 400% with pitch kept.
+  - Freeze frames (effects batch 4): Shift+F holds the frame under the playhead for the default still duration (the clip splits, the hold is inserted and the following clips ripple); a frozen clip shows one source frame for its whole length, has no speed or slip, and can be toggled in the Inspector.
   - Clip gain and volume keyframes.
   - Picture in picture: position, scale, crop, opacity.
   - Color: brightness, contrast, saturation, gamma.
@@ -69,7 +71,7 @@ Principles:
 - **Sequences:** nested or multiple sequences, multicam.
 - **Keyframes:** only audio volume has them. Transform, opacity, color and the video and audio effects are static per clip.
 - **Color:** LUTs, curves, wheels, scopes, HDR tone mapping (HDR gets a warning badge), 10-bit preview.
-- **Time:** reverse clips, freeze frames, speed ramps.
+- **Time:** reverse clips, speed ramps.
 - **Audio:** surround output, audio scrubbing, voice-over recording, noise reduction and other effects beyond the batch 3 set (filters, shelves, compressor, gate, pan, mono).
 - **Visual effects:** subtitles, masks, stabilisation, tracking.
 - **Extensibility:** plugins, scripting, a user keymap file.
@@ -111,7 +113,7 @@ The window opens maximized on first run. The default restored size is 1600x900 a
 
 - **Proportions.** The top row takes 58% of the height and the timeline 42%. The top columns are 22% (Media), 56% (Viewer) and 22% (Inspector). All boundaries are `GridSplitter`s, and their positions are saved in settings.
 - **Menu row.** It shows the project name, with `*` when there are unsaved changes. Export is the primary (Accent) button.
-- **Menus.** File, Edit, Clip, Sequence, Agent, View, Help. The Agent menu (AGENT_INTEGRATION 6.6 and 9.4): Start MCP server / Stop MCP server (F9); Copy briefing for your agent (for the client registered last, or the generic text); Copy briefing for > one item per client profile, the plain HTTP one last; Connect an agent client... (the client list); Agent panel; Take over (enabled while an agent holds the project). Separators group the server, the briefings, the clients and the panel items. The View menu keeps Agent: Pause / Resume and Agent: Follow. No menu, panel or settings text names a client vendor: the client names come from the profile file (`agent-clients.json`).
+- **Menus.** File, Edit, Clip, Sequence, Agent, View, Help. The Clip menu holds the clip edits in keymap order: Insert and Overwrite from Source, Match Frame; Split at Playhead, Split All Tracks, Trim Start and End to Playhead; Add Default Transition, Add Audio Crossfade, New Title; Speed..., Freeze Frame at Playhead (Shift+F, effects batch 4), Link / Unlink, Move into Sync, Enable / Disable, Nudge Left and Right. The Agent menu (AGENT_INTEGRATION 6.6 and 9.4): Start MCP server / Stop MCP server (F9); Copy briefing for your agent (for the client registered last, or the generic text); Copy briefing for > one item per client profile, the plain HTTP one last; Connect an agent client... (the client list); Agent panel; Take over (enabled while an agent holds the project). Separators group the server, the briefings, the clients and the panel items. The View menu keeps Agent: Pause / Resume and Agent: Follow. No menu, panel or settings text names a client vendor: the client names come from the profile file (`agent-clients.json`).
 - **Agent banner** (AGENT_INTEGRATION 6.2). While an agent holds, pauses or waits for the project, a 32 px bar spans the window under the menu row:
   - Bg2 background, a 3 px Accent left edge (the Snap/Marker yellow while paused), a 1 px Border bottom line;
   - left: the agent's name in bold and its reason ("**Claude Code** is editing: Remove silences"), then in TextSecondary the last call and its age ("edit.split, 2 s ago"), the elapsed time (`tnum`) and the open batch;
@@ -156,8 +158,8 @@ It covers the panels and the timeline only: the menu row with the agent banner a
   - Unsupported files are listed in one toast.
 - **Effects tab.**
   - Transitions: the 41 video transitions under four sub-headers, FADES (Cross Dissolve, Dip to Black, Dip to White, Fade Grays, Fade Fast, Fade Slow, Noise Dissolve, Pixelate), WIPES (the eight wipes, the four smooth wipes, the four diagonals, Radial Wipe, Distance Dissolve), SLIDES (the four slides, Squeeze Horizontal, Squeeze Vertical, Zoom In) and SHAPES (Circle Open, Circle Close, Circle Crop, Rect Crop, Horizontal Open and Close, Vertical Open and Close), plus AUDIO (Audio Crossfade). Drag one onto a cut, which highlights while hovered (video kinds on video tracks, Audio Crossfade on audio tracks). Double-click sets the default (star), which is remembered in settings. Crossfade is the factory default.
-  - Title templates (TITLES): Centered, Lower Third and Top Caption. Drag one onto a video track to create a 5 s title.
-  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral), and the audio presets Mono (toggles the mono sum on the audio clips), Voice (high-pass 80 Hz) and Reset Audio Effects (every audio effect back to neutral). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
+  - Title templates (TITLES): the six `TitleTemplates` of Core, Centered, Lower Third, Top Caption, Subtitle (Inter Regular 44 on a translucent dark box, lower third), Headline (Inter Bold 120 with a 4 px outline, top) and Quote (Inter SemiBold 72 on a translucent box, centred). Drag one onto a video track to create a 5 s title; the sizes are authored for 1080 lines and scale with the sequence height.
+  - Clip fades and presets (FADES AND PRESETS): Fade In, Fade Out, Fade In and Out (1 s, video and audio) and Remove Fades, plus the effect presets Grayscale, Flip Horizontal and Flip Vertical (each toggles the effect on the video clips) and Reset Effects (every video effect back to neutral), the audio presets Mono (toggles the mono sum on the audio clips), Voice (high-pass 80 Hz) and Reset Audio Effects (every audio effect back to neutral), and Freeze Frame (effects batch 4: the same edit as Shift+F on the selected video clip under the playhead; dropped on a clip, it holds the frame under the pointer). Apply acts on the selected clips; a drop acts on the clip under the pointer and, with linked selection on, its partners.
 
 ### 4.3 Viewer
 - **Mode switch.** A segmented control switches Timeline and Source. Timeline is tinted VideoClip blue and Source Accent green, so the active monitor is never ambiguous.
@@ -190,7 +192,7 @@ It covers the panels and the timeline only: the menu row with the agent banner a
 ### 4.4 Inspector
 Context sensitive, with collapsible sections whose state is remembered.
 - **Media clip.**
-  - Clip: name, file, enabled, speed %, source in/out.
+  - Clip: name, file, enabled, speed %, source in/out, and for video clips that are not stills a Freeze frame toggle (effects batch 4) that holds the source in point for the whole clip; a frozen clip hides the Speed row and the source rows like a still does.
   - Transform: Position X/Y (px from canvas center), Scale (% of fit), Crop L/T/R/B (% of source), Opacity %.
   - Color: Brightness (-1..1), Contrast (0..2), Saturation (0..3), Gamma (0.1..4), Reset.
   - Effects: Flip horizontal, Flip vertical, Rotation (-180..180 degrees, clockwise positive), Hue (-180..180 degrees), Temperature (1000..40000 K, 6500 neutral), Tint (-100..100 %, towards magenta), Blur (0..50 px), Sharpen (0..100 %), Vignette (0..100 %), Grayscale, Reset (everything including the key).
@@ -252,7 +254,7 @@ Context sensitive, with collapsible sections whose state is remembered.
 - **Clip body.**
   - Rounded rectangle (3 px) in VideoClip, AudioClip, TitleClip or StillClip color.
   - Name in Inter 11 px at the top left.
-  - Badges: speed (`150%`), `fx` (on a video clip any transform, opacity, color or video effect that is not neutral, on an audio clip any audio effect; fades, gain and keyframes do not count), and a red sync badge (`+5`) when linked clips have drifted.
+  - Badges: speed (`150%`), `hold` next to it on a freeze frame (a frozen video clip; never on a still), `fx` (on a video clip any transform, opacity, color or video effect that is not neutral, on an audio clip any audio effect; fades, gain and keyframes do not count), and a red sync badge (`+5`) when linked clips have drifted (frozen clips and their partners never show one).
 - **Clip content.**
   - Video clips tile a filmstrip, each tile showing the source frame at its left edge.
   - Audio clips draw a min/max waveform from the peak level nearest one peak per pixel, overlaid by the volume line and keyframe dots. The height follows the square root of the normalised peak (`WaveformScale`), so quiet material stays readable: -20 dBFS fills about a third of the half height, full scale touches the edge.
@@ -376,6 +378,7 @@ At a junction, each clip keeps its own edge zone. A press becomes a drag after 4
   - With no Source In/Out but a timeline In and Out, the timeline range sets the duration.
   - F (match frame) opens the clip under the playhead in Source mode at the matching frame.
 - **Speed.** Ctrl+R opens a dialog: 25 to 400% plus "Ripple following clips" (on by default). The source range is kept and the duration changes.
+- **Freeze frame** (Shift+F, Clip > Freeze Frame at Playhead, the Freeze Frame preset). The selected video clip under the playhead (or, with nothing selected, the clip under the playhead on the first targeted video track) is split at the playhead and a copy that holds the frame shown there (speed included, same look, no fades, no link) is inserted for the default still duration; everything after it ripples on every unlocked track, like any insert, and the hold is selected. Frozen clips are unbounded like stills, keep their frame when trimmed or moved, refuse speed and slip, and show a `hold` badge next to the speed badge. A still is refused (it is already one frame), and so is a frame outside the clip; with no video clip to hold, a toast says "Select a video clip under the playhead to freeze." The clip's link partners (its audio) are split at the playhead too, so the pieces after the hold stay linked to each other. Unfreezing a clip (the Inspector toggle) trims it to the source left after its frame, or removes it when none is left.
 
 ### 5.6 Drag feedback
 - **Live result.** The timeline redraws the computed result, with a faint outline of the original position.
@@ -422,7 +425,8 @@ The defaults live in a static keymap. Non-letter keys are named by their Avaloni
 | `,` OemComma / `.` OemPeriod | insert / overwrite from Source | F | match frame |
 | Ctrl+D | default video transition | Ctrl+Shift+D | default audio crossfade |
 | Ctrl+T | new title at playhead | Ctrl+R | speed dialog |
-| Ctrl+L | link / unlink | Shift+E | enable / disable clip |
+| Shift+F | freeze frame at playhead | Ctrl+L | link / unlink |
+| Shift+E | enable / disable clip | | |
 | Ctrl+C / Ctrl+X | copy / cut | Ctrl+V / Ctrl+Shift+V | paste overwrite / insert |
 | Ctrl+A | select all | Esc | cancel drag, else deselect |
 | Ctrl+Z | undo | Ctrl+Shift+Z, Ctrl+Y | redo |
