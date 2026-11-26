@@ -87,7 +87,7 @@ if [ "$runs_here" = true ]; then
     absent=()
     while IFS= read -r name; do
         grep -qF -- "$name" <<<"$(grep -E '^[^ ]' <<<"$registration")" || absent+=("$name")
-    done < <(grep -oE '"name": *"[^"]+"' "$output/agent-clients.json" | sed -E 's/"name": *"([^"]+)"//')
+    done < <(grep -oE '"name": *"[^"]+"' "$output/agent-clients.json" | sed -E 's/"name": *"([^"]+)"/\1/')
     if [ "${#absent[@]}" -gt 0 ]; then
         echo "The published $mcp --print-registration printed no block for: ${absent[*]}" >&2
         exit 1
