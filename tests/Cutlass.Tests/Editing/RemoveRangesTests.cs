@@ -179,7 +179,9 @@ public sealed class RemoveRangesTests
         // AGENT_INTEGRATION 2.3: RemoveRanges over 1000 clips must stay linear. The old per-range ripple shift was
         // quadratic and took seconds here; the linear version takes about 20 ms on a desktop and about 60 ms on a shared
         // CI runner. The bound only has to separate those two worlds, so it is deliberately loose (Debug builds also
-        // validate after every inner edit).
+        // validate after every inner edit). A busy machine can stall one run past the bound (the Windows CI runners
+        // stall for up to a second, and so does a desktop under full load), so the best of up to five runs counts: a
+        // quadratic version misses the bound every time, a stall does not hit five runs in a row.
         var builder = new ProjectBuilder();
         var clips = Enumerable.Range(0, 500).Select(i => (Clip)V("v" + i, i * 20L, 20, sourceFrame: 0)).ToArray();
         var audio = Enumerable.Range(0, 500).Select(i => (Clip)A("a" + i, i * 20L, 20, sourceFrame: 0)).ToArray();
@@ -187,14 +189,21 @@ public sealed class RemoveRangesTests
         var ranges = Enumerable.Range(0, 50).Select(i => ((long)(i * 200) + 5, (long)(i * 200) + 15)).ToList();
         // Warm up the JIT on the same shapes first; the bound is about the steady state.
         TimelineEdits.RemoveRanges(new SequentialIdGenerator(), p, ranges, null, ripple: true);
-        var watch = Stopwatch.StartNew();
-        var r = TimelineEdits.RemoveRanges(new SequentialIdGenerator(), p, ranges, null, ripple: true);
-        watch.Stop();
-        Assert.Equal(10_000 - 500, TimelineQuery.Duration(r.Project));
 #if DEBUG
-        Assert.True(watch.ElapsedMilliseconds < 10_000, $"RemoveRanges took {watch.ElapsedMilliseconds} ms.");
+        const long BoundMs = 10_000;
 #else
-        Assert.True(watch.ElapsedMilliseconds < 1_000, $"RemoveRanges took {watch.ElapsedMilliseconds} ms.");
+        const long BoundMs = 1_000;
 #endif
+        var best = long.MaxValue;
+        for (var attempt = 0; attempt < 5 && best >= BoundMs; attempt++)
+        {
+            var watch = Stopwatch.StartNew();
+            var r = TimelineEdits.RemoveRanges(new SequentialIdGenerator(), p, ranges, null, ripple: true);
+            watch.Stop();
+            Assert.Equal(10_000 - 500, TimelineQuery.Duration(r.Project));
+            best = Math.Min(best, watch.ElapsedMilliseconds);
+        }
+
+        Assert.True(best < BoundMs, $"RemoveRanges took {best} ms in the best of five runs.");
     }
 }

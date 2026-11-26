@@ -202,7 +202,7 @@ The host operations exist because the App does more than the bare edit:
 - **Concurrency:**
   - Mutating calls go through one `SemaphoreSlim(1)`, in arrival order. Reads run concurrently.
   - Heavy reads run at most 2 at once, or 1 while the user plays back. A third waits 10 s, then gets `busy`.
-- **Delegates stay short.** The App invoker uses `Dispatcher.UIThread.InvokeAsync` at `Normal` priority. `RemoveRanges` over 1000 clips must stay linear: about 20 ms on a desktop and under 100 ms on a shared CI runner in Release (the A1 test bounds it at 1 s, which still separates it from the quadratic version that took seconds).
+- **Delegates stay short.** The App invoker uses `Dispatcher.UIThread.InvokeAsync` at `Normal` priority. `RemoveRanges` over 1000 clips must stay linear: about 20 ms on a desktop and under 100 ms on a shared CI runner in Release (the A1 test bounds the best of up to five runs at 1 s, which still separates it from the quadratic version that took seconds and does not fail when a busy runner stalls one run).
 
 ### 2.4 The App host
 

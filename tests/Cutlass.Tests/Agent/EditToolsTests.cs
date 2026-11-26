@@ -466,10 +466,16 @@ public sealed class EditToolsTests : IDisposable
         var paused = await Fails("edit.split", """{"frame":50}""", id, ErrorCode.Paused);
         Assert.Equal(2000, paused.RetryAfterMs);
 
-        // Resumed while waiting: the call runs.
-        var call = _host.CallAsync("edit.split", """{"frame":50}""", id);
+        // Resumed while waiting: the call runs. The wait runs on the wall clock, so this half uses a host with a long
+        // wait: with the 300 ms of the first half, a machine that stalls between the call and the Resume (a busy CI
+        // runner) let the wait run out and the call failed with "paused".
+        using var patient = new FakeAgentHost(Sample(), LeaseOptions.Default with { PausedWaitMs = 60_000 });
+        var patientId = await patient.AcquireAsync();
+        await patient.Ui.InvokeAsync(() => patient.Lock.Pause(patient.Time.NowMs), CancellationToken.None);
+        var call = patient.CallAsync("edit.split", """{"frame":50}""", patientId);
         await Task.Delay(50);
-        await _host.Ui.InvokeAsync(() => _host.Lock.Resume(_host.Time.NowMs), CancellationToken.None);
+        Assert.False(call.IsCompleted);
+        await patient.Ui.InvokeAsync(() => patient.Lock.Resume(patient.Time.NowMs), CancellationToken.None);
         var r = await call;
         Assert.Null(r.Error);
         Assert.True(r.Changed);
