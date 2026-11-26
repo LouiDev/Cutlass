@@ -2,6 +2,7 @@ using Cutlass.Agent.Hosting;
 using Cutlass.Agent.Lock;
 using Cutlass.App;
 using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Agent;
 using Cutlass.Media.Ffmpeg;
 using Cutlass.Media.Platform;
 using Cutlass.Tests.App.Shell;

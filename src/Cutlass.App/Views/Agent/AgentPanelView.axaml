@@ -1,0 +1,114 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cutlass.App.ViewModels"
+             xmlns:vmagent="using:Cutlass.App.ViewModels.Agent"
+             x:Class="Cutlass.App.Views.Agent.AgentPanelView"
+             x:DataType="vmagent:AgentViewModel">
+
+  <!--
+    AGENT_INTEGRATION 6.3, 6.6 and 9.4: the AGENT tab of the left panel. The MCP SERVER header block (server state, URL
+    and Start/Stop; the MCP exe, found or missing; Clients, the count of current client registrations with Connect...;
+    Copy briefing for your agent and Open docs; Copy token and Copy exe path), a lock card (phase, agent, reason, lease
+    left, Pause/Resume, Take over), the call log newest first (time, agent, tool, duration, code in Danger for errors,
+    the arguments as a tooltip), and Open log folder.
+  -->
+  <DockPanel Margin="8,8,8,6">
+    <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <Border Classes="agentCard">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="panelTitle" Text="MCP SERVER" />
+          <Grid ColumnDefinitions="88,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="secondary" Text="Server" VerticalAlignment="Center" />
+            <DockPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0" ToolTip.Tip="{Binding ServerText}">
+              <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center" Classes="statusDot"
+                       Classes.ok="{Binding IsServerListening}" Classes.error="{Binding IsServerError}" />
+              <TextBlock DockPanel.Dock="Left" Text="{Binding ServerStateText}" Classes.danger="{Binding IsServerError}"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              <TextBlock Classes="secondary" Text="{Binding ServerUrlText}" Margin="8,0,0,0" VerticalAlignment="Center"
+                         TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <Button Grid.Row="0" Grid.Column="2" Classes="agentSecondary" MinWidth="92" HorizontalContentAlignment="Center"
+                    Content="{Binding ServerButtonText}" Command="{Binding ToggleServerCommand}"
+                    ToolTip.Tip="Agent > Start / Stop MCP server (F9)" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Classes="secondary" Text="Exe" VerticalAlignment="Center" />
+            <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" ToolTip.Tip="{Binding ExePathText}">
+              <TextBlock DockPanel.Dock="Right" Text="{Binding ExeStateText}" Margin="6,0,0,0" VerticalAlignment="Center"
+                         Classes.success="{Binding !IsExeMissing}" Classes.warning="{Binding IsExeMissing}" />
+              <TextBlock Text="{Binding ExePathText}" TextTrimming="PrefixCharacterEllipsis" VerticalAlignment="Center" />
+            </DockPanel>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Classes="secondary" Text="Clients" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ClientsText}" Margin="0,0,6,0" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" Classes.success="{Binding HasCurrentClients}"
+                       ToolTip.Tip="{Binding ClientsToolTip}" />
+            <Button Grid.Row="2" Grid.Column="2" Classes="agentSecondary" MinWidth="92" HorizontalContentAlignment="Center"
+                    Content="Connect..." Command="{Binding ConnectClientsCommand}"
+                    ToolTip.Tip="Agent > Connect an agent client...: register Cutlass with the agent clients on this machine" />
+          </Grid>
+          <WrapPanel Orientation="Horizontal" Margin="0,2,0,0">
+            <Button Classes="accent" Content="Copy briefing for your agent" Command="{Binding CopyBriefingCommand}" Margin="0,0,6,6"
+                    ToolTip.Tip="A prompt with the open project and the steps; paste it into your agent session" />
+            <Button Classes="agentSecondary" Content="Open docs" Command="{Binding OpenDocsCommand}" Margin="0,0,6,6"
+                    ToolTip.Tip="AGENT_INTEGRATION.md: the API, the lock and the MCP tools" />
+          </WrapPanel>
+          <WrapPanel Orientation="Horizontal">
+            <Button Classes="link" Content="Copy token" Command="{Binding CopyTokenCommand}" Margin="0,0,8,0"
+                    ToolTip.Tip="The bearer token agents send (never shown in full)" />
+            <Button Classes="link" Content="Copy exe path" Command="{Binding CopyExePathCommand}"
+                    ToolTip.Tip="The MCP server exe next to Cutlass, which MCP clients start" />
+          </WrapPanel>
+          <TextBlock Classes="secondary" Text="{Binding PanelNote}" FontSize="11"
+                     IsVisible="{Binding PanelNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="agentCard">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="panelTitle" Text="LOCK" />
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Classes="statusDot"
+                     Classes.accent="{Binding BadgeIsAccent}" Classes.amber="{Binding BadgeIsAmber}" />
+            <TextBlock Text="{Binding PhaseText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <TextBlock Classes="secondary" Text="{Binding HeadlineText}" TextWrapping="Wrap"
+                     IsVisible="{Binding IsLocked}" />
+          <TextBlock Classes="secondary agentClock" Text="{Binding LeaseText}"
+                     IsVisible="{Binding LeaseText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0" IsVisible="{Binding IsLocked}">
+            <Button Classes="agentSecondary" Content="{Binding PauseResumeText}" Command="{Binding PauseResumeCommand}" />
+            <Button Classes="accent" Content="Take over" Command="{Binding TakeOverCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Classes="panelTitle" Text="CALLS" Margin="0,4,0,0" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+      <Button Classes="link" Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
+    </StackPanel>
+
+    <Panel>
+      <TextBlock Classes="hint" Text="No agent calls yet." IsVisible="{Binding !HasCalls}" />
+      <ListBox Classes="agentCalls" ItemsSource="{Binding Calls}" Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vmagent:AgentCallItemViewModel">
+            <!-- The right margin keeps the code column clear of the overlay scrollbar. -->
+            <Grid ColumnDefinitions="56,*,Auto" ToolTip.Tip="{Binding ToolTip}" Background="Transparent" Margin="0,0,10,0">
+              <TextBlock Grid.Column="0" Classes="secondary agentClock" FontSize="11" Text="{Binding TimeText}" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" ClipToBounds="True">
+                <TextBlock FontSize="11" Text="{Binding Tool}" />
+                <TextBlock Classes="secondary" FontSize="11" Text="{Binding Agent}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Classes="secondary agentClock" FontSize="11" Text="{Binding DurationText}" />
+                <TextBlock FontSize="11" Text="{Binding Code}" Classes.danger="{Binding IsError}" Classes.secondary="{Binding !IsError}" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Panel>
+  </DockPanel>
+</UserControl>

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Lock;
-using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Agent.Clients.Profiles;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Time;

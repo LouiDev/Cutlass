@@ -2,8 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cutlass.App.ViewModels"
              xmlns:controls="using:Cutlass.App.Controls"
+             xmlns:vmviewer="using:Cutlass.App.ViewModels.Viewer"
              x:Class="Cutlass.App.Views.ViewerView"
-             x:DataType="vm:ViewerViewModel">
+             x:DataType="vmviewer:ViewerViewModel">
 
   <UserControl.Styles>
     <!-- The readout invites a click: it turns into a timecode field (DESIGN 4.3). -->
@@ -59,10 +60,10 @@
           <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
             <Button Classes="segment timeline" Classes.active="{Binding IsTimelineMode}" CornerRadius="4,0,0,4"
                     Content="Timeline" Command="{Binding SetModeCommand}"
-                    CommandParameter="{x:Static vm:ViewerMode.Timeline}" ToolTip.Tip="Show the sequence" />
+                    CommandParameter="{x:Static vmviewer:ViewerMode.Timeline}" ToolTip.Tip="Show the sequence" />
             <Button Classes="segment source" Classes.active="{Binding IsSourceMode}" CornerRadius="0,4,4,0"
                     Content="Source" Command="{Binding SetModeCommand}" IsEnabled="{Binding CanShowSource}"
-                    CommandParameter="{x:Static vm:ViewerMode.Source}"
+                    CommandParameter="{x:Static vmviewer:ViewerMode.Source}"
                     ToolTip.Tip="Show the media opened in Source (double-click a bin item to open one)" />
             <TextBlock Classes="secondary" Margin="10,0,0,0" VerticalAlignment="Center" MaxWidth="260"
                        TextTrimming="CharacterEllipsis" Text="{Binding Source.Name}" IsVisible="{Binding IsSourceMode}" />

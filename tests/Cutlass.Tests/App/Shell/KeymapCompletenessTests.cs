@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Avalonia.Input;
 using Cutlass.App;
-using Cutlass.App.Services;
+using Cutlass.App.Services.Commands;
 using Cutlass.App.ViewModels;
 using Cutlass.Media.Ffmpeg;
 using Cutlass.Media.Platform;

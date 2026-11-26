@@ -1,6 +1,8 @@
 using Avalonia.Input;
 using Cutlass.App.Services;
+using Cutlass.App.Services.Commands;
 using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Session;
 using Cutlass.Tests.TestSupport;

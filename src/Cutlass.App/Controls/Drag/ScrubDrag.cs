@@ -1,4 +1,4 @@
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 

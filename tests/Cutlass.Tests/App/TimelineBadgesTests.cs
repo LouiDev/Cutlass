@@ -1,4 +1,4 @@
-using Cutlass.App.Controls;
+using Cutlass.App.Controls.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Tests.TestSupport;

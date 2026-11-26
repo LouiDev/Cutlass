@@ -1,8 +1,9 @@
 using System.Globalization;
 using Cutlass.App.Controls;
 using Cutlass.App.Controls.Drag;
-using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Controls.Timeline;
+using Cutlass.App.Services.Playback;
+using Cutlass.App.ViewModels.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Session;
 using Cutlass.Tests.TestSupport;

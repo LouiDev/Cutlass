@@ -1,5 +1,6 @@
-using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Services.Playback;
+using Cutlass.App.ViewModels.Timeline;
+using Cutlass.App.ViewModels.Viewer;
 using Cutlass.Core.Session;
 using Cutlass.Tests.TestSupport;
 using static Cutlass.Tests.TestSupport.ProjectBuilder;

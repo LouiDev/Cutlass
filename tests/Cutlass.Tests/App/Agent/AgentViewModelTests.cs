@@ -1,8 +1,8 @@
 using Cutlass.Agent.Hosting;
 using Cutlass.Agent.Lock;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Audit;
 using Cutlass.App.Services.Agent;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Agent;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Session;
 

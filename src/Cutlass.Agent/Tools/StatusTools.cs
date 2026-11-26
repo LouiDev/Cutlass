@@ -1,5 +1,7 @@
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Api.Dto;
+using Cutlass.Agent.Api.Dto.Status;
+using Cutlass.Agent.Tools.Dispatch;
+using Cutlass.Agent.Tools.Edit;
 using Cutlass.Compiler.Export;
 using Cutlass.Core.Model;
 

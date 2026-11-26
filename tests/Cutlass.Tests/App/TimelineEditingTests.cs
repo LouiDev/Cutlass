@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
-using Cutlass.App.Controls;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Controls.Timeline;
+using Cutlass.App.ViewModels.Timeline;
+using Cutlass.App.ViewModels.Viewer;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Session;

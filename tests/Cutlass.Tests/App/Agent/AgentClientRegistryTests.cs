@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cutlass.App.Services;
 using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Agent.Clients.Profiles;
 
 namespace Cutlass.Tests.App.Agent;
 

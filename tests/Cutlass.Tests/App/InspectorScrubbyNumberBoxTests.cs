@@ -1,6 +1,6 @@
 using Avalonia.Input;
 using Cutlass.App.Controls;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Inspector;
 using Cutlass.Tests.TestSupport;
 
 namespace Cutlass.Tests.App;

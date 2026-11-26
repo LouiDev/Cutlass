@@ -1,4 +1,4 @@
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Analysis;
 
 namespace Cutlass.Tests.Agent;
 

@@ -1,7 +1,12 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Cutlass.App.Services;
 using Cutlass.App.Services.Agent;
+using Cutlass.App.Services.Commands;
+using Cutlass.App.Services.Dialogs;
+using Cutlass.App.ViewModels.Agent;
+using Cutlass.App.ViewModels.MediaBin;
+using Cutlass.App.ViewModels.Timeline;
+using Cutlass.App.ViewModels.Viewer;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Serialization;

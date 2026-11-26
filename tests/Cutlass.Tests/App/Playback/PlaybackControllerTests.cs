@@ -1,4 +1,5 @@
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Timeline;
+using Cutlass.App.ViewModels.Viewer;
 using Cutlass.Core.Session;
 using Cutlass.Media.Preview;
 using Cutlass.Tests.TestSupport;

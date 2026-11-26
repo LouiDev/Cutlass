@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Api.Export;
+using Cutlass.Agent.Tools.Dispatch;
 
 namespace Cutlass.Agent.Tools;
 

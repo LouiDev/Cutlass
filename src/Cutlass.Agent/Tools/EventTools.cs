@@ -1,4 +1,5 @@
 using Cutlass.Agent.Api;
+using Cutlass.Agent.Tools.Dispatch;
 
 namespace Cutlass.Agent.Tools;
 

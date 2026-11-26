@@ -1,4 +1,4 @@
-using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
 
 namespace Cutlass.Tests.Media.Preview;
 

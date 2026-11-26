@@ -1,8 +1,14 @@
 using System.Globalization;
 using System.Text.Json;
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Api.Dto;
+using Cutlass.Agent.Api.Dto.Project;
 using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Requests.Clips;
+using Cutlass.Agent.Api.Requests.Generators;
+using Cutlass.Agent.Api.Requests.Media;
+using Cutlass.Agent.Api.Requests.Preview;
+using Cutlass.Agent.Api.Requests.Project;
+using Cutlass.Agent.Api.Requests.Titles;
 using Cutlass.IntegrationTests.Infrastructure;
 
 namespace Cutlass.IntegrationTests.Agent;

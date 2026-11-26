@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Cutlass.App.Services;
+using Cutlass.App.Services.Commands;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Media.Settings;
 
 namespace Cutlass.App.ViewModels;

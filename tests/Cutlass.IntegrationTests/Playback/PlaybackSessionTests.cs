@@ -4,6 +4,8 @@ using Cutlass.Core.Time;
 using Cutlass.IntegrationTests.Export;
 using Cutlass.IntegrationTests.Infrastructure;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
+using Cutlass.Media.Preview.Playback;
 using Xunit.Abstractions;
 using static Cutlass.IntegrationTests.Export.TimelineKit;
 

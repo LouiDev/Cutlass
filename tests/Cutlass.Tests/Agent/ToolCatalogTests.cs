@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Http;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.Tests.Agent.Kit;
 using Cutlass.Tests.TestSupport;
 

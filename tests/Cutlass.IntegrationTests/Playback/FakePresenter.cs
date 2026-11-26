@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Playback;
 
 namespace Cutlass.IntegrationTests.Playback;
 

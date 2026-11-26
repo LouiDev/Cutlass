@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Compiler;
 using Cutlass.Compiler.Capabilities;
 using Cutlass.Compiler.Export;
@@ -54,7 +54,7 @@ public sealed class ExportDialogHardeningTests : IDisposable
         string? preset = null,
         Func<ExportRequest, bool>? start = null,
         Func<ExportRequest, CancellationToken, Task<string>>? command = null,
-        Cutlass.App.Services.IDialogService? dialogs = null) =>
+        Cutlass.App.Services.Dialogs.IDialogService? dialogs = null) =>
         new(project ?? Project(), caps ?? Caps(), "trip", _folder, dialogs, new EmptyCatalog(), command, start, preset);
 
     [Theory]

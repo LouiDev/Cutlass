@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Cutlass.App.Services;
+using Cutlass.App.Services.Dialogs;
 using Cutlass.Media.Export;
 using Cutlass.Media.Jobs;
 

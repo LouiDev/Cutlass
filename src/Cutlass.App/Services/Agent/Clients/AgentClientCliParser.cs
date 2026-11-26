@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cutlass.App.Services.Agent.Clients.Profiles;
 
 namespace Cutlass.App.Services.Agent.Clients;
 

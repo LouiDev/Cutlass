@@ -1,5 +1,7 @@
 using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
+using Cutlass.App.ViewModels.MediaBin;
+using Cutlass.App.ViewModels.Viewer;
 using Cutlass.Core.Model;
 using Cutlass.Core.Time;
 using Cutlass.Media.Settings;

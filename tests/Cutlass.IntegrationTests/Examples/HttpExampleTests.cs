@@ -1,4 +1,4 @@
-using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Requests.Clips;
 using Cutlass.IntegrationTests.Agent;
 using Cutlass.IntegrationTests.Infrastructure;
 

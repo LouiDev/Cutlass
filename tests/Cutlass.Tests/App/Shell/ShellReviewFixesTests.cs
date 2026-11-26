@@ -1,6 +1,5 @@
 using Avalonia.Input;
 using Cutlass.App;
-using Cutlass.App.Services;
 using Cutlass.App.ViewModels;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;

@@ -1,7 +1,8 @@
 using Cutlass.Agent.Hosting;
 using Cutlass.Agent.Http;
 using Cutlass.Agent.Lock;
-using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Audit;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.IntegrationTests.Infrastructure;
 using Cutlass.Media.Platform;
 

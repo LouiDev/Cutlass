@@ -1,3 +1,4 @@
+using Cutlass.App.Controls.Timeline;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 

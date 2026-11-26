@@ -1,6 +1,7 @@
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Lock;
 using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Edit;
 using Cutlass.Core.Editing;
 using Cutlass.Core.Model;
 using Cutlass.Core.Session;

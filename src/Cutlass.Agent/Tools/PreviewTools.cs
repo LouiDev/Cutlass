@@ -2,7 +2,9 @@ using System.Globalization;
 using System.Text.Json;
 using Cutlass.Agent.Api;
 using Cutlass.Agent.Api.Dto;
+using Cutlass.Agent.Api.Dto.Preview;
 using Cutlass.Agent.Imaging;
+using Cutlass.Agent.Tools.Dispatch;
 using Cutlass.Core.Model;
 using Cutlass.Core.Time;
 using Cutlass.Media.Ffmpeg;
@@ -168,7 +170,7 @@ internal sealed class PreviewTools(ToolDispatcher d)
         };
     }
 
-    private static List<long> FramesOf(Api.Requests.ContactSheetRequest req)
+    private static List<long> FramesOf(Api.Requests.Preview.ContactSheetRequest req)
     {
         if (req.Frames is { Count: > 0 } list)
         {

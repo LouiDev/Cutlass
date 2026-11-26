@@ -5,6 +5,7 @@ using Cutlass.Media.Export;
 using Cutlass.Media.Ffmpeg;
 using Cutlass.Media.Platform;
 using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Audio;
 using Cutlass.Media.Projects;
 using Cutlass.Media.Services;
 using Cutlass.Media.Settings;

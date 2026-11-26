@@ -1,4 +1,5 @@
 using Cutlass.App.Services;
+using Cutlass.App.Services.Smoke;
 using Cutlass.Core.Time;
 
 namespace Cutlass.Tests.App.Shell;

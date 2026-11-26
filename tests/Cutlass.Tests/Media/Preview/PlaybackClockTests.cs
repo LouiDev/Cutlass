@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Cutlass.Core.Time;
-using Cutlass.Media.Preview;
+using Cutlass.Media.Preview.Playback;
 
 namespace Cutlass.Tests.Media.Preview;
 

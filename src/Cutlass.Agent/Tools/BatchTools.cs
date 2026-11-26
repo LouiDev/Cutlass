@@ -1,4 +1,6 @@
 using Cutlass.Agent.Api;
+using Cutlass.Agent.Tools.Dispatch;
+using Cutlass.Agent.Tools.Edit;
 using Cutlass.Core.Editing;
 
 namespace Cutlass.Agent.Tools;

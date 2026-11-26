@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Cutlass.Agent.Tools;
+using Cutlass.Agent.Tools.Dispatch;
 
 namespace Cutlass.Agent.Api;
 

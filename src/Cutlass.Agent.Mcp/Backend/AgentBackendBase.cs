@@ -114,7 +114,7 @@ public abstract class AgentBackendBase : IAgentBackend
             using var cts = new CancellationTokenSource(ReleaseTimeout);
             try
             {
-                var result = await CallAsync("lock.release", Cutlass.Agent.Tools.AgentCall.EmptyArgs, cts.Token).ConfigureAwait(false);
+                var result = await CallAsync("lock.release", Cutlass.Agent.Tools.Dispatch.AgentCall.EmptyArgs, cts.Token).ConfigureAwait(false);
                 Logger.LogInformation(
                     "Released the edit lock on exit: {Outcome}.",
                     result.Error is { } error ? error.CodeName : "ok");

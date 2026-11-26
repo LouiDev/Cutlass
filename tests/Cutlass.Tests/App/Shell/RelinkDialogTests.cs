@@ -1,4 +1,4 @@
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Dialogs;
 using Cutlass.Core.Model;
 using Cutlass.Media.Projects;
 using Cutlass.Media.Services;

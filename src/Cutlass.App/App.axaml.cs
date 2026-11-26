@@ -5,6 +5,8 @@ using Cutlass.Agent.Lock;
 using Cutlass.App.Services;
 using Cutlass.App.Services.Agent;
 using Cutlass.App.Services.Agent.Clients;
+using Cutlass.App.Services.Dialogs;
+using Cutlass.App.Services.Smoke;
 using Cutlass.App.ViewModels;
 using Cutlass.App.Views;
 

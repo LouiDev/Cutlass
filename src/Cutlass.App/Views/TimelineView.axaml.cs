@@ -4,8 +4,9 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Cutlass.App.Controls;
-using Cutlass.App.ViewModels;
+using Cutlass.App.Controls.Timeline;
+using Cutlass.App.ViewModels.Timeline;
+using Cutlass.App.Views.Dialogs;
 using Cutlass.Core.Editing;
 
 namespace Cutlass.App.Views;

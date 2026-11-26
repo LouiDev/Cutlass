@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Cutlass.Agent.Api;
-using Cutlass.Agent.Api.Requests;
+using Cutlass.Agent.Api.Requests.Project;
 using Cutlass.Agent.Lock;
 using Cutlass.Core.Model;
 using Cutlass.Tests.Compiler;

@@ -1,5 +1,5 @@
 using Cutlass.App.Services;
-using Cutlass.App.ViewModels;
+using Cutlass.App.ViewModels.Agent;
 using Cutlass.Tests.App.Shell;
 
 namespace Cutlass.Tests.App.Agent;

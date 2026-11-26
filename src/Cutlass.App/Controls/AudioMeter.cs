@@ -2,7 +2,8 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Cutlass.App.Services;
+using Cutlass.App.Controls.Timeline;
+using Cutlass.App.Services.Playback;
 
 namespace Cutlass.App.Controls;
 

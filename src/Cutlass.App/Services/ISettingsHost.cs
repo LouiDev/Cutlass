@@ -1,3 +1,4 @@
+using Cutlass.App.Services.Ffmpeg;
 using Cutlass.Media.Settings;
 
 namespace Cutlass.App.Services;
