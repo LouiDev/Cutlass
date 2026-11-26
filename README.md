@@ -47,7 +47,7 @@ dotnet run --project src/Cutlass.App -- --import <file>...
 The smoke tests run a script inside the real app against freshly generated lavfi clips. They need ffmpeg and a desktop session.
 
 ```
-pwsh build/smoke.ps1 [-Script m4|m5|m6|m7|m7b] [-OutDir <folder>] [-AppPath <published exe>]
+pwsh build/smoke.ps1 [-Script m4|m5|m6|m7|m7b|m9] [-OutDir <folder>] [-AppPath <published exe>]
 powershell -File build/smoke.ps1 -Script m7
 ```
 
@@ -56,6 +56,7 @@ powershell -File build/smoke.ps1 -Script m7
 - `m6`: Source mode, three-point edits, match frame, copy and paste, Q/W, transitions, speed, clip effects, a freeze frame, generators and export, plus the timeline checklist screenshots.
 - `m7`: the Settings dialog and one export per preset, each checked with ffprobe.
 - `m7b`: offline media on the timeline and screenshots of the Relink, Settings, Export, Speed and Sequence Settings dialogs.
+- `m9`: the agent HTTP API in the running app (lock, banner, read-only UI, an agent batch, silence removal, pause, take over, one-step undo, an agent export), the Agent menu and briefings, and the agent client registrations in a sandbox home.
 
 CI runs `m4` on Windows and Linux (under `xvfb-run`), `m7` on Windows, and `build/examples/agent-http.ps1` against `Cutlass.Agent.Mcp serve` on Windows.
 
@@ -71,7 +72,7 @@ bash build/publish.sh [linux-x64|win-x64]
 dotnet publish src/Cutlass.App -c Release -r linux-x64 --self-contained
 ```
 
-Run the shell script through `bash`: a checkout made on Windows (`core.filemode=false`) does not carry its execute bit. When the script is first committed, mark it executable in the index with `git update-index --chmod=+x build/publish.sh`.
+Run the shell script through `bash`: a checkout made on Windows (`core.filemode=false`) does not carry its execute bit. The index holds it as executable (mode 100755); if a commit from Windows ever drops that, restore it with `git update-index --chmod=+x build/publish.sh`.
 
 To check a Windows publish end to end, run the M4 smoke test on it: `powershell -File build/smoke.ps1 -AppPath artifacts/publish/win-x64/Cutlass.App.exe`. A linux-x64 publish can be made on Windows but runs only on Linux.
 
@@ -171,7 +172,7 @@ It prints the base URL and the token file and runs until `POST /v1/shutdown` or 
 
 ## Known limitations
 
-- Linux has never been run on real hardware; every Linux path was verified by reading only. CI has never executed on GitHub.
+- Linux has only run on the CI runner (the test suites and the M4 smoke under Xvfb), never in a desktop session; XWayland, audible playback and the published linux-x64 folder were verified by reading only.
 - Avalonia 11.3.22 on X11 has no XDND, so OS file drops do nothing on Linux; use Ctrl+I or the Import button there.
 - Two instances sharing one cache can evict each other's proxies; the app detaches and re-queues lost proxies but does not lease artifacts.
 - atempo alignment is calibrated with tone bursts (mean within 1 ms); a single click cannot be held to 1 ms by any constant compensation.
